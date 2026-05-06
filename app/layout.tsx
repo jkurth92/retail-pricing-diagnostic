@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Retali Pricing Diagnostic",
+  title: "Retail Pricing Diagnostic",
   description: "Pricing diagnostic workspace",
 };
 
@@ -33,3 +33,4 @@ export default function RootLayout({
     </html>
   );
 }
+
