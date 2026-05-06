@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-
+import PricingLadderModule from "@/components/PricingLadderModule";
+import PriceZoneModule from "@/components/PriceZoneModule";
 type Tab = "overview" | "pricing" | "promotions" | "markdown";
 
 export default function Home() {
@@ -26,7 +27,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="p-10 max-w-6xl space-y-8">
+    <div className="p-10 max-w-[1200px] mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Retail Pricing Diagnostic</h1>
         <p className="text-sm text-gray-500 mt-2">
@@ -127,7 +128,7 @@ export default function Home() {
 
                   <div className="h-3 w-full rounded-full bg-gray-200 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-black"
+                      className="h-full rounded-full bg-gray-900"
                       style={{ width: lever.width }}
                     />
                   </div>
@@ -161,76 +162,73 @@ export default function Home() {
       )}
 
       {activeTab === "pricing" && (
-        <div className="space-y-6">
-          <div className="border rounded-xl p-6 bg-white shadow-sm">
-            <h2 className="text-xl font-semibold">Pricing</h2>
-            <p className="text-sm text-gray-600 mt-2">
-              Diagnose price position, KVI structure, price-pack architecture, and pricing ladder gaps.
-            </p>
-          </div>
+  <div className="space-y-6">
+    <div className="border rounded-xl p-6 bg-white shadow-sm">
+      <h2 className="text-xl font-semibold">Pricing</h2>
+      <p className="text-sm text-gray-600 mt-2">
+        Diagnose price position, KVI structure, price-pack architecture, and pricing ladder gaps.
+      </p>
+    </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
-              <h3 className="font-semibold text-lg">Current State</h3>
-              <p className="text-sm text-gray-600">Position: Mid-tier</p>
-              <p className="text-sm text-gray-600">Ladder: Compressed</p>
-              <p className="text-sm text-gray-600">Competitiveness: Mixed</p>
-            </div>
+    <div className="grid grid-cols-2 gap-6">
+      <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
+        <h3 className="font-semibold text-lg">Current State</h3>
+        <p className="text-sm text-gray-600">Position: Mid-tier</p>
+        <p className="text-sm text-gray-600">Ladder: Compressed</p>
+        <p className="text-sm text-gray-600">Competitiveness: Mixed</p>
+      </div>
 
-            <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
-              <h3 className="font-semibold text-lg">Opportunity</h3>
-              <p className="text-sm text-gray-600">Revenue: +0.5%–1.5%</p>
-              <p className="text-sm text-gray-600">Margin: +15–40 bps</p>
-              <p className="text-sm text-gray-600">Unit Impact: Flat to +0.5%</p>
-            </div>
-          </div>
+      <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
+        <h3 className="font-semibold text-lg">Opportunity</h3>
+        <p className="text-sm text-gray-600">Revenue: +0.5%–1.5%</p>
+        <p className="text-sm text-gray-600">Margin: +15–40 bps</p>
+        <p className="text-sm text-gray-600">Unit Impact: Flat to +0.5%</p>
+      </div>
+    </div>
 
-          <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
-            <h3 className="font-semibold text-lg">KVI Structure</h3>
-            <p className="text-sm text-gray-600">KVIs priced competitively</p>
-            <p className="text-sm text-gray-600">Over-investment in some categories</p>
-            <p className="text-sm text-gray-600">Under-monetization of non-KVIs</p>
-          </div>
+    <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
+      <h3 className="font-semibold text-lg">KVI Structure</h3>
+      <p className="text-sm text-gray-600">KVIs priced competitively</p>
+      <p className="text-sm text-gray-600">Over-investment in some categories</p>
+      <p className="text-sm text-gray-600">Under-monetization of non-KVIs</p>
+    </div>
 
-          <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
-            <h3 className="font-semibold text-lg">Price-Pack Architecture</h3>
-            <p className="text-sm text-gray-600">Missing mid-tier packs</p>
-            <p className="text-sm text-gray-600">Inconsistent price-per-unit scaling</p>
-            <p className="text-sm text-gray-600">Limited trade-up pathways</p>
-          </div>
+    <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
+      <h3 className="font-semibold text-lg">Price-Pack Architecture</h3>
+      <p className="text-sm text-gray-600">Missing mid-tier packs</p>
+      <p className="text-sm text-gray-600">Inconsistent price-per-unit scaling</p>
+      <p className="text-sm text-gray-600">Limited trade-up pathways</p>
+    </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
-              <h3 className="font-semibold text-lg">Embedded Analysis</h3>
-              <div className="border rounded-lg p-4 text-sm text-gray-500">
-                Pricing ladder module placeholder
-              </div>
-              <div className="border rounded-lg p-4 text-sm text-gray-500">
-                Price zone module placeholder
-              </div>
-            </div>
+    <div className="space-y-8">
+  <PricingLadderModule />
+  <PriceZoneModule />
+</div>
 
-            <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
-              <h3 className="font-semibold text-lg">Recommendations</h3>
-              <div className="space-y-2 text-sm">
-                <div className="p-3 border rounded-lg">Introduce mid-tier packs</div>
-                <div className="p-3 border rounded-lg">Normalize price-per-unit logic</div>
-                <div className="p-3 border rounded-lg">Improve zone differentiation</div>
-                <div className="p-3 border rounded-lg">Increase non-KVI price capture</div>
-              </div>
-            </div>
-          </div>
 
-          <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
-            <h3 className="font-semibold text-lg">Data Requests</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>• Elasticities by category</p>
-              <p>• Price zones and rules</p>
-              <p>• Pack-level sales mix</p>
-            </div>
-          </div>
+    <div className="grid grid-cols-5 gap-6 items-end overflow-x-auto">
+      <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
+        <h3 className="font-semibold text-lg">Recommendations</h3>
+        <div className="space-y-2 text-sm">
+          <div className="p-3 border rounded-lg">Introduce mid-tier packs</div>
+          <div className="p-3 border rounded-lg">Normalize price-per-unit logic</div>
+          <div className="p-3 border rounded-lg">Improve zone differentiation</div>
+          <div className="p-3 border rounded-lg">Increase non-KVI price capture</div>
         </div>
-      )}
+      </div>
+
+      <div className="border rounded-xl p-6 bg-white shadow-sm space-y-3">
+        <h3 className="font-semibold text-lg">Data Requests</h3>
+        <div className="space-y-2 text-sm text-gray-600">
+          <p>• Elasticities by category</p>
+          <p>• Price zones and rules</p>
+          <p>• Pack-level sales mix</p>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {activeTab === "promotions" && (
         <div className="space-y-6">
