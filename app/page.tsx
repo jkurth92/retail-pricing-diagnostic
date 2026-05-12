@@ -9,6 +9,20 @@ import { estimateOpportunity } from "./utils/opportunityEngine";
 
 type Tab = "overview" | "pricing" | "promotions" | "markdown";
 type OverviewTab = "prompts" | "retailer" | "opportunity";
+type AnalysisMode = "external" | "hybrid";
+type ContextInputs = {
+  pricing: string;
+  promo: string;
+  markdown: string;
+};
+type FeedbackRating = "too_low" | "about_right" | "too_high" | "";
+type FeedbackLever = "pricing" | "promotions" | "markdown" | "";
+type Opportunity = ReturnType<typeof estimateOpportunity>;
+type LeverData = {
+  name: string;
+  value: string;
+  width: string;
+};
 
 const sectionCard =
   "brand-card p-6";
@@ -22,23 +36,17 @@ export default function Home() {
   const [retailerInput, setRetailerInput] = useState("");
   const [selectedRetailer, setSelectedRetailer] = useState("Retailer");
   const [isLoading, setIsLoading] = useState(false);
-  const [feedbackRating, setFeedbackRating] = useState<
-  "too_low" | "about_right" | "too_high" | ""
->("");
+  const [feedbackRating, setFeedbackRating] = useState<FeedbackRating>("");
 
-const [feedbackLever, setFeedbackLever] = useState<
-  "pricing" | "promotions" | "markdown" | ""
->("");
+const [feedbackLever, setFeedbackLever] = useState<FeedbackLever>("");
 
 const [feedbackNotes, setFeedbackNotes] = useState("");
-  const [contextInputs, setContextInputs] = useState({
+  const [contextInputs, setContextInputs] = useState<ContextInputs>({
     pricing: "",
     promo: "",
     markdown: "",
   });
-  const [analysisMode, setAnalysisMode] = useState<"external" | "hybrid">(
-    "external"
-  );
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("external");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const handleFileUpload = (files: FileList | null) => {
@@ -156,7 +164,307 @@ const opportunity = estimateOpportunity(mockInputs);
       </div>
 
       {activeOverviewTab === "prompts" && (
-        <div className="space-y-10">
+        <PromptsSection
+          retailerInput={retailerInput}
+          setRetailerInput={setRetailerInput}
+          setIsLoading={setIsLoading}
+          setSelectedRetailer={setSelectedRetailer}
+          analysisMode={analysisMode}
+          setAnalysisMode={setAnalysisMode}
+          contextInputs={contextInputs}
+          setContextInputs={setContextInputs}
+          uploadedFiles={uploadedFiles}
+          handleFileUpload={handleFileUpload}
+          clearFiles={clearFiles}
+          feedbackRating={feedbackRating}
+          setFeedbackRating={setFeedbackRating}
+          feedbackLever={feedbackLever}
+          setFeedbackLever={setFeedbackLever}
+          feedbackNotes={feedbackNotes}
+          setFeedbackNotes={setFeedbackNotes}
+        />
+      )}
+
+      {activeOverviewTab === "retailer" && (
+        <RetailerOverviewSection
+          selectedRetailer={selectedRetailer}
+          analysisMode={analysisMode}
+        />
+      )}
+
+      {activeOverviewTab === "opportunity" && (
+        <OpportunitySection
+          opportunity={opportunity}
+          analysisMode={analysisMode}
+          leverData={leverData}
+        />
+      )}
+    </div>
+
+  )
+
+)}
+
+      {activeTab === "pricing" && (
+        <div className="space-y-6">
+          <section className={sectionCard}>
+            <h2 className="text-xl font-semibold">Pricing</h2>
+            <p className="text-sm text-gray-600 mt-2">
+              Diagnose price position, KVI structure, price-pack architecture, and pricing ladder gaps.
+            </p>
+          </section>
+
+          <div className="grid grid-cols-2 gap-6">
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Current State</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>Position: Mid-tier</p>
+                <p>Ladder: Compressed</p>
+                <p>Competitiveness: Mixed</p>
+              </div>
+            </section>
+
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>Revenue: +0.5%–1.5%</p>
+                <p>Margin: +15–40 bps</p>
+                <p>Unit Impact: Flat to +0.5%</p>
+              </div>
+            </section>
+          </div>
+
+          <section className={sectionCard}>
+            <h3 className="font-semibold text-lg mb-3">KVI Structure</h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <p>KVIs priced competitively</p>
+              <p>Over-investment in some categories</p>
+              <p>Under-monetization of non-KVIs</p>
+            </div>
+          </section>
+
+          <section className={sectionCard}>
+            <h3 className="font-semibold text-lg mb-3">Price-Pack Architecture</h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <p>Missing mid-tier packs</p>
+              <p>Inconsistent price-per-unit scaling</p>
+              <p>Limited trade-up pathways</p>
+            </div>
+          </section>
+
+          <section className={sectionCard}>
+            <h3 className="font-semibold text-lg mb-4">Embedded Analysis</h3>
+            <div className="space-y-8">
+              <PricingLadderModule />
+              <PriceZoneModule />
+            </div>
+          </section>
+
+          <div className="grid grid-cols-2 gap-6">
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
+              <div className="space-y-2 text-sm">
+                <div className={subCard}>Introduce mid-tier packs</div>
+                <div className={subCard}>Normalize price-per-unit logic</div>
+                <div className={subCard}>Improve zone differentiation</div>
+                <div className={subCard}>Increase non-KVI price capture</div>
+              </div>
+            </section>
+
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>• Elasticities by category</p>
+                <p>• Price zones and rules</p>
+                <p>• Pack-level sales mix</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "promotions" && (
+        <div className="space-y-6">
+          <section className={sectionCard}>
+            <h2 className="text-xl font-semibold">Promotions</h2>
+            <p className="text-sm text-gray-600 mt-2">
+              Diagnose promo intensity, incrementality, vehicle mix, and KVI alignment.
+            </p>
+          </section>
+
+          <div className="grid grid-cols-2 gap-6">
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Current State</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>Promo intensity: High</p>
+                <p>Discount depth: Moderate to deep</p>
+                <p>Dependency: High</p>
+              </div>
+            </section>
+
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>Revenue: +0.8%–2.0%</p>
+                <p>Margin: +25–70 bps</p>
+                <p>Unit Impact: Flat to +0.8%</p>
+              </div>
+            </section>
+          </div>
+
+          <section className={sectionCard}>
+            <h3 className="font-semibold text-lg mb-3">KVI Alignment</h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <p>KVIs over-promoted</p>
+              <p>Non-KVIs under-monetized</p>
+              <p>Promo mix should be more selective</p>
+            </div>
+          </section>
+
+          <section className={sectionCard}>
+            <PromoCalendarModule />
+          </section>
+
+          <div className="grid grid-cols-2 gap-6">
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
+              <div className="space-y-2 text-sm">
+                <div className={subCard}>Reduce promo frequency</div>
+                <div className={subCard}>Shift to event-based promotions</div>
+                <div className={subCard}>Protect KVI pricing</div>
+                <div className={subCard}>Use multi-buy to drive trade-up</div>
+              </div>
+            </section>
+
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>• Incremental promo lift data</p>
+                <p>• Promo calendar</p>
+                <p>• Vehicle-level performance</p>
+                <p>• Vendor funding structure</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "markdown" && (
+        <div className="space-y-6">
+          <section className={sectionCard}>
+            <h2 className="text-xl font-semibold">Markdown</h2>
+            <p className="text-sm text-gray-600 mt-2">
+              Diagnose markdown timing, discount depth, sell-through, and inventory efficiency.
+            </p>
+          </section>
+
+          <div className="grid grid-cols-2 gap-6">
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Current State</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>Sell-through: Mixed</p>
+                <p>Timing: Late</p>
+                <p>Discount depth: Deep</p>
+              </div>
+            </section>
+
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>Revenue: +0.2%–0.8%</p>
+                <p>Margin: +10–35 bps</p>
+                <p>Inventory: Improved turns</p>
+              </div>
+            </section>
+          </div>
+
+          <section className={sectionCard}>
+            <h3 className="font-semibold text-lg mb-3">KVI Interaction</h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <p>Occasional markdowns on KVIs</p>
+              <p>Risk to price perception</p>
+              <p>Need more discipline on what gets cleared and when</p>
+            </div>
+          </section>
+
+          <section className={sectionCard}>
+            <h3 className="font-semibold text-lg mb-3">Price-Pack Impact</h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <p>Large packs driving markdown risk</p>
+              <p>Too many slow-moving SKUs</p>
+              <p>Pack rationalization could reduce clearance pressure</p>
+            </div>
+          </section>
+
+          <section className={sectionCard}>
+            <MarkdownModule />
+          </section>
+
+          <div className="grid grid-cols-2 gap-6">
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
+              <div className="space-y-2 text-sm">
+                <div className={subCard}>Earlier targeted markdowns</div>
+                <div className={subCard}>Reduce deep clearance discounting</div>
+                <div className={subCard}>Rationalize pack assortment</div>
+              </div>
+            </section>
+
+            <section className={sectionCard}>
+              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>• Inventory aging</p>
+                <p>• Sell-through by SKU</p>
+                <p>• Markdown policies</p>
+                <p>• Clearance timing by pack</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PromptsSection({
+  retailerInput,
+  setRetailerInput,
+  setIsLoading,
+  setSelectedRetailer,
+  analysisMode,
+  setAnalysisMode,
+  contextInputs,
+  setContextInputs,
+  uploadedFiles,
+  handleFileUpload,
+  clearFiles,
+  feedbackRating,
+  setFeedbackRating,
+  feedbackLever,
+  setFeedbackLever,
+  feedbackNotes,
+  setFeedbackNotes,
+}: {
+  retailerInput: string;
+  setRetailerInput: (value: string) => void;
+  setIsLoading: (value: boolean) => void;
+  setSelectedRetailer: (value: string) => void;
+  analysisMode: AnalysisMode;
+  setAnalysisMode: (value: AnalysisMode) => void;
+  contextInputs: ContextInputs;
+  setContextInputs: (value: ContextInputs) => void;
+  uploadedFiles: File[];
+  handleFileUpload: (files: FileList | null) => void;
+  clearFiles: () => void;
+  feedbackRating: FeedbackRating;
+  setFeedbackRating: (value: FeedbackRating) => void;
+  feedbackLever: FeedbackLever;
+  setFeedbackLever: (value: FeedbackLever) => void;
+  feedbackNotes: string;
+  setFeedbackNotes: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-10">
       <section className="brand-card p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-2">
@@ -466,140 +774,158 @@ const opportunity = estimateOpportunity(mockInputs);
           </div>
         </div>
       </section>
-        </div>
-      )}
+    </div>
+  );
+}
 
-      {activeOverviewTab === "retailer" && (
-      <section className="brand-card p-6 space-y-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Retailer snapshot
-            </p>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {selectedRetailer}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 sm:grid-cols-3 md:min-w-[420px]">
-            {[
-              { label: "Retailer", value: selectedRetailer },
-              { label: "Scope", value: "All categories" },
-              {
-                label: "Mode",
-                value:
-                  analysisMode === "hybrid"
-                    ? "External + client inputs"
-                    : "External only",
-              },
-            ].map((item) => (
-              <div key={item.label} className="rounded-lg border border-[var(--ui-border)] bg-white px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-gray-500">
-                  {item.label}
-                </p>
-                <p className="mt-0.5 truncate font-semibold text-[var(--ui-text)]">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-3">
+function RetailerOverviewSection({
+  selectedRetailer,
+  analysisMode,
+}: {
+  selectedRetailer: string;
+  analysisMode: AnalysisMode;
+}) {
+  return (
+    <section className="brand-card p-6 space-y-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1">
           <p className="text-xs uppercase tracking-wide text-gray-500">
-            Company profile
+            Retailer snapshot
           </p>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {[
-              { label: "Annual revenue", value: "—" },
-              { label: "EBITDA margin", value: "—" },
-              { label: "Store count", value: "—" },
-              { label: "Format", value: "—" },
-            ].map((item) => (
-              <div key={item.label} className={subCard}>
-                <p className="text-xs uppercase tracking-wide text-gray-500">
-                  {item.label}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-[var(--ui-text)]">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {selectedRetailer}
+          </h2>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
-              Commercial context
-            </p>
-            <p className="text-xs text-gray-500">
-              Commercial context derived from external-only signals unless client inputs are added.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            {[
-              { label: "Pricing posture", value: "Benchmark-led" },
-              { label: "Promo intensity", value: "Moderate" },
-              { label: "Markdown tendency", value: "Seasonal" },
-              { label: "KVI concentration", value: "Focused" },
-              {
-                label: "Confidence",
-                value: analysisMode === "hybrid" ? "Medium-high" : "Medium",
-              },
-            ].map((item) => (
-              <div key={item.label} className="rounded-lg border border-[var(--ui-border)] bg-white px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-gray-500">
-                  {item.label}
-                </p>
-                <p className="mt-0.5 text-sm font-semibold text-[var(--ui-text)]">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {analysisMode === "hybrid" && (
-            <p className="text-xs text-[var(--ui-blue)]">
-              Hybrid mode: client inputs can refine the external signal read.
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          <p className="text-xs uppercase tracking-wide text-gray-500">
-            Recent signals
-          </p>
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            <div className="rounded-lg border border-[var(--ui-border)] bg-white p-4">
-              <p className="text-sm font-semibold text-[var(--ui-text)]">
-                Latest press release highlights
+        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 sm:grid-cols-3 md:min-w-[420px]">
+          {[
+            { label: "Retailer", value: selectedRetailer },
+            { label: "Scope", value: "All categories" },
+            {
+              label: "Mode",
+              value:
+                analysisMode === "hybrid"
+                  ? "External + client inputs"
+                  : "External only",
+            },
+          ].map((item) => (
+            <div key={item.label} className="rounded-lg border border-[var(--ui-border)] bg-white px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-gray-500">
+                {item.label}
               </p>
-              <div className="mt-2 space-y-1 text-xs text-gray-600">
-                <p>• Pricing architecture update pending source feed</p>
-                <p>• Promotional calendar activity to be summarized</p>
-                <p>• Store opening or remodel signals awaiting refresh</p>
-              </div>
+              <p className="mt-0.5 truncate font-semibold text-[var(--ui-text)]">
+                {item.value}
+              </p>
             </div>
+          ))}
+        </div>
+      </div>
 
-            <div className="rounded-lg border border-[var(--ui-border)] bg-white p-4">
-              <p className="text-sm font-semibold text-[var(--ui-text)]">
-                Relevant headlines
+      <div className="space-y-3">
+        <p className="text-xs uppercase tracking-wide text-gray-500">
+          Company profile
+        </p>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: "Annual revenue", value: "—" },
+            { label: "EBITDA margin", value: "—" },
+            { label: "Store count", value: "—" },
+            { label: "Format", value: "—" },
+          ].map((item) => (
+            <div key={item.label} className={subCard}>
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                {item.label}
               </p>
-              <div className="mt-2 space-y-1 text-xs text-gray-600">
-                <p>• Pricing and promo headlines will populate here</p>
-                <p>• Markdown, input cost, and margin pressure mentions</p>
-                <p>• Leadership or operating model changes to monitor</p>
-              </div>
+              <p className="mt-1 text-lg font-semibold text-[var(--ui-text)]">
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <p className="text-xs uppercase tracking-wide text-gray-500">
+            Commercial context
+          </p>
+          <p className="text-xs text-gray-500">
+            Commercial context derived from external-only signals unless client inputs are added.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          {[
+            { label: "Pricing posture", value: "Benchmark-led" },
+            { label: "Promo intensity", value: "Moderate" },
+            { label: "Markdown tendency", value: "Seasonal" },
+            { label: "KVI concentration", value: "Focused" },
+            {
+              label: "Confidence",
+              value: analysisMode === "hybrid" ? "Medium-high" : "Medium",
+            },
+          ].map((item) => (
+            <div key={item.label} className="rounded-lg border border-[var(--ui-border)] bg-white px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-gray-500">
+                {item.label}
+              </p>
+              <p className="mt-0.5 text-sm font-semibold text-[var(--ui-text)]">
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {analysisMode === "hybrid" && (
+          <p className="text-xs text-[var(--ui-blue)]">
+            Hybrid mode: client inputs can refine the external signal read.
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-xs uppercase tracking-wide text-gray-500">
+          Recent signals
+        </p>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-white p-4">
+            <p className="text-sm font-semibold text-[var(--ui-text)]">
+              Latest press release highlights
+            </p>
+            <div className="mt-2 space-y-1 text-xs text-gray-600">
+              <p>• Pricing architecture update pending source feed</p>
+              <p>• Promotional calendar activity to be summarized</p>
+              <p>• Store opening or remodel signals awaiting refresh</p>
             </div>
           </div>
-        </div>
-      </section>
-      )}
 
-      {activeOverviewTab === "opportunity" && (
-        <div className="space-y-10">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-white p-4">
+            <p className="text-sm font-semibold text-[var(--ui-text)]">
+              Relevant headlines
+            </p>
+            <div className="mt-2 space-y-1 text-xs text-gray-600">
+              <p>• Pricing and promo headlines will populate here</p>
+              <p>• Markdown, input cost, and margin pressure mentions</p>
+              <p>• Leadership or operating model changes to monitor</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function OpportunitySection({
+  opportunity,
+  analysisMode,
+  leverData,
+}: {
+  opportunity: Opportunity;
+  analysisMode: AnalysisMode;
+  leverData: LeverData[];
+}) {
+  return (
+    <div className="space-y-10">
       <section className={sectionCard}>
         <h2 className="text-xl font-semibold mb-4">Opportunity sizing breakdown</h2>
 
@@ -736,231 +1062,6 @@ const opportunity = estimateOpportunity(mockInputs);
           <div className={subCard}>5. Rationalize pack assortment</div>
         </div>
       </section>
-        </div>
-      )}
-    </div>
-  
-  )
-  
-)}
-
-      {activeTab === "pricing" && (
-        <div className="space-y-6">
-          <section className={sectionCard}>
-            <h2 className="text-xl font-semibold">Pricing</h2>
-            <p className="text-sm text-gray-600 mt-2">
-              Diagnose price position, KVI structure, price-pack architecture, and pricing ladder gaps.
-            </p>
-          </section>
-
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Current State</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Position: Mid-tier</p>
-                <p>Ladder: Compressed</p>
-                <p>Competitiveness: Mixed</p>
-              </div>
-            </section>
-
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Revenue: +0.5%–1.5%</p>
-                <p>Margin: +15–40 bps</p>
-                <p>Unit Impact: Flat to +0.5%</p>
-              </div>
-            </section>
-          </div>
-
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">KVI Structure</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>KVIs priced competitively</p>
-              <p>Over-investment in some categories</p>
-              <p>Under-monetization of non-KVIs</p>
-            </div>
-          </section>
-
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">Price-Pack Architecture</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>Missing mid-tier packs</p>
-              <p>Inconsistent price-per-unit scaling</p>
-              <p>Limited trade-up pathways</p>
-            </div>
-          </section>
-
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-4">Embedded Analysis</h3>
-            <div className="space-y-8">
-              <PricingLadderModule />
-              <PriceZoneModule />
-            </div>
-          </section>
-
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
-              <div className="space-y-2 text-sm">
-                <div className={subCard}>Introduce mid-tier packs</div>
-                <div className={subCard}>Normalize price-per-unit logic</div>
-                <div className={subCard}>Improve zone differentiation</div>
-                <div className={subCard}>Increase non-KVI price capture</div>
-              </div>
-            </section>
-
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>• Elasticities by category</p>
-                <p>• Price zones and rules</p>
-                <p>• Pack-level sales mix</p>
-              </div>
-            </section>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "promotions" && (
-        <div className="space-y-6">
-          <section className={sectionCard}>
-            <h2 className="text-xl font-semibold">Promotions</h2>
-            <p className="text-sm text-gray-600 mt-2">
-              Diagnose promo intensity, incrementality, vehicle mix, and KVI alignment.
-            </p>
-          </section>
-
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Current State</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Promo intensity: High</p>
-                <p>Discount depth: Moderate to deep</p>
-                <p>Dependency: High</p>
-              </div>
-            </section>
-
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Revenue: +0.8%–2.0%</p>
-                <p>Margin: +25–70 bps</p>
-                <p>Unit Impact: Flat to +0.8%</p>
-              </div>
-            </section>
-          </div>
-
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">KVI Alignment</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>KVIs over-promoted</p>
-              <p>Non-KVIs under-monetized</p>
-              <p>Promo mix should be more selective</p>
-            </div>
-          </section>
-
-          <section className={sectionCard}>
-            <PromoCalendarModule />
-          </section>
-
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
-              <div className="space-y-2 text-sm">
-                <div className={subCard}>Reduce promo frequency</div>
-                <div className={subCard}>Shift to event-based promotions</div>
-                <div className={subCard}>Protect KVI pricing</div>
-                <div className={subCard}>Use multi-buy to drive trade-up</div>
-              </div>
-            </section>
-
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>• Incremental promo lift data</p>
-                <p>• Promo calendar</p>
-                <p>• Vehicle-level performance</p>
-                <p>• Vendor funding structure</p>
-              </div>
-            </section>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "markdown" && (
-        <div className="space-y-6">
-          <section className={sectionCard}>
-            <h2 className="text-xl font-semibold">Markdown</h2>
-            <p className="text-sm text-gray-600 mt-2">
-              Diagnose markdown timing, discount depth, sell-through, and inventory efficiency.
-            </p>
-          </section>
-
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Current State</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Sell-through: Mixed</p>
-                <p>Timing: Late</p>
-                <p>Discount depth: Deep</p>
-              </div>
-            </section>
-
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Revenue: +0.2%–0.8%</p>
-                <p>Margin: +10–35 bps</p>
-                <p>Inventory: Improved turns</p>
-              </div>
-            </section>
-          </div>
-
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">KVI Interaction</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>Occasional markdowns on KVIs</p>
-              <p>Risk to price perception</p>
-              <p>Need more discipline on what gets cleared and when</p>
-            </div>
-          </section>
-
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">Price-Pack Impact</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>Large packs driving markdown risk</p>
-              <p>Too many slow-moving SKUs</p>
-              <p>Pack rationalization could reduce clearance pressure</p>
-            </div>
-          </section>
-
-          <section className={sectionCard}>
-            <MarkdownModule />
-          </section>
-
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
-              <div className="space-y-2 text-sm">
-                <div className={subCard}>Earlier targeted markdowns</div>
-                <div className={subCard}>Reduce deep clearance discounting</div>
-                <div className={subCard}>Rationalize pack assortment</div>
-              </div>
-            </section>
-
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>• Inventory aging</p>
-                <p>• Sell-through by SKU</p>
-                <p>• Markdown policies</p>
-                <p>• Clearance timing by pack</p>
-              </div>
-            </section>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
