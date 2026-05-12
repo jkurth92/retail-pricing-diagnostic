@@ -368,97 +368,6 @@ const opportunity = estimateOpportunity(mockInputs);
       </section>
 
       <section className={sectionCard}>
-        <h2 className="text-xl font-semibold mb-6">Executive Summary</h2>
-
-        <div className="grid grid-cols-3 gap-6">
-          {[
-            {
-              title: "Pricing",
-              subtitle: "Moderate opportunity",
-              issue: "Weak price-pack ladder",
-            },
-            {
-              title: "Promotions",
-              subtitle: "High dependency",
-              issue: "Over-discounting",
-            },
-            {
-              title: "Markdown",
-              subtitle: "Inefficient clearance",
-              issue: "Late markdown timing",
-            },
-          ].map((card) => (
-            <div key={card.title} className={subCard}>
-              <h3 className="font-semibold text-lg">{card.title}</h3>
-              <p className="text-sm text-gray-600 mt-1">{card.subtitle}</p>
-              <p className="text-xs mt-3 text-gray-500">
-                Key issue: {card.issue}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className={sectionCard}>
-        <h2 className="text-xl font-semibold mb-6">
-          Total Estimated Value Opportunity
-        </h2>
-
-        <div className="grid grid-cols-4 gap-6">
-          {[
-            { value: opportunity.totalRevenueUpliftPct, label: "Revenue Growth" },
-            { value: opportunity.totalMarginUpliftBps, label: "Margin Expansion" },
-            { value: "Flat–+1.0%", label: "Unit Impact" },
-            { value: "Moderate", label: "Confidence" },
-          ].map((item) => (
-            <div key={item.label} className={subCard}>
-              <p className="text-2xl font-bold tracking-tight">{item.value}</p>
-              <p className="text-xs text-gray-500 mt-1">{item.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid grid-cols-2 gap-6">
-        <div className="brand-card p-5 space-y-3">
-          <p className="font-medium text-black">Key drivers of opportunity</p>
-
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>
-              • Pricing misalignment vs competitors{" "}
-              <span className="text-black font-medium">
-                ({opportunity.pricing.marginUpliftBps})
-              </span>
-            </p>
-
-            <p>
-              • High promo intensity and depth{" "}
-              <span className="text-black font-medium">
-                ({opportunity.promotions.marginUpliftBps})
-              </span>
-            </p>
-
-            <p>
-              • Elevated markdown activity vs peers{" "}
-              <span className="text-black font-medium">
-                ({opportunity.markdown.marginUpliftBps})
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <div className="brand-card p-5 space-y-3">
-          <p className="font-medium text-black">Confidence & assumptions</p>
-          <p className="text-sm text-gray-600">Confidence: Medium</p>
-          <div className="space-y-1 text-sm text-gray-600">
-            <p>• Based on public signals only</p>
-            <p>• No retailer internal elasticity data used</p>
-            <p>• Estimates are directional and benchmark-based</p>
-          </div>
-        </div>
-      </section>
-
-      <section className={sectionCard}>
         <h2 className="text-xl font-semibold mb-4">Opportunity sizing breakdown</h2>
 
         <div className="space-y-3 text-sm text-gray-700">
@@ -501,6 +410,185 @@ const opportunity = estimateOpportunity(mockInputs);
       </section>
 
       <section className={sectionCard}>
+        <h2 className="text-xl font-semibold mb-6">
+          Total Estimated Value Opportunity
+        </h2>
+
+        <div className="grid grid-cols-4 gap-6">
+          {[
+            { value: opportunity.totalRevenueUpliftPct, label: "Revenue Growth" },
+            { value: opportunity.totalMarginUpliftBps, label: "Margin Expansion" },
+            { value: "Flat–+1.0%", label: "Unit Impact" },
+            { value: "Moderate", label: "Confidence" },
+          ].map((item) => (
+            <div key={item.label} className={subCard}>
+              <p className="text-2xl font-bold tracking-tight">{item.value}</p>
+              <p className="text-xs text-gray-500 mt-1">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="brand-card p-6 space-y-3">
+          <p className="font-medium text-black">Key drivers of opportunity</p>
+
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>
+              • Pricing misalignment vs competitors{" "}
+              <span className="text-black font-medium">
+                ({opportunity.pricing.marginUpliftBps})
+              </span>
+            </p>
+
+            <p>
+              • High promo intensity and depth{" "}
+              <span className="text-black font-medium">
+                ({opportunity.promotions.marginUpliftBps})
+              </span>
+            </p>
+
+            <p>
+              • Elevated markdown activity vs peers{" "}
+              <span className="text-black font-medium">
+                ({opportunity.markdown.marginUpliftBps})
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div className="brand-card p-6 space-y-3">
+          <p className="font-medium text-black">Confidence & assumptions</p>
+          <p className="text-sm text-gray-600">Confidence: Medium</p>
+          <div className="space-y-1 text-sm text-gray-600">
+            <p>• Based on public signals only</p>
+            <p>• No retailer internal elasticity data used</p>
+            <p>• Estimates are directional and benchmark-based</p>
+          </div>
+        </div>
+      </section>
+
+      <section className={sectionCard}>
+        <h2 className="text-xl font-semibold mb-4">Feedback on estimate</h2>
+
+        <div className="space-y-6">
+          <div>
+            <p className="text-sm font-medium text-[var(--ui-text)] mb-2">
+              Does this opportunity size feel right?
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setFeedbackRating("too_low")}
+                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
+                  feedbackRating === "too_low"
+                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
+                    : "border-[var(--ui-border)] bg-white text-gray-600"
+                }`}
+              >
+                Too low
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFeedbackRating("about_right")}
+                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
+                  feedbackRating === "about_right"
+                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
+                    : "border-[var(--ui-border)] bg-white text-gray-600"
+                }`}
+              >
+                About right
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFeedbackRating("too_high")}
+                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
+                  feedbackRating === "too_high"
+                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
+                    : "border-[var(--ui-border)] bg-white text-gray-600"
+                }`}
+              >
+                Too high
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-[var(--ui-text)] mb-2">
+              Which lever feels most uncertain?
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setFeedbackLever("pricing")}
+                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
+                  feedbackLever === "pricing"
+                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
+                    : "border-[var(--ui-border)] bg-white text-gray-600"
+                }`}
+              >
+                Pricing
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFeedbackLever("promotions")}
+                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
+                  feedbackLever === "promotions"
+                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
+                    : "border-[var(--ui-border)] bg-white text-gray-600"
+                }`}
+              >
+                Promotions
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFeedbackLever("markdown")}
+                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
+                  feedbackLever === "markdown"
+                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
+                    : "border-[var(--ui-border)] bg-white text-gray-600"
+                }`}
+              >
+                Markdown
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-[var(--ui-text)]">
+              Notes
+            </label>
+            <textarea
+              value={feedbackNotes}
+              onChange={(e) => setFeedbackNotes(e.target.value)}
+              placeholder="Add any comments on what feels high, low, or missing."
+              className="mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--ui-blue)]"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              This feedback will be used to refine the opportunity estimate.
+            </p>
+
+            <button
+              type="button"
+              className="rounded-lg bg-[var(--ui-blue)] px-4 py-2 text-sm font-medium text-white"
+            >
+              Save feedback
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className={sectionCard}>
         <h2 className="text-xl font-semibold mb-4">Value by Lever</h2>
 
         <div className="space-y-4">
@@ -535,125 +623,6 @@ const opportunity = estimateOpportunity(mockInputs);
           <div className={subCard}>5. Rationalize pack assortment</div>
         </div>
       </section>
-      <section className={sectionCard}>
-  <h2 className="text-xl font-semibold mb-4">Feedback on estimate</h2>
-
-  <div className="space-y-6">
-    <div>
-      <p className="text-sm font-medium text-[var(--ui-text)] mb-2">
-        Does this opportunity size feel right?
-      </p>
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setFeedbackRating("too_low")}
-          className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-            feedbackRating === "too_low"
-              ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-              : "border-[var(--ui-border)] bg-white text-gray-600"
-          }`}
-        >
-          Too low
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setFeedbackRating("about_right")}
-          className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-            feedbackRating === "about_right"
-              ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-              : "border-[var(--ui-border)] bg-white text-gray-600"
-          }`}
-        >
-          About right
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setFeedbackRating("too_high")}
-          className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-            feedbackRating === "too_high"
-              ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-              : "border-[var(--ui-border)] bg-white text-gray-600"
-          }`}
-        >
-          Too high
-        </button>
-      </div>
-    </div>
-
-    <div>
-      <p className="text-sm font-medium text-[var(--ui-text)] mb-2">
-        Which lever feels most uncertain?
-      </p>
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setFeedbackLever("pricing")}
-          className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-            feedbackLever === "pricing"
-              ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-              : "border-[var(--ui-border)] bg-white text-gray-600"
-          }`}
-        >
-          Pricing
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setFeedbackLever("promotions")}
-          className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-            feedbackLever === "promotions"
-              ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-              : "border-[var(--ui-border)] bg-white text-gray-600"
-          }`}
-        >
-          Promotions
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setFeedbackLever("markdown")}
-          className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-            feedbackLever === "markdown"
-              ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-              : "border-[var(--ui-border)] bg-white text-gray-600"
-          }`}
-        >
-          Markdown
-        </button>
-      </div>
-    </div>
-
-    <div>
-      <label className="text-sm font-medium text-[var(--ui-text)]">
-        Notes
-      </label>
-      <textarea
-        value={feedbackNotes}
-        onChange={(e) => setFeedbackNotes(e.target.value)}
-        placeholder="Add any comments on what feels high, low, or missing."
-        className="mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--ui-blue)]"
-        rows={3}
-      />
-    </div>
-
-    <div className="flex items-center justify-between">
-      <p className="text-xs text-gray-500">
-        This feedback will be used to refine the opportunity estimate.
-      </p>
-
-      <button
-        type="button"
-        className="rounded-lg bg-[var(--ui-blue)] px-4 py-2 text-sm font-medium text-white"
-      >
-        Save feedback
-      </button>
-    </div>
-  </div>
-</section>
     </div>
   
   )
