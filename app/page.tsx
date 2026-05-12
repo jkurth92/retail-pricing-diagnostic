@@ -315,6 +315,58 @@ const opportunity = estimateOpportunity(mockInputs);
         </section>
       )}
 
+      <section className="brand-card p-6 space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
+              Retailer snapshot
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {selectedRetailer}
+            </h2>
+          </div>
+
+          <div className="space-y-1 text-sm text-gray-600 md:text-right">
+            <p>
+              Scope: <span className="font-medium text-[var(--ui-text)]">All categories</span>
+            </p>
+            <p>
+              Mode:{" "}
+              <span className="font-medium text-[var(--ui-text)]">
+                {analysisMode === "hybrid" ? "External + client data" : "External only"}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Status", value: isLoading ? "Analyzing" : "Ready" },
+            {
+              label: "Source",
+              value:
+                analysisMode === "hybrid"
+                  ? "Public + client inputs"
+                  : "Public only",
+            },
+            {
+              label: "Confidence",
+              value: analysisMode === "hybrid" ? "Medium-high" : "Medium",
+            },
+            { label: "Updated", value: "Today" },
+          ].map((item) => (
+            <div key={item.label} className={subCard}>
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                {item.label}
+              </p>
+              <p className="mt-1 font-semibold text-[var(--ui-text)]">
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className={sectionCard}>
         <h2 className="text-xl font-semibold mb-6">Executive Summary</h2>
 
