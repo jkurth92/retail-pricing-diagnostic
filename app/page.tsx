@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import PricingLadderModule from "@/components/PricingLadderModule";
 import PriceZoneModule from "@/components/PriceZoneModule";
 import PromoCalendarModule from "@/components/PromoCalendarModule";
@@ -141,7 +141,9 @@ const opportunity = estimateOpportunity(mockInputs);
             <div className="flex flex-wrap items-center gap-3">
               <input
                 value={retailerInput}
-                onChange={(e) => setRetailerInput(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setRetailerInput(e.target.value)
+                }
                 placeholder="Enter retailer name"
                 className="w-80 rounded-lg border border-[var(--ui-border)] bg-white px-4 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-blue)]"
               />
@@ -215,7 +217,7 @@ const opportunity = estimateOpportunity(mockInputs);
                 </label>
                 <textarea
                   value={contextInputs.pricing}
-                  onChange={(e) =>
+                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                     setContextInputs({ ...contextInputs, pricing: e.target.value })
                   }
                   placeholder="e.g. retailer is typically value-led, has a tight KVI set, limited premium tiers"
@@ -230,7 +232,7 @@ const opportunity = estimateOpportunity(mockInputs);
                 </label>
                 <textarea
                   value={contextInputs.promo}
-                  onChange={(e) =>
+                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                     setContextInputs({ ...contextInputs, promo: e.target.value })
                   }
                   placeholder="e.g. promotions are frequent, feature/display is the main vehicle, deep discounting is common"
@@ -245,7 +247,7 @@ const opportunity = estimateOpportunity(mockInputs);
                 </label>
                 <textarea
                   value={contextInputs.markdown}
-                  onChange={(e) =>
+                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                     setContextInputs({ ...contextInputs, markdown: e.target.value })
                   }
                   placeholder="e.g. clearance tends to happen late, excess markdowns appear in seasonal categories"
@@ -272,7 +274,9 @@ const opportunity = estimateOpportunity(mockInputs);
                 multiple
                 accept=".csv,.xlsx,.xls,.pdf,.ppt,.pptx"
                 className="hidden"
-                onChange={(e) => handleFileUpload(e.target.files)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  handleFileUpload(e.target.files)
+                }
               />
               <p className="font-medium text-[var(--ui-text)]">
                 Drop files here or browse
@@ -641,7 +645,9 @@ const opportunity = estimateOpportunity(mockInputs);
             </label>
             <textarea
               value={feedbackNotes}
-              onChange={(e) => setFeedbackNotes(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                setFeedbackNotes(e.target.value)
+              }
               placeholder="Add any comments on what feels high, low, or missing."
               className="mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--ui-blue)]"
               rows={3}
