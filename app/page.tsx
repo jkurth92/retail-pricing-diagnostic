@@ -83,7 +83,7 @@ const opportunity = estimateOpportunity(mockInputs);
     <div className="min-h-screen bg-[var(--ui-bg)] p-10 max-w-[1200px] mx-auto space-y-10 text-[var(--ui-text)]">
       <header className="space-y-2">
   <h1 className="brand-heading text-4xl font-semibold tracking-tight">
-  Retail Pricing Diagnostic
+  Retail Pricing Diagnostic TEST
 </h1>
 <p className="text-sm text-gray-500 mt-1">
   {selectedRetailer} · All categories
