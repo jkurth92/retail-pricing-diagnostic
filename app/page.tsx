@@ -264,115 +264,161 @@ const opportunity = estimateOpportunity(mockInputs);
 )}
 
       {activeTab === "pricing" && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <section className={sectionCard}>
-            <h2 className="text-xl font-semibold">Pricing</h2>
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Pricing diagnostic
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+              Pricing
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
               Diagnose price position, KVI structure, price-pack architecture, and pricing ladder gaps.
             </p>
           </section>
 
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Current State</h3>
-              <div className="space-y-2 text-sm text-gray-600">
+          <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {[
+              { value: "Mid-tier", label: "Position" },
+              { value: "Compressed", label: "Ladder" },
+              { value: "+15–40 bps", label: "Margin opportunity" },
+            ].map((item) => (
+              <div key={item.label} className={metricCard}>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-blue)]">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Current State</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
                 <p>Position: Mid-tier</p>
                 <p>Ladder: Compressed</p>
                 <p>Competitiveness: Mixed</p>
               </div>
-            </section>
+            </div>
 
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Revenue: +0.5%–1.5%</p>
-                <p>Margin: +15–40 bps</p>
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Opportunity</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
+                <p>Revenue: <span className="font-semibold text-[var(--ui-blue)]">+0.5%–1.5%</span></p>
+                <p>Margin: <span className="font-semibold text-[var(--ui-blue)]">+15–40 bps</span></p>
                 <p>Unit Impact: Flat to +0.5%</p>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
 
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">KVI Structure</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>KVIs priced competitively</p>
-              <p>Over-investment in some categories</p>
-              <p>Under-monetization of non-KVIs</p>
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">KVI Structure</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
+                <p>KVIs priced competitively</p>
+                <p>Over-investment in some categories</p>
+                <p>Under-monetization of non-KVIs</p>
+              </div>
+            </div>
+
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Price-Pack Architecture</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
+                <p>Missing mid-tier packs</p>
+                <p>Inconsistent price-per-unit scaling</p>
+                <p>Limited trade-up pathways</p>
+              </div>
             </div>
           </section>
 
           <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">Price-Pack Architecture</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>Missing mid-tier packs</p>
-              <p>Inconsistent price-per-unit scaling</p>
-              <p>Limited trade-up pathways</p>
-            </div>
-          </section>
-
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-4">Embedded Analysis</h3>
-            <div className="space-y-8">
+            <h3 className="mb-4 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Embedded Analysis</h3>
+            <div className="space-y-6">
               <PricingLadderModule />
               <PriceZoneModule />
             </div>
           </section>
 
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Recommendations</h3>
               <div className="space-y-2 text-sm">
                 <div className={subCard}>Introduce mid-tier packs</div>
                 <div className={subCard}>Normalize price-per-unit logic</div>
                 <div className={subCard}>Improve zone differentiation</div>
                 <div className={subCard}>Increase non-KVI price capture</div>
               </div>
-            </section>
+            </div>
 
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
-              <div className="space-y-2 text-sm text-gray-600">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Data Requests</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
                 <p>• Elasticities by category</p>
                 <p>• Price zones and rules</p>
                 <p>• Pack-level sales mix</p>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
       )}
 
       {activeTab === "promotions" && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <section className={sectionCard}>
-            <h2 className="text-xl font-semibold">Promotions</h2>
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Promotions diagnostic
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+              Promotions
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
               Diagnose promo intensity, incrementality, vehicle mix, and KVI alignment.
             </p>
           </section>
 
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Current State</h3>
-              <div className="space-y-2 text-sm text-gray-600">
+          <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {[
+              { value: "High", label: "Promo intensity" },
+              { value: "+25–70 bps", label: "Margin opportunity" },
+              { value: "Flat–+0.8%", label: "Unit impact" },
+            ].map((item) => (
+              <div key={item.label} className={metricCard}>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-blue)]">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Current State</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
                 <p>Promo intensity: High</p>
                 <p>Discount depth: Moderate to deep</p>
                 <p>Dependency: High</p>
               </div>
-            </section>
+            </div>
 
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Revenue: +0.8%–2.0%</p>
-                <p>Margin: +25–70 bps</p>
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Opportunity</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
+                <p>Revenue: <span className="font-semibold text-[var(--ui-blue)]">+0.8%–2.0%</span></p>
+                <p>Margin: <span className="font-semibold text-[var(--ui-blue)]">+25–70 bps</span></p>
                 <p>Unit Impact: Flat to +0.8%</p>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
 
           <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">KVI Alignment</h3>
-            <div className="space-y-2 text-sm text-gray-600">
+            <h3 className="mb-3 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">KVI Alignment</h3>
+            <div className="space-y-2 text-sm leading-6 text-gray-600">
               <p>KVIs over-promoted</p>
               <p>Non-KVIs under-monetized</p>
               <p>Promo mix should be more selective</p>
@@ -383,74 +429,98 @@ const opportunity = estimateOpportunity(mockInputs);
             <PromoCalendarModule />
           </section>
 
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Recommendations</h3>
               <div className="space-y-2 text-sm">
                 <div className={subCard}>Reduce promo frequency</div>
                 <div className={subCard}>Shift to event-based promotions</div>
                 <div className={subCard}>Protect KVI pricing</div>
                 <div className={subCard}>Use multi-buy to drive trade-up</div>
               </div>
-            </section>
+            </div>
 
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
-              <div className="space-y-2 text-sm text-gray-600">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Data Requests</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
                 <p>• Incremental promo lift data</p>
                 <p>• Promo calendar</p>
                 <p>• Vehicle-level performance</p>
                 <p>• Vendor funding structure</p>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
       )}
 
       {activeTab === "markdown" && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <section className={sectionCard}>
-            <h2 className="text-xl font-semibold">Markdown</h2>
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Markdown diagnostic
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+              Markdown
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
               Diagnose markdown timing, discount depth, sell-through, and inventory efficiency.
             </p>
           </section>
 
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Current State</h3>
-              <div className="space-y-2 text-sm text-gray-600">
+          <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {[
+              { value: "Late", label: "Timing" },
+              { value: "+10–35 bps", label: "Margin opportunity" },
+              { value: "Improved turns", label: "Inventory impact" },
+            ].map((item) => (
+              <div key={item.label} className={metricCard}>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-blue)]">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Current State</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
                 <p>Sell-through: Mixed</p>
                 <p>Timing: Late</p>
                 <p>Discount depth: Deep</p>
               </div>
-            </section>
+            </div>
 
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Opportunity</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>Revenue: +0.2%–0.8%</p>
-                <p>Margin: +10–35 bps</p>
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Opportunity</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
+                <p>Revenue: <span className="font-semibold text-[var(--ui-blue)]">+0.2%–0.8%</span></p>
+                <p>Margin: <span className="font-semibold text-[var(--ui-blue)]">+10–35 bps</span></p>
                 <p>Inventory: Improved turns</p>
               </div>
-            </section>
-          </div>
-
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">KVI Interaction</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>Occasional markdowns on KVIs</p>
-              <p>Risk to price perception</p>
-              <p>Need more discipline on what gets cleared and when</p>
             </div>
           </section>
 
-          <section className={sectionCard}>
-            <h3 className="font-semibold text-lg mb-3">Price-Pack Impact</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>Large packs driving markdown risk</p>
-              <p>Too many slow-moving SKUs</p>
-              <p>Pack rationalization could reduce clearance pressure</p>
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">KVI Interaction</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
+                <p>Occasional markdowns on KVIs</p>
+                <p>Risk to price perception</p>
+                <p>Need more discipline on what gets cleared and when</p>
+              </div>
+            </div>
+
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Price-Pack Impact</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
+                <p>Large packs driving markdown risk</p>
+                <p>Too many slow-moving SKUs</p>
+                <p>Pack rationalization could reduce clearance pressure</p>
+              </div>
             </div>
           </section>
 
@@ -458,26 +528,26 @@ const opportunity = estimateOpportunity(mockInputs);
             <MarkdownModule />
           </section>
 
-          <div className="grid grid-cols-2 gap-6">
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Recommendations</h3>
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Recommendations</h3>
               <div className="space-y-2 text-sm">
                 <div className={subCard}>Earlier targeted markdowns</div>
                 <div className={subCard}>Reduce deep clearance discounting</div>
                 <div className={subCard}>Rationalize pack assortment</div>
               </div>
-            </section>
+            </div>
 
-            <section className={sectionCard}>
-              <h3 className="font-semibold text-lg mb-3">Data Requests</h3>
-              <div className="space-y-2 text-sm text-gray-600">
+            <div className={`${sectionCard} space-y-3`}>
+              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Data Requests</h3>
+              <div className="space-y-2 text-sm leading-6 text-gray-600">
                 <p>• Inventory aging</p>
                 <p>• Sell-through by SKU</p>
                 <p>• Markdown policies</p>
                 <p>• Clearance timing by pack</p>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
       )}
       </div>
