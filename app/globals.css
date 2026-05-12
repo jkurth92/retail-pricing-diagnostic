@@ -14,3 +14,70 @@ body {
   color: var(--text);
   background: var(--background);
 }
+:root {
+  --ui-bg: #f7f9fc;
+  --ui-surface: #ffffff;
+  --ui-surface-alt: #f2f6ff;
+  --ui-text: #0b1f4b;
+  --ui-text-muted: #667085;
+  --ui-border: #d9e1f2;
+
+  --ui-navy: #061f79;
+  --ui-blue: #2251ff;
+  --ui-electric: #00a9f4;
+  --ui-lightblue: #99e6ff;
+  --ui-teal: #0679c3;
+  --ui-mint: #75f0e7;
+
+  --ui-shadow: 0 1px 2px rgba(6, 31, 121, 0.06), 0 8px 24px rgba(6, 31, 121, 0.06);
+}
+
+html,
+body {
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.brand-heading {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--ui-navy);
+  letter-spacing: -0.02em;
+}
+
+.brand-section-title {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--ui-navy);
+  letter-spacing: -0.02em;
+}
+
+.brand-card {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+  box-shadow: var(--ui-shadow);
+}
+
+.brand-subcard {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+}
+
+.brand-pill {
+  background: rgba(34, 81, 255, 0.08);
+  color: var(--ui-blue);
+}
+
+.brand-tab-active {
+  border-bottom: 2px solid var(--ui-blue);
+  color: var(--ui-navy);
+}
+
+.brand-tab {
+  border-bottom: 2px solid transparent;
+  color: var(--ui-text-muted);
+}
