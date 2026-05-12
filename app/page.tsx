@@ -92,41 +92,110 @@ const opportunity = estimateOpportunity(mockInputs);
   },
 ];
 
+  const activeWorkflowStep =
+    activeTab !== "overview"
+      ? "Analysis"
+      : activeOverviewTab === "retailer"
+        ? "Context"
+        : activeOverviewTab === "opportunity"
+          ? "Opportunity"
+          : feedbackRating || feedbackLever || feedbackNotes
+            ? "Feedback"
+            : "Setup";
+
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-6 text-[var(--ui-text)]">
       <div className="mx-auto max-w-[1200px] space-y-5">
-      <header className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-  <h1 className="brand-heading text-4xl font-bold tracking-tight text-[var(--ui-navy)]">
-  Retail Pricing Diagnostic
-</h1>
-<p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-  {selectedRetailer} · All categories
-</p>
-  <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-    Analyze pricing, promotions, and markdown opportunity using public signals.
-  </p>
-</header>
+        <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
+          <aside className="h-fit rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Diagnostic Flow
+            </p>
+            <div className="mt-4 space-y-1">
+              {["Setup", "Context", "Analysis", "Opportunity", "Feedback"].map(
+                (step) => (
+                  <div
+                    key={step}
+                    className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                      activeWorkflowStep === step
+                        ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-navy)]"
+                        : "border-transparent text-gray-500"
+                    }`}
+                  >
+                    {step}
+                  </div>
+                )
+              )}
+            </div>
 
-<div className="flex gap-5 border-b border-gray-200">
-  {[
-    ["overview", "Overview"],
-    ["pricing", "Pricing"],
-    ["promotions", "Promotions"],
-    ["markdown", "Markdown"],
-  ].map(([tabId, label]) => (
-    <button
-      key={tabId}
-      onClick={() => setActiveTab(tabId as Tab)}
-      className={`border-b-2 px-1 pb-2.5 text-sm font-semibold transition ${
-        activeTab === tabId
-          ? "border-[var(--ui-blue)] text-[var(--ui-navy)]"
-          : "border-transparent text-gray-500 hover:text-[var(--ui-navy)]"
-      }`}
-    >
-      {label}
-    </button>
-  ))}
-</div>
+            <div className="mt-6 border-t border-gray-200 pt-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                History
+              </p>
+              <p className="mt-2 text-sm leading-6 text-gray-500">
+                Latest run: {isLoading ? "In progress" : "Ready"}
+              </p>
+            </div>
+          </aside>
+
+          <main className="space-y-5">
+            <header className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <h1 className="brand-heading text-3xl font-bold tracking-tight text-[var(--ui-navy)]">
+                    Retail Pricing Diagnostic
+                  </h1>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
+                    Analyze pricing, promotions, and markdown opportunity using public signals.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 sm:grid-cols-4 lg:min-w-[520px]">
+                  {[
+                    { label: "Retailer", value: selectedRetailer },
+                    { label: "Scope", value: "All categories" },
+                    {
+                      label: "Mode",
+                      value: analysisMode === "hybrid" ? "With client data" : "External",
+                    },
+                    { label: "Status", value: isLoading ? "Running" : "Ready" },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                        {item.label}
+                      </p>
+                      <p className="mt-0.5 truncate font-semibold text-[var(--ui-text)]">
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </header>
+
+            <div className="flex gap-5 border-b border-gray-200">
+              {[
+                ["overview", "Overview"],
+                ["pricing", "Pricing"],
+                ["promotions", "Promotions"],
+                ["markdown", "Markdown"],
+              ].map(([tabId, label]) => (
+                <button
+                  key={tabId}
+                  onClick={() => setActiveTab(tabId as Tab)}
+                  className={`border-b-2 px-1 pb-2.5 text-sm font-semibold transition ${
+                    activeTab === tabId
+                      ? "border-[var(--ui-blue)] text-[var(--ui-navy)]"
+                      : "border-transparent text-gray-500 hover:text-[var(--ui-navy)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
       {activeTab === "overview" && (
   isLoading ? (
@@ -550,6 +619,8 @@ const opportunity = estimateOpportunity(mockInputs);
           </section>
         </div>
       )}
+          </main>
+        </div>
       </div>
     </div>
   );

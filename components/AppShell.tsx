@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { RightPanel } from "@/components/RightPanel";
 import { Sidebar } from "@/components/Sidebar";
 import { TopNav } from "@/components/TopNav";
 
@@ -14,7 +13,6 @@ export function AppShell({ children }: AppShellProps) {
       <div className="flex min-h-0 flex-1">
         <Sidebar />
         <main className="min-w-0 flex-1 overflow-auto px-8 py-6">{children}</main>
-        <RightPanel />
       </div>
     </div>
   );
