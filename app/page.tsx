@@ -315,7 +315,7 @@ const opportunity = estimateOpportunity(mockInputs);
         </section>
       )}
 
-      <section className="brand-card p-6 space-y-6">
+      <section className="brand-card p-6 space-y-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1">
             <p className="text-xs uppercase tracking-wide text-gray-500">
@@ -326,44 +326,119 @@ const opportunity = estimateOpportunity(mockInputs);
             </h2>
           </div>
 
-          <div className="space-y-1 text-sm text-gray-600 md:text-right">
-            <p>
-              Scope: <span className="font-medium text-[var(--ui-text)]">All categories</span>
-            </p>
-            <p>
-              Mode:{" "}
-              <span className="font-medium text-[var(--ui-text)]">
-                {analysisMode === "hybrid" ? "External + client data" : "External only"}
-              </span>
-            </p>
+          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 sm:grid-cols-3 md:min-w-[420px]">
+            {[
+              { label: "Retailer", value: selectedRetailer },
+              { label: "Scope", value: "All categories" },
+              {
+                label: "Mode",
+                value:
+                  analysisMode === "hybrid"
+                    ? "External + client inputs"
+                    : "External only",
+              },
+            ].map((item) => (
+              <div key={item.label} className="rounded-lg border border-[var(--ui-border)] bg-white px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wide text-gray-500">
+                  {item.label}
+                </p>
+                <p className="mt-0.5 truncate font-semibold text-[var(--ui-text)]">
+                  {item.value}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: "Status", value: isLoading ? "Analyzing" : "Ready" },
-            {
-              label: "Source",
-              value:
-                analysisMode === "hybrid"
-                  ? "Public + client inputs"
-                  : "Public only",
-            },
-            {
-              label: "Confidence",
-              value: analysisMode === "hybrid" ? "Medium-high" : "Medium",
-            },
-            { label: "Updated", value: "Today" },
-          ].map((item) => (
-            <div key={item.label} className={subCard}>
-              <p className="text-xs uppercase tracking-wide text-gray-500">
-                {item.label}
+        <div className="space-y-3">
+          <p className="text-xs uppercase tracking-wide text-gray-500">
+            Company profile
+          </p>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: "Annual revenue", value: "—" },
+              { label: "EBITDA margin", value: "—" },
+              { label: "Store count", value: "—" },
+              { label: "Format", value: "—" },
+            ].map((item) => (
+              <div key={item.label} className={subCard}>
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-lg font-semibold text-[var(--ui-text)]">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
+              Commercial context
+            </p>
+            <p className="text-xs text-gray-500">
+              Commercial context derived from external-only signals unless client inputs are added.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            {[
+              { label: "Pricing posture", value: "Benchmark-led" },
+              { label: "Promo intensity", value: "Moderate" },
+              { label: "Markdown tendency", value: "Seasonal" },
+              { label: "KVI concentration", value: "Focused" },
+              {
+                label: "Confidence",
+                value: analysisMode === "hybrid" ? "Medium-high" : "Medium",
+              },
+            ].map((item) => (
+              <div key={item.label} className="rounded-lg border border-[var(--ui-border)] bg-white px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wide text-gray-500">
+                  {item.label}
+                </p>
+                <p className="mt-0.5 text-sm font-semibold text-[var(--ui-text)]">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {analysisMode === "hybrid" && (
+            <p className="text-xs text-[var(--ui-blue)]">
+              Hybrid mode: client inputs can refine the external signal read.
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-xs uppercase tracking-wide text-gray-500">
+            Recent signals
+          </p>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="rounded-lg border border-[var(--ui-border)] bg-white p-4">
+              <p className="text-sm font-semibold text-[var(--ui-text)]">
+                Latest press release highlights
               </p>
-              <p className="mt-1 font-semibold text-[var(--ui-text)]">
-                {item.value}
-              </p>
+              <div className="mt-2 space-y-1 text-xs text-gray-600">
+                <p>• Pricing architecture update pending source feed</p>
+                <p>• Promotional calendar activity to be summarized</p>
+                <p>• Store opening or remodel signals awaiting refresh</p>
+              </div>
             </div>
-          ))}
+
+            <div className="rounded-lg border border-[var(--ui-border)] bg-white p-4">
+              <p className="text-sm font-semibold text-[var(--ui-text)]">
+                Relevant headlines
+              </p>
+              <div className="mt-2 space-y-1 text-xs text-gray-600">
+                <p>• Pricing and promo headlines will populate here</p>
+                <p>• Markdown, input cost, and margin pressure mentions</p>
+                <p>• Leadership or operating model changes to monitor</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
