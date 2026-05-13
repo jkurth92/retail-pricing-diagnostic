@@ -25,10 +25,19 @@ type UploadedClientDataMetadata = {
   lastModified: number;
   status: "Uploaded";
 };
+type ClientStructuredContext = {
+  pricingModel: string;
+  promoIntensity: string;
+  channelMix: string;
+  retailerFormat: string;
+  scopeSignal: string;
+};
 type ClientContext = {
   eprScores: EprScores;
   eprAverageScore: number;
   eprMaturityLabel: string;
+  additionalContext: string;
+  structuredContext: ClientStructuredContext;
   uploadedClientData: UploadedClientDataMetadata[];
 };
 type FeedbackRating = "too_low" | "about_right" | "too_high" | "";
@@ -62,6 +71,38 @@ const eprQuestions: { id: EprDimension; label: string }[] = [
   { id: "executionTools", label: "Execution & Tools" },
 ];
 
+const contextFieldOptions: {
+  id: keyof ClientStructuredContext;
+  label: string;
+  options: string[];
+}[] = [
+  {
+    id: "pricingModel",
+    label: "Pricing model",
+    options: ["EDLP", "High-low", "Hybrid", "Other"],
+  },
+  {
+    id: "promoIntensity",
+    label: "Promo intensity",
+    options: ["Low", "Medium", "High"],
+  },
+  {
+    id: "channelMix",
+    label: "Channel mix",
+    options: ["Store", "Online", "Omnichannel"],
+  },
+  {
+    id: "retailerFormat",
+    label: "Retailer type or format",
+    options: ["Grocery", "Mass", "Specialty", "Club", "Other"],
+  },
+  {
+    id: "scopeSignal",
+    label: "Scope signal",
+    options: ["Enterprise", "Category", "Region", "Pilot"],
+  },
+];
+
 const initialEprScores: EprScores = {
   strategicPricePositioning: 3,
   priceArchitectureKvis: 3,
@@ -69,6 +110,14 @@ const initialEprScores: EprScores = {
   promoPriceIntegration: 3,
   markdownInventoryManagement: 3,
   executionTools: 3,
+};
+
+const initialStructuredContext: ClientStructuredContext = {
+  pricingModel: "",
+  promoIntensity: "",
+  channelMix: "",
+  retailerFormat: "",
+  scopeSignal: "",
 };
 
 const getEprMaturityLabel = (score: number) => {
@@ -90,7 +139,10 @@ const [feedbackLever, setFeedbackLever] = useState<FeedbackLever>("");
 
 const [feedbackNotes, setFeedbackNotes] = useState("");
   const [eprScores, setEprScores] = useState<EprScores>(initialEprScores);
-  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("external");
+  const [additionalClientContext, setAdditionalClientContext] = useState("");
+  const [structuredClientContext, setStructuredClientContext] =
+    useState<ClientStructuredContext>(initialStructuredContext);
+  const analysisMode: AnalysisMode = "hybrid";
   const [uploadedClientData, setUploadedClientData] = useState<
     UploadedClientDataMetadata[]
   >([]);
@@ -102,6 +154,8 @@ const [feedbackNotes, setFeedbackNotes] = useState("");
     eprScores,
     eprAverageScore,
     eprMaturityLabel: getEprMaturityLabel(eprAverageScore),
+    additionalContext: additionalClientContext,
+    structuredContext: structuredClientContext,
     uploadedClientData,
   };
 
@@ -116,7 +170,6 @@ const [feedbackNotes, setFeedbackNotes] = useState("");
         status: "Uploaded",
       }))
     );
-    setAnalysisMode("hybrid");
   };
 
   const clearFiles = () => {
@@ -357,11 +410,13 @@ const opportunity = estimateOpportunity(mockInputs);
           setRetailerInput={setRetailerInput}
           setIsLoading={setIsLoading}
           setSelectedRetailer={setSelectedRetailer}
-          analysisMode={analysisMode}
-          setAnalysisMode={setAnalysisMode}
           eprScores={eprScores}
           setEprScores={setEprScores}
           clientContext={clientContext}
+          additionalClientContext={additionalClientContext}
+          setAdditionalClientContext={setAdditionalClientContext}
+          structuredClientContext={structuredClientContext}
+          setStructuredClientContext={setStructuredClientContext}
           uploadedClientData={uploadedClientData}
           handleFileUpload={handleFileUpload}
           clearFiles={clearFiles}
@@ -693,11 +748,13 @@ function PromptsSection({
   setRetailerInput,
   setIsLoading,
   setSelectedRetailer,
-  analysisMode,
-  setAnalysisMode,
   eprScores,
   setEprScores,
   clientContext,
+  additionalClientContext,
+  setAdditionalClientContext,
+  structuredClientContext,
+  setStructuredClientContext,
   uploadedClientData,
   handleFileUpload,
   clearFiles,
@@ -712,11 +769,13 @@ function PromptsSection({
   setRetailerInput: (value: string) => void;
   setIsLoading: (value: boolean) => void;
   setSelectedRetailer: (value: string) => void;
-  analysisMode: AnalysisMode;
-  setAnalysisMode: (value: AnalysisMode) => void;
   eprScores: EprScores;
   setEprScores: (value: EprScores) => void;
   clientContext: ClientContext;
+  additionalClientContext: string;
+  setAdditionalClientContext: (value: string) => void;
+  structuredClientContext: ClientStructuredContext;
+  setStructuredClientContext: (value: ClientStructuredContext) => void;
   uploadedClientData: UploadedClientDataMetadata[];
   handleFileUpload: (files: FileList | null) => void;
   clearFiles: () => void;
@@ -727,6 +786,8 @@ function PromptsSection({
   feedbackNotes: string;
   setFeedbackNotes: (value: string) => void;
 }) {
+  const hasRequiredClientUpload = uploadedClientData.length > 0;
+
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -748,7 +809,10 @@ function PromptsSection({
 
               <button
                 type="button"
+                disabled={!hasRequiredClientUpload}
                 onClick={() => {
+                  if (!hasRequiredClientUpload) return;
+
                   const name = retailerInput.trim() || "Retailer";
                   setIsLoading(true);
                   setSelectedRetailer(name);
@@ -757,36 +821,16 @@ function PromptsSection({
                     setIsLoading(false);
                   }, 2000);
                 }}
-                className="rounded-xl bg-[var(--ui-blue)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                className={`rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                  hasRequiredClientUpload
+                    ? "bg-[var(--ui-blue)] text-white hover:opacity-90"
+                    : "cursor-not-allowed bg-gray-200 text-gray-500"
+                }`}
               >
-                Run Diagnostic
+                {hasRequiredClientUpload
+                  ? "Run Diagnostic"
+                  : "Upload client data to run"}
               </button>
-
-              <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1">
-                <button
-                  type="button"
-                  onClick={() => setAnalysisMode("external")}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                    analysisMode === "external"
-                      ? "bg-[var(--ui-blue)] text-white"
-                      : "text-gray-600"
-                  }`}
-                >
-                  External
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAnalysisMode("hybrid")}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                    analysisMode === "hybrid"
-                      ? "bg-[var(--ui-blue)] text-white"
-                      : "text-gray-600"
-                  }`}
-                >
-                  Add context
-                </button>
-              </div>
             </div>
           </div>
 
@@ -796,88 +840,87 @@ function PromptsSection({
         </div>
       </section>
 
-      {analysisMode === "hybrid" && (
-        <section className="space-y-4">
-          <div className={`${sectionCard} space-y-4`}>
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                  Client context
-                </p>
-                <h2 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
-                  EPR scoring
-                </h2>
-                <p className="mt-1.5 text-sm leading-6 text-gray-600">
-                  Score the retailer across the six EPR dimensions.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-                  Current maturity
-                </p>
-                <p className="mt-1 font-semibold text-[var(--ui-navy)]">
-                  {clientContext.eprMaturityLabel} (
-                  {clientContext.eprAverageScore.toFixed(1)}/5)
-                </p>
-              </div>
+      <section className="space-y-4">
+        <div className={`${sectionCard} space-y-4`}>
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                Client context
+              </p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+                EPR scoring
+              </h2>
+              <p className="mt-1.5 text-sm leading-6 text-gray-600">
+                Score the retailer across the six EPR dimensions.
+              </p>
             </div>
 
-            <div className="space-y-2">
-              {eprQuestions.map((question) => (
-                <div
-                  key={question.id}
-                  className="grid gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 md:grid-cols-[1fr_auto] md:items-center"
-                >
-                  <p className="text-sm font-semibold text-[var(--ui-text)]">
-                    {question.label}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {[1, 2, 3, 4, 5].map((score) => (
-                      <button
-                        key={score}
-                        type="button"
-                        onClick={() =>
-                          setEprScores({ ...eprScores, [question.id]: score })
-                        }
-                        className={`min-w-9 rounded-lg border px-2.5 py-1.5 text-sm font-semibold transition ${
-                          eprScores[question.id] === score
-                            ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
-                            : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
-                        }`}
-                        aria-label={`${question.label}: ${score}`}
-                      >
-                        {score}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-2 border-t border-gray-200 pt-3 text-xs font-medium text-gray-500 sm:grid-cols-3">
-              <p>1 = Underdeveloped</p>
-              <p>3 = Developing</p>
-              <p>5 = Advanced</p>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                Current maturity
+              </p>
+              <p className="mt-1 font-semibold text-[var(--ui-navy)]">
+                {clientContext.eprMaturityLabel} (
+                {clientContext.eprAverageScore.toFixed(1)}/5)
+              </p>
             </div>
           </div>
 
-          <div className={`${sectionCard} space-y-4`}>
+          <div className="space-y-2">
+            {eprQuestions.map((question) => (
+              <div
+                key={question.id}
+                className="grid gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 md:grid-cols-[1fr_auto] md:items-center"
+              >
+                <p className="text-sm font-semibold text-[var(--ui-text)]">
+                  {question.label}
+                </p>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {[1, 2, 3, 4, 5].map((score) => (
+                    <button
+                      key={score}
+                      type="button"
+                      onClick={() =>
+                        setEprScores({ ...eprScores, [question.id]: score })
+                      }
+                      className={`min-w-9 rounded-lg border px-2.5 py-1.5 text-sm font-semibold transition ${
+                        eprScores[question.id] === score
+                          ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
+                      }`}
+                      aria-label={`${question.label}: ${score}`}
+                    >
+                      {score}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-2 border-t border-gray-200 pt-3 text-xs font-medium text-gray-500 sm:grid-cols-3">
+            <p>1 = Underdeveloped</p>
+            <p>3 = Developing</p>
+            <p>5 = Advanced</p>
+          </div>
+        </div>
+
+        <div className={`${sectionCard} space-y-4`}>
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
                   Client data upload
                 </p>
                 <p className="mt-1.5 text-sm leading-6 text-gray-600">
-                  Upload retailer data files for the next step in the flow.
+                  Required. Upload files that contain retailer, pricing, promo, markdown, category, or other client inputs.
                 </p>
               </div>
 
               <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
                 {uploadedClientData.length > 0
                   ? "Upload complete"
-                  : "Awaiting files"}
+                  : "Required upload"}
               </div>
             </div>
 
@@ -885,7 +928,7 @@ function PromptsSection({
               <input
                 type="file"
                 multiple
-                accept=".csv,.xlsx,.xls,.pdf,.ppt,.pptx"
+                accept=".csv,.xlsx,.xls,.pdf,.ppt,.pptx,.doc,.docx,.txt,.json"
                 className="hidden"
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   handleFileUpload(e.target.files)
@@ -895,7 +938,7 @@ function PromptsSection({
                 Drop files here or browse
               </p>
               <p className="mt-1 text-xs text-gray-500">
-                CSV, Excel, PDF, PowerPoint
+                CSV, Excel, PDF, PowerPoint, or other client source files
               </p>
             </label>
 
@@ -939,8 +982,60 @@ function PromptsSection({
               </div>
             )}
           </div>
-        </section>
-      )}
+
+        <div className={`${sectionCard} space-y-4`}>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                Free text + structured context
+              </p>
+              <p className="mt-1.5 text-sm leading-6 text-gray-600">
+                Capture client-specific nuance that should inform the next diagnostic step.
+              </p>
+            </div>
+
+            <textarea
+              value={additionalClientContext}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                setAdditionalClientContext(e.target.value)
+              }
+              placeholder="Pricing posture (EDLP, high-low, hybrid), promo posture, category mix or scope notes, channel mix, known constraints, recent changes, and any retailer-specific nuances that should affect the diagnostic."
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+              rows={4}
+            />
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              {contextFieldOptions.map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <p className="text-sm font-semibold text-[var(--ui-text)]">
+                    {field.label}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {field.options.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() =>
+                          setStructuredClientContext({
+                            ...structuredClientContext,
+                            [field.id]: option,
+                          })
+                        }
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          structuredClientContext[field.id] === option
+                            ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                            : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+        </div>
+      </section>
 
       <section className={`${sectionCard} space-y-4`}>
         <h2 className="mb-4 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">Feedback on estimate</h2>
