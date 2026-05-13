@@ -907,133 +907,133 @@ function PromptsSection({
         </div>
 
         <div className={`${sectionCard} space-y-4`}>
-            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                  Client data upload
-                </p>
-                <p className="mt-1.5 text-sm leading-6 text-gray-600">
-                  Required. Upload files that contain retailer, pricing, promo, markdown, category, or other client inputs.
-                </p>
-              </div>
-
-              <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
-                {uploadedClientData.length > 0
-                  ? "Upload complete"
-                  : "Required upload"}
-              </div>
-            </div>
-
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-6 text-center transition hover:border-[var(--ui-blue)] hover:bg-white">
-              <input
-                type="file"
-                multiple
-                accept=".csv,.xlsx,.xls,.pdf,.ppt,.pptx,.doc,.docx,.txt,.json"
-                className="hidden"
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  handleFileUpload(e.target.files)
-                }
-              />
-              <p className="font-medium text-[var(--ui-text)]">
-                Drop files here or browse
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                CSV, Excel, PDF, PowerPoint, or other client source files
-              </p>
-            </label>
-
-            {uploadedClientData.length > 0 && (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                  <span className="font-semibold text-[var(--ui-text)]">
-                    Uploaded {uploadedClientData.length} file
-                    {uploadedClientData.length === 1 ? "" : "s"}
-                  </span>
-                  {" "}for client context capture.
-                </div>
-
-                <div className="space-y-2">
-                  {uploadedClientData.map((file) => (
-                    <div
-                      key={file.name}
-                      className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm"
-                    >
-                      <div>
-                        <p className="font-medium text-[var(--ui-text)]">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-gray-500">{file.status}</p>
-                      </div>
-                      <div className="text-right text-xs text-gray-500">
-                        <p>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
-                        <p>{file.type}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={clearFiles}
-                  className="text-sm font-medium text-[var(--ui-blue)]"
-                >
-                  Clear files
-                </button>
-              </div>
-            )}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Client Context Inputs
+            </p>
+            <p className="mt-1.5 text-sm leading-6 text-gray-600">
+              Capture client-specific nuance that should inform the next diagnostic step.
+            </p>
           </div>
 
+          <textarea
+            value={additionalClientContext}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              setAdditionalClientContext(e.target.value)
+            }
+            placeholder="Pricing posture (EDLP, high-low, hybrid), promo posture, category mix or scope notes, channel mix, known constraints, recent changes, and any retailer-specific nuances that should affect the diagnostic."
+            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+            rows={4}
+          />
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {contextFieldOptions.map((field) => (
+              <div key={field.id} className="space-y-2">
+                <p className="text-sm font-semibold text-[var(--ui-text)]">
+                  {field.label}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {field.options.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() =>
+                        setStructuredClientContext({
+                          ...structuredClientContext,
+                          [field.id]: option,
+                        })
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        structuredClientContext[field.id] === option
+                          ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className={`${sectionCard} space-y-4`}>
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                Free text + structured context
+                Client data upload
               </p>
               <p className="mt-1.5 text-sm leading-6 text-gray-600">
-                Capture client-specific nuance that should inform the next diagnostic step.
+                Required. Upload files that contain retailer, pricing, promo, markdown, category, or other client inputs.
               </p>
             </div>
 
-            <textarea
-              value={additionalClientContext}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                setAdditionalClientContext(e.target.value)
-              }
-              placeholder="Pricing posture (EDLP, high-low, hybrid), promo posture, category mix or scope notes, channel mix, known constraints, recent changes, and any retailer-specific nuances that should affect the diagnostic."
-              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-              rows={4}
-            />
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              {contextFieldOptions.map((field) => (
-                <div key={field.id} className="space-y-2">
-                  <p className="text-sm font-semibold text-[var(--ui-text)]">
-                    {field.label}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    {field.options.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() =>
-                          setStructuredClientContext({
-                            ...structuredClientContext,
-                            [field.id]: option,
-                          })
-                        }
-                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                          structuredClientContext[field.id] === option
-                            ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
-                            : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
+              {uploadedClientData.length > 0
+                ? "Upload complete"
+                : "Required upload"}
             </div>
+          </div>
+
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-6 text-center transition hover:border-[var(--ui-blue)] hover:bg-white">
+            <input
+              type="file"
+              multiple
+              accept=".csv,.xlsx,.xls,.pdf,.ppt,.pptx,.doc,.docx,.txt,.json"
+              className="hidden"
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                handleFileUpload(e.target.files)
+              }
+            />
+            <p className="font-medium text-[var(--ui-text)]">
+              Drop files here or browse
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              CSV, Excel, PDF, PowerPoint, or other client source files
+            </p>
+          </label>
+
+          {uploadedClientData.length > 0 && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                <span className="font-semibold text-[var(--ui-text)]">
+                  Uploaded {uploadedClientData.length} file
+                  {uploadedClientData.length === 1 ? "" : "s"}
+                </span>
+                {" "}for client context capture.
+              </div>
+
+              <div className="space-y-2">
+                {uploadedClientData.map((file) => (
+                  <div
+                    key={file.name}
+                    className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm"
+                  >
+                    <div>
+                      <p className="font-medium text-[var(--ui-text)]">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-gray-500">{file.status}</p>
+                    </div>
+                    <div className="text-right text-xs text-gray-500">
+                      <p>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                      <p>{file.type}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={clearFiles}
+                className="text-sm font-medium text-[var(--ui-blue)]"
+              >
+                Clear files
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
