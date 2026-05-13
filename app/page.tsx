@@ -10,10 +10,26 @@ import { estimateOpportunity } from "./utils/opportunityEngine";
 type Tab = "overview" | "pricing" | "promotions" | "markdown";
 type OverviewTab = "prompts" | "retailer" | "opportunity";
 type AnalysisMode = "external" | "hybrid";
-type ContextInputs = {
-  pricing: string;
-  promo: string;
-  markdown: string;
+type EprDimension =
+  | "strategicPricePositioning"
+  | "priceArchitectureKvis"
+  | "promotionsStrategyEffectiveness"
+  | "promoPriceIntegration"
+  | "markdownInventoryManagement"
+  | "executionTools";
+type EprScores = Record<EprDimension, number>;
+type UploadedClientDataMetadata = {
+  name: string;
+  size: number;
+  type: string;
+  lastModified: number;
+  status: "Uploaded";
+};
+type ClientContext = {
+  eprScores: EprScores;
+  eprAverageScore: number;
+  eprMaturityLabel: string;
+  uploadedClientData: UploadedClientDataMetadata[];
 };
 type FeedbackRating = "too_low" | "about_right" | "too_high" | "";
 type FeedbackLever = "pricing" | "promotions" | "markdown" | "";
@@ -31,6 +47,36 @@ const subCard =
 const metricCard =
   "rounded-2xl border border-gray-200 bg-white p-4 shadow-sm";
 
+const eprQuestions: { id: EprDimension; label: string }[] = [
+  { id: "strategicPricePositioning", label: "Strategic Price Positioning" },
+  { id: "priceArchitectureKvis", label: "Price Architecture & KVIs" },
+  {
+    id: "promotionsStrategyEffectiveness",
+    label: "Promotions Strategy & Effectiveness",
+  },
+  { id: "promoPriceIntegration", label: "Promo & Price Integration" },
+  {
+    id: "markdownInventoryManagement",
+    label: "Markdown & Inventory Management",
+  },
+  { id: "executionTools", label: "Execution & Tools" },
+];
+
+const initialEprScores: EprScores = {
+  strategicPricePositioning: 3,
+  priceArchitectureKvis: 3,
+  promotionsStrategyEffectiveness: 3,
+  promoPriceIntegration: 3,
+  markdownInventoryManagement: 3,
+  executionTools: 3,
+};
+
+const getEprMaturityLabel = (score: number) => {
+  if (score >= 4.25) return "Advanced";
+  if (score >= 2.75) return "Developing";
+  return "Underdeveloped";
+};
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [activeOverviewTab, setActiveOverviewTab] =
@@ -43,23 +89,38 @@ export default function Home() {
 const [feedbackLever, setFeedbackLever] = useState<FeedbackLever>("");
 
 const [feedbackNotes, setFeedbackNotes] = useState("");
-  const [contextInputs, setContextInputs] = useState<ContextInputs>({
-    pricing: "",
-    promo: "",
-    markdown: "",
-  });
+  const [eprScores, setEprScores] = useState<EprScores>(initialEprScores);
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("external");
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedClientData, setUploadedClientData] = useState<
+    UploadedClientDataMetadata[]
+  >([]);
+
+  const eprAverageScore =
+    eprQuestions.reduce((total, question) => total + eprScores[question.id], 0) /
+    eprQuestions.length;
+  const clientContext: ClientContext = {
+    eprScores,
+    eprAverageScore,
+    eprMaturityLabel: getEprMaturityLabel(eprAverageScore),
+    uploadedClientData,
+  };
 
   const handleFileUpload = (files: FileList | null) => {
     if (!files) return;
-    setUploadedFiles(Array.from(files));
+    setUploadedClientData(
+      Array.from(files).map((file) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type || "Unknown",
+        lastModified: file.lastModified,
+        status: "Uploaded",
+      }))
+    );
     setAnalysisMode("hybrid");
   };
 
   const clearFiles = () => {
-    setUploadedFiles([]);
-    setAnalysisMode("external");
+    setUploadedClientData([]);
   };
 
 const mockInputs = {
@@ -298,9 +359,10 @@ const opportunity = estimateOpportunity(mockInputs);
           setSelectedRetailer={setSelectedRetailer}
           analysisMode={analysisMode}
           setAnalysisMode={setAnalysisMode}
-          contextInputs={contextInputs}
-          setContextInputs={setContextInputs}
-          uploadedFiles={uploadedFiles}
+          eprScores={eprScores}
+          setEprScores={setEprScores}
+          clientContext={clientContext}
+          uploadedClientData={uploadedClientData}
           handleFileUpload={handleFileUpload}
           clearFiles={clearFiles}
           feedbackRating={feedbackRating}
@@ -633,9 +695,10 @@ function PromptsSection({
   setSelectedRetailer,
   analysisMode,
   setAnalysisMode,
-  contextInputs,
-  setContextInputs,
-  uploadedFiles,
+  eprScores,
+  setEprScores,
+  clientContext,
+  uploadedClientData,
   handleFileUpload,
   clearFiles,
   feedbackRating,
@@ -651,9 +714,10 @@ function PromptsSection({
   setSelectedRetailer: (value: string) => void;
   analysisMode: AnalysisMode;
   setAnalysisMode: (value: AnalysisMode) => void;
-  contextInputs: ContextInputs;
-  setContextInputs: (value: ContextInputs) => void;
-  uploadedFiles: File[];
+  eprScores: EprScores;
+  setEprScores: (value: EprScores) => void;
+  clientContext: ClientContext;
+  uploadedClientData: UploadedClientDataMetadata[];
   handleFileUpload: (files: FileList | null) => void;
   clearFiles: () => void;
   feedbackRating: FeedbackRating;
@@ -733,73 +797,88 @@ function PromptsSection({
       </section>
 
       {analysisMode === "hybrid" && (
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section className="space-y-4">
           <div className={`${sectionCard} space-y-4`}>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                Client context
-              </p>
-              <p className="mt-1.5 text-sm leading-6 text-gray-600">
-                Tell us what you already know about the retailer to refine sizing.
-              </p>
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                  Client context
+                </p>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+                  EPR scoring
+                </h2>
+                <p className="mt-1.5 text-sm leading-6 text-gray-600">
+                  Score the retailer across the six EPR dimensions.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                  Current maturity
+                </p>
+                <p className="mt-1 font-semibold text-[var(--ui-navy)]">
+                  {clientContext.eprMaturityLabel} (
+                  {clientContext.eprAverageScore.toFixed(1)}/5)
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-semibold text-[var(--ui-text)]">
-                  Pricing context
-                </label>
-                <textarea
-                  value={contextInputs.pricing}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                    setContextInputs({ ...contextInputs, pricing: e.target.value })
-                  }
-                  placeholder="e.g. retailer is typically value-led, has a tight KVI set, limited premium tiers"
-                  className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-                  rows={2}
-                />
-              </div>
+            <div className="space-y-2">
+              {eprQuestions.map((question) => (
+                <div
+                  key={question.id}
+                  className="grid gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 md:grid-cols-[1fr_auto] md:items-center"
+                >
+                  <p className="text-sm font-semibold text-[var(--ui-text)]">
+                    {question.label}
+                  </p>
 
-              <div>
-                <label className="text-sm font-semibold text-[var(--ui-text)]">
-                  Promo context
-                </label>
-                <textarea
-                  value={contextInputs.promo}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                    setContextInputs({ ...contextInputs, promo: e.target.value })
-                  }
-                  placeholder="e.g. promotions are frequent, feature/display is the main vehicle, deep discounting is common"
-                  className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-                  rows={2}
-                />
-              </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[1, 2, 3, 4, 5].map((score) => (
+                      <button
+                        key={score}
+                        type="button"
+                        onClick={() =>
+                          setEprScores({ ...eprScores, [question.id]: score })
+                        }
+                        className={`min-w-9 rounded-lg border px-2.5 py-1.5 text-sm font-semibold transition ${
+                          eprScores[question.id] === score
+                            ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                            : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
+                        }`}
+                        aria-label={`${question.label}: ${score}`}
+                      >
+                        {score}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-              <div>
-                <label className="text-sm font-semibold text-[var(--ui-text)]">
-                  Markdown context
-                </label>
-                <textarea
-                  value={contextInputs.markdown}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                    setContextInputs({ ...contextInputs, markdown: e.target.value })
-                  }
-                  placeholder="e.g. clearance tends to happen late, excess markdowns appear in seasonal categories"
-                  className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-                  rows={2}
-                />
-              </div>
+            <div className="grid gap-2 border-t border-gray-200 pt-3 text-xs font-medium text-gray-500 sm:grid-cols-3">
+              <p>1 = Underdeveloped</p>
+              <p>3 = Developing</p>
+              <p>5 = Advanced</p>
             </div>
           </div>
 
           <div className={`${sectionCard} space-y-4`}>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                Client upload
-              </p>
-              <p className="mt-1.5 text-sm leading-6 text-gray-600">
-                Optional. Use client data to refine the public-data estimate.
-              </p>
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                  Client data upload
+                </p>
+                <p className="mt-1.5 text-sm leading-6 text-gray-600">
+                  Upload retailer data files for the next step in the flow.
+                </p>
+              </div>
+
+              <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
+                {uploadedClientData.length > 0
+                  ? "Upload complete"
+                  : "Awaiting files"}
+              </div>
             </div>
 
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-6 text-center transition hover:border-[var(--ui-blue)] hover:bg-white">
@@ -820,22 +899,32 @@ function PromptsSection({
               </p>
             </label>
 
-            {uploadedFiles.length > 0 && (
+            {uploadedClientData.length > 0 && (
               <div className="space-y-3">
-                <div className="text-sm font-semibold text-[var(--ui-text)]">
-                  Uploaded files
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                  <span className="font-semibold text-[var(--ui-text)]">
+                    Uploaded {uploadedClientData.length} file
+                    {uploadedClientData.length === 1 ? "" : "s"}
+                  </span>
+                  {" "}for client context capture.
                 </div>
 
                 <div className="space-y-2">
-                  {uploadedFiles.map((file) => (
+                  {uploadedClientData.map((file) => (
                     <div
                       key={file.name}
                       className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm"
                     >
-                      <span>{file.name}</span>
-                      <span className="text-xs text-gray-500">
-                        {(file.size / 1024 / 1024).toFixed(1)} MB
-                      </span>
+                      <div>
+                        <p className="font-medium text-[var(--ui-text)]">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-gray-500">{file.status}</p>
+                      </div>
+                      <div className="text-right text-xs text-gray-500">
+                        <p>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                        <p>{file.type}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
