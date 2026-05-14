@@ -70,6 +70,7 @@ type ActionCard = {
   id: string;
   title: string;
   lever: string;
+  impactRange: string;
   effort: string;
   included: boolean;
   highlighted: boolean;
@@ -1752,76 +1753,69 @@ function ScopeOfDiagnosticSection({
   };
 
   return (
-    <section className={`${sectionCard} space-y-6`}>
-      <div className="space-y-5 rounded-2xl border border-blue-200 bg-blue-50/60 p-5 shadow-sm">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ui-blue)]">
-            Scope Definition
-          </p>
-          <h3 className="mt-1 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
-            Define the business in scope
-          </h3>
-          <p className="mt-1.5 text-sm leading-6 text-gray-600">
-            Set the revenue base, category coverage, and commercial levers for the next sizing step.
-          </p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-          <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[var(--ui-navy)]">
-                  Addressable revenue
-                </p>
-                <p className="mt-1 text-xs leading-5 text-gray-500">
-                  Enter the percentage of total business included in this diagnostic.
-                </p>
+    <section className={`${sectionCard} space-y-4`}>
+      <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ui-blue)]">
+              Scope Summary
+            </p>
+            <h3 className="mt-1 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+              {formatCurrencyShort(addressableRevenue)} addressable revenue
+            </h3>
+            <p className="mt-1 text-sm font-semibold text-[var(--ui-blue)]">
+              {scopedRevenuePct}% of total business
+            </p>
+            <div className="mt-3 grid gap-2 text-xs leading-5 text-gray-600 md:grid-cols-2">
+              <div className="rounded-xl border border-blue-100 bg-white/80 px-3 py-2">
+                <span className="font-semibold text-[var(--ui-text)]">
+                  Included categories:
+                </span>{" "}
+                {includedCategories.length > 0
+                  ? includedCategories.join(", ")
+                  : "None selected"}
               </div>
-              <div className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--ui-blue)]">
-                {scopedRevenuePct}% in scope
-              </div>
-            </div>
-
-            <label className="mt-4 block">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-                % of total revenue
-              </span>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={addressableRevenuePct}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    updateScopeInputs({ addressableRevenuePct: e.target.value })
-                  }
-                  className="w-28 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-                />
-                <span className="text-sm font-semibold text-gray-500">%</span>
-              </div>
-            </label>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                  Total revenue
-                </p>
-                <p className="mt-1 text-xl font-bold text-[var(--ui-navy)]">
-                  {formatCurrencyShort(totalRevenue)}
-                </p>
-              </div>
-              <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                  Addressable revenue
-                </p>
-                <p className="mt-1 text-xl font-bold text-[var(--ui-blue)]">
-                  {formatCurrencyShort(addressableRevenue)} ({scopedRevenuePct}%)
-                </p>
+              <div className="rounded-xl border border-blue-100 bg-white/80 px-3 py-2">
+                <span className="font-semibold text-[var(--ui-text)]">
+                  Selected levers:
+                </span>{" "}
+                {selectedLeverLabels.length > 0
+                  ? selectedLeverLabels.join(", ")
+                  : "None selected"}
               </div>
             </div>
+            {excludedCategories.length > 0 && (
+              <p className="mt-2 text-xs text-gray-600">
+                Excluded from scope: {excludedCategories.join(", ")}.
+              </p>
+            )}
           </div>
 
-          <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+          <label className="w-full rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm sm:w-auto">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+              % of total revenue
+            </span>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={addressableRevenuePct}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  updateScopeInputs({ addressableRevenuePct: e.target.value })
+                }
+                className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+              />
+              <span className="text-sm font-semibold text-gray-500">%</span>
+            </div>
+            <p className="mt-1 text-[11px] font-semibold text-gray-500">
+              Total revenue: {formatCurrencyShort(totalRevenue)}
+            </p>
+          </label>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-[var(--ui-navy)]">
@@ -1942,7 +1936,6 @@ function ScopeOfDiagnosticSection({
               </div>
             </div>
           </div>
-        </div>
 
         <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-[var(--ui-navy)]">
@@ -1991,18 +1984,17 @@ function ScopeOfDiagnosticSection({
             </span>
           </p>
         </div>
-      </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
               Retailer Competitors
             </p>
-            <h3 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+            <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
               Recommended competitive set
             </h3>
-            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-gray-600">
+            <p className="mt-1 max-w-3xl text-xs leading-5 text-gray-500">
               Suggested competitor set based on retailer format, pricing model, and available context. Review and edit as needed.
             </p>
           </div>
@@ -2011,7 +2003,7 @@ function ScopeOfDiagnosticSection({
             <button
               type="button"
               onClick={handleRegenerateCompetitors}
-              className="rounded-xl border border-[var(--ui-blue)] bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-blue)] transition hover:bg-blue-50"
+              className="rounded-lg border border-[var(--ui-blue)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ui-blue)] transition hover:bg-blue-50"
             >
               Regenerate
             </button>
@@ -2019,7 +2011,7 @@ function ScopeOfDiagnosticSection({
               <button
                 type="button"
                 onClick={replaceWithRecommendedCompetitors}
-                className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-600 transition hover:border-[var(--ui-blue)]"
+                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-[var(--ui-blue)]"
               >
                 Reset to AI
               </button>
@@ -2027,12 +2019,10 @@ function ScopeOfDiagnosticSection({
           </div>
         </div>
 
-        <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-gray-700">
-          <span className="font-semibold text-[var(--ui-navy)]">
-            Recommendation logic:
-          </span>{" "}
+        <p className="mt-2 text-xs leading-5 text-gray-500">
+          Recommendation logic:{" "}
           using {scopeInputs.retailerFormat || clientContext.structuredContext.retailerFormat || "retailer format"}, {clientContext.structuredContext.pricingModel || "pricing model"}, {clientContext.structuredContext.scopeSignal || "scope signal"}, and {clientContext.uploadedClientData.length > 0 ? "uploaded client files" : "available context notes"}.
-        </div>
+        </p>
 
         {showRegenerateConfirm && (
           <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
@@ -2058,22 +2048,21 @@ function ScopeOfDiagnosticSection({
           </div>
         )}
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-2">
           {competitors.map((competitor, index) => (
             <div
               key={competitor.id}
-              className="rounded-2xl border border-gray-200 bg-gray-50 p-3"
+              className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
             >
-              <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
-                <div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="grid gap-2 xl:grid-cols-[minmax(180px,0.85fr)_minmax(220px,1fr)_auto_auto] xl:items-center">
+                <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center">
                     <input
                       value={competitor.name}
                       onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         updateCompetitorName(competitor.id, e.target.value)
                       }
                       aria-label={`Competitor ${index + 1} name`}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100 sm:max-w-xs"
+                      className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
                     />
                     <span
                       className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
@@ -2084,13 +2073,13 @@ function ScopeOfDiagnosticSection({
                     >
                       {competitor.source}
                     </span>
-                  </div>
+                </div>
 
-                  <p className="mt-2 text-xs leading-5 text-gray-500">
+                <p className="text-xs leading-5 text-gray-500">
                     {competitor.reason}
-                  </p>
+                </p>
 
-                  <div className="mt-3 flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                     {[
                       competitor.format,
                       competitor.scale,
@@ -2104,10 +2093,9 @@ function ScopeOfDiagnosticSection({
                         {chip}
                       </span>
                     ))}
-                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5 lg:justify-end">
+                <div className="flex flex-wrap gap-1.5 xl:justify-end">
                   <button
                     type="button"
                     onClick={() => moveCompetitor(competitor.id, -1)}
@@ -2137,7 +2125,7 @@ function ScopeOfDiagnosticSection({
           ))}
         </div>
 
-        <div className="mt-4 flex flex-col gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3 sm:flex-row">
+        <div className="mt-3 flex flex-col gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-2 sm:flex-row">
           <input
             value={newCompetitorName}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -2150,39 +2138,16 @@ function ScopeOfDiagnosticSection({
               }
             }}
             placeholder="Add a competitor"
-            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
           />
           <button
             type="button"
             onClick={addCompetitor}
-            className="rounded-lg bg-[var(--ui-blue)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+            className="rounded-lg bg-[var(--ui-blue)] px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
           >
             Add competitor
           </button>
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-          Scope Summary
-        </p>
-        <p className="mt-2 text-lg font-semibold leading-7 text-[var(--ui-navy)]">
-          You are analyzing ~{formatCurrencyShort(addressableRevenue)} in revenue,
-          representing {scopedRevenuePct}% of total business, across{" "}
-          {includedCategories.length > 0
-            ? includedCategories.join(", ")
-            : "selected categories"}{" "}
-          and{" "}
-          {selectedLeverLabels.length > 0
-            ? selectedLeverLabels.join(", ")
-            : "selected levers"}
-          .
-        </p>
-        {excludedCategories.length > 0 && (
-          <p className="mt-2 text-sm text-gray-600">
-            Excluded from scope: {excludedCategories.join(", ")}.
-          </p>
-        )}
       </div>
 
     </section>
@@ -2536,6 +2501,7 @@ function OpportunitySection({
       id: "price-pack",
       title: "Rebalance price-pack architecture",
       lever: "Pricing",
+      impactRange: "+15-30 bps",
       effort: "Medium",
       included: true,
       highlighted: true,
@@ -2544,6 +2510,7 @@ function OpportunitySection({
       id: "promo-frequency",
       title: "Reduce blanket promotional frequency",
       lever: "Promotions",
+      impactRange: "+10-25 bps",
       effort: "Medium",
       included: true,
       highlighted: false,
@@ -2552,6 +2519,7 @@ function OpportunitySection({
       id: "promo-kvis",
       title: "Reallocate promotions away from non-KVIs",
       lever: "Promotions",
+      impactRange: "+8-18 bps",
       effort: "Low",
       included: true,
       highlighted: false,
@@ -2560,6 +2528,7 @@ function OpportunitySection({
       id: "markdown-timing",
       title: "Improve markdown timing discipline",
       lever: "Markdown",
+      impactRange: "+8-18 bps",
       effort: "Medium",
       included: true,
       highlighted: false,
@@ -2568,6 +2537,7 @@ function OpportunitySection({
       id: "pack-rationalization",
       title: "Rationalize pack assortment",
       lever: "Markdown",
+      impactRange: "+5-12 bps",
       effort: "High",
       included: false,
       highlighted: false,
@@ -2756,17 +2726,17 @@ function OpportunitySection({
     {
       key: "pricing",
       name: "Pricing",
-      reason: "Price-pack architecture and KVI guardrails drive selective margin capture.",
+      reason: `EPR gap: price architecture and KVI discipline score ${clientContext.eprScores.priceArchitectureKvis}/5, creating room for selective margin capture outside protected value items.`,
     },
     {
       key: "promotions",
       name: "Promotions",
-      reason: "Promo depth and frequency create room to improve incrementality.",
+      reason: `EPR gap: promotions effectiveness scores ${clientContext.eprScores.promotionsStrategyEffectiveness}/5; market signals point to heavier discounting and room to improve incrementality.`,
     },
     {
       key: "markdown",
       name: "Markdown",
-      reason: "Timing and recovery discipline reduce clearance leakage.",
+      reason: `Retailer signal: markdown and inventory management scores ${clientContext.eprScores.markdownInventoryManagement}/5, suggesting timing and recovery leakage in seasonal or slow-moving inventory.`,
     },
   ];
   const maxLeverBps = Math.max(
@@ -2820,37 +2790,6 @@ function OpportunitySection({
 
   return (
     <div className="space-y-5">
-      <section className="space-y-3">
-        <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Scenario
-            </p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
-              Interactive opportunity sizing workspace
-            </h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {(["Base", "Conservative", "Aggressive"] as Scenario[]).map(
-              (scenarioOption) => (
-                <button
-                  key={scenarioOption}
-                  type="button"
-                  onClick={() => applyScenario(scenarioOption)}
-                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                    scenario === scenarioOption
-                      ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
-                  }`}
-                >
-                  {scenarioOption}
-                </button>
-              )
-            )}
-          </div>
-        </div>
-      </section>
-
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {[
           {
@@ -2875,110 +2814,35 @@ function OpportunitySection({
       </section>
 
       <p className="text-sm leading-6 text-gray-600">
-        <span className="font-semibold text-[var(--ui-text)]">Based on:</span>{" "}
-        {formatCurrencyShort(addressableRevenue)} in scope ({scopedRevenuePct}% of total business),{" "}
-        {selectedLeverLabels.length > 0 ? selectedLeverLabels.join(", ") : "no selected levers"},{" "}
-        and {clientContext.eprMaturityLabel} EPR maturity ({clientContext.eprAverageScore.toFixed(1)}/5).
+        AI-generated estimate based on {formatCurrencyShort(addressableRevenue)} in scope (
+        {scopedRevenuePct}% of business), across{" "}
+        {includedCategories.length > 0
+          ? `${includedCategories.slice(0, 3).join(", ")}${includedCategories.length > 3 ? " and other selected categories" : ""}`
+          : "selected categories"}{" "}
+        and {selectedLeverFamilies.length > 0 ? selectedLeverFamilies.join(", ") : "selected levers"}, assuming{" "}
+        {clientContext.eprMaturityLabel.toLowerCase()} pricing maturity.
       </p>
 
-      <section className={`${sectionCard} space-y-4`}>
+      <section className={`${sectionCard} space-y-4 border-blue-100 bg-blue-50/40`}>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-            What&apos;s in scope
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ui-blue)]">
+            Key Drivers of Opportunity
           </p>
           <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-            Scope context carried into sizing
+            Why this estimate is defensible
           </h2>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            `${formatCurrencyShort(addressableRevenue)} revenue in scope`,
-            `${scopedRevenuePct}% of business`,
-            ...(includedCategories.length > 0 ? includedCategories : ["No categories selected"]),
-            ...(selectedLeverLabels.length > 0 ? selectedLeverLabels : ["No levers selected"]),
-            ...(competitors.length > 0
-              ? competitors.map((competitor) => `Peer: ${competitor.name}`)
-              : ["No competitors selected"]),
-          ].map((chip) => (
-            <span
-              key={chip}
-              className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--ui-blue)]"
-            >
-              {chip}
-            </span>
-          ))}
-        </div>
-      </section>
 
-      <section className={`${sectionCard} space-y-4`}>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Estimate Builder
-            </p>
-            <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-              Opportunity sizing breakdown
-            </h2>
-          </div>
-          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-semibold text-[var(--ui-blue)]">
-            Live total: {formatSignedBps(totalOpportunityBps)}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {estimateRows.map((row) => (
-            <div
-              key={row.key}
-              className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 lg:grid-cols-[1fr_120px_220px]"
-            >
-              <div>
-                <p className="font-semibold text-[var(--ui-navy)]">{row.label}</p>
-                <p className="mt-1 text-sm leading-5 text-gray-600">{row.explanation}</p>
+        <div className="grid gap-3 lg:grid-cols-3">
+          {leverRows.map((driver) => (
+            <div key={driver.key} className="rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-semibold text-[var(--ui-navy)]">{driver.name}</p>
+                <p className="text-sm font-bold text-[var(--ui-blue)]">
+                  {formatSignedBps(scopedLeverContributions[driver.key])}
+                </p>
               </div>
-              <p className="text-xl font-bold text-[var(--ui-blue)]">
-                {formatSignedBps(row.contribution)}
-              </p>
-              <div>
-                <input
-                  type="range"
-                  min={row.min}
-                  max={row.max}
-                  value={row.value}
-                  onChange={(event) =>
-                    updateEstimateComponent(row.key, Number(event.target.value))
-                  }
-                  className="w-full accent-[var(--ui-blue)]"
-                />
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateEstimateComponent(
-                        row.key,
-                        clampNumber(row.value - 5, row.min, row.max)
-                      )
-                    }
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600"
-                  >
-                    -5
-                  </button>
-                  <span className="text-xs font-semibold text-gray-500">
-                    Adjustment {formatSignedBps(row.value)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateEstimateComponent(
-                        row.key,
-                        clampNumber(row.value + 5, row.min, row.max)
-                      )
-                    }
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600"
-                  >
-                    +5
-                  </button>
-                </div>
-              </div>
+              <p className="mt-3 text-sm leading-5 text-gray-600">{driver.reason}</p>
             </div>
           ))}
         </div>
@@ -2986,127 +2850,21 @@ function OpportunitySection({
 
       <section className={`${sectionCard} space-y-4`}>
         <h2 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-          Value by Lever
+          Opportunity Breakdown
         </h2>
 
-        <div className="space-y-4">
-          {leverRows.map((lever) => {
-            const rawValue = leverContributions[lever.key];
-            const scopedValue = scopedLeverContributions[lever.key];
-            const isInScope = leverScopeFactors[lever.key] > 0;
-
-            return (
-              <div key={lever.key} className={subCard}>
-                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-[var(--ui-navy)]">{lever.name}</p>
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                          isInScope
-                            ? "border-blue-100 bg-blue-50 text-[var(--ui-blue)]"
-                            : "border-gray-200 bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {isInScope ? "In scope" : "Out of scope"}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Current contribution: {formatSignedBps(scopedValue)}
-                    </p>
-                  </div>
-                  <p className="text-sm font-semibold text-[var(--ui-blue)]">
-                    {formatSignedBps(rawValue)}
-                  </p>
-                </div>
-
-                <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
-                  <div
-                    className="h-full rounded-full bg-[var(--ui-blue)]"
-                    style={{ width: `${Math.min((rawValue / maxLeverBps) * 100, 100)}%` }}
-                  />
-                </div>
-
-                <input
-                  type="range"
-                  min="0"
-                  max="120"
-                  value={rawValue}
-                  onChange={(event) =>
-                    updateLeverContribution(lever.key, Number(event.target.value))
-                  }
-                  className="mt-3 w-full accent-[var(--ui-blue)]"
-                />
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateLeverContribution(
-                        lever.key,
-                        clampNumber(rawValue - 5, 0, 120)
-                      )
-                    }
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600"
-                  >
-                    -5 bps
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateLeverContribution(
-                        lever.key,
-                        clampNumber(rawValue + 5, 0, 120)
-                      )
-                    }
-                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600"
-                  >
-                    +5 bps
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className={`${sectionCard} space-y-4`}>
-        <h2 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-          Key Drivers of Opportunity
-        </h2>
-
-        <div className="grid gap-3 lg:grid-cols-3">
-          {leverRows.map((driver) => (
-            <div key={driver.key} className={subCard}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-[var(--ui-navy)]">{driver.name}</p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--ui-blue)]">
-                    {formatSignedBps(scopedLeverContributions[driver.key])}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDriverStatuses({
-                      ...driverStatuses,
-                      [driver.key]:
-                        driverStatuses[driver.key] === "highConfidence"
-                          ? "needsReview"
-                          : "highConfidence",
-                    })
-                  }
-                  className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
-                    driverStatuses[driver.key] === "highConfidence"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-amber-200 bg-amber-50 text-amber-700"
-                  }`}
-                >
-                  {driverStatuses[driver.key] === "highConfidence"
-                    ? "High confidence"
-                    : "Needs review"}
-                </button>
-              </div>
-              <p className="mt-3 text-sm leading-5 text-gray-600">{driver.reason}</p>
+        <div className="grid gap-3 md:grid-cols-3">
+          {leverRows.map((lever) => (
+            <div key={lever.key} className={subCard}>
+              <p className="text-sm font-semibold text-[var(--ui-navy)]">
+                {lever.name}
+              </p>
+              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-blue)]">
+                {formatSignedBps(scopedLeverContributions[lever.key])}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-gray-500">
+                {leverScopeFactors[lever.key] > 0 ? "Included in current diagnostic scope." : "Out of current diagnostic scope."}
+              </p>
             </div>
           ))}
         </div>
