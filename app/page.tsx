@@ -41,10 +41,38 @@ type ClientContext = {
   uploadedClientData: UploadedClientDataMetadata[];
 };
 type Opportunity = ReturnType<typeof estimateOpportunity>;
-type LeverData = {
-  name: string;
-  value: string;
-  width: string;
+type Scenario = "Base" | "Conservative" | "Aggressive";
+type EstimateComponents = {
+  baseBenchmarkAdjustment: number;
+  eprAdjustment: number;
+  scopeAdjustment: number;
+  clientDataAdjustment: number;
+};
+type LeverContributions = {
+  pricing: number;
+  promotions: number;
+  markdown: number;
+};
+type ConfidenceInputs = {
+  overall: number;
+  benchmarkRelevance: number;
+  dataQuality: number;
+  assumptionStrength: number;
+};
+type AssumptionInputs = {
+  elasticity: number;
+  promoIncrementality: number;
+  markdownRecovery: number;
+};
+type DriverStatus = "highConfidence" | "needsReview";
+type DriverStatuses = Record<keyof LeverContributions, DriverStatus>;
+type ActionCard = {
+  id: string;
+  title: string;
+  lever: string;
+  effort: string;
+  included: boolean;
+  highlighted: boolean;
 };
 type CategoryScopeStatus = "included" | "excluded";
 type CategoryScopeSelections = Partial<Record<string, CategoryScopeStatus>>;
@@ -77,6 +105,27 @@ type RetailerHeadline = {
 type RetailerNewsFeed = {
   summary: string;
   headlines: RetailerHeadline[];
+};
+type FinancialDataPoint = {
+  year: string;
+  value: number;
+};
+type FinancialSeries = {
+  label: string;
+  unit: "currency" | "percent";
+  values: FinancialDataPoint[];
+};
+type ProfitabilityMetric = {
+  label: string;
+  value: string;
+  benchmark: string;
+  note: string;
+};
+type PeerComparisonMetric = {
+  label: string;
+  company: number;
+  peerMedian: number;
+  unit: "percent";
 };
 
 const sectionCard =
@@ -152,6 +201,20 @@ const formatCurrencyShort = (value: number) => {
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   return `$${value.toLocaleString()}`;
 };
+
+const clampNumber = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
+const parseBpsValue = (value: string) => {
+  const parsedValue = Number(value.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsedValue) ? parsedValue : 0;
+};
+
+const formatSignedBps = (value: number) =>
+  `${value >= 0 ? "+" : ""}${Math.round(value)} bps`;
+
+const formatSignedPct = (value: number) =>
+  `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
 
 const eprQuestions: { id: EprDimension; label: string }[] = [
   { id: "strategicPricePositioning", label: "Strategic Price Positioning" },
@@ -253,6 +316,90 @@ const getMockRetailerNews = (
   ],
 });
 
+const mockFinancialPerformance: FinancialSeries[] = [
+  {
+    label: "Revenue",
+    unit: "currency",
+    values: [
+      { year: "FY20", value: 42.1 },
+      { year: "FY21", value: 44.8 },
+      { year: "FY22", value: 45.7 },
+      { year: "FY23", value: 46.4 },
+      { year: "FY24", value: 47.0 },
+    ],
+  },
+  {
+    label: "EBITDA",
+    unit: "currency",
+    values: [
+      { year: "FY20", value: 4.8 },
+      { year: "FY21", value: 5.0 },
+      { year: "FY22", value: 4.7 },
+      { year: "FY23", value: 4.5 },
+      { year: "FY24", value: 4.3 },
+    ],
+  },
+  {
+    label: "Margin",
+    unit: "percent",
+    values: [
+      { year: "FY20", value: 11.4 },
+      { year: "FY21", value: 11.2 },
+      { year: "FY22", value: 10.3 },
+      { year: "FY23", value: 9.7 },
+      { year: "FY24", value: 9.1 },
+    ],
+  },
+];
+
+const mockProfitabilityMetrics: ProfitabilityMetric[] = [
+  {
+    label: "ROIC",
+    value: "8.6%",
+    benchmark: "Peer median: 10.4%",
+    note: "Below peer returns",
+  },
+  {
+    label: "Working capital / revenue",
+    value: "6.8%",
+    benchmark: "Peer median: 5.1%",
+    note: "More capital tied up",
+  },
+  {
+    label: "COGS",
+    value: "68.4%",
+    benchmark: "FY20: 66.9%",
+    note: "Cost pressure up",
+  },
+  {
+    label: "SG&A",
+    value: "22.5%",
+    benchmark: "FY20: 21.7%",
+    note: "Operating cost drag",
+  },
+];
+
+const mockPeerComparisons: PeerComparisonMetric[] = [
+  {
+    label: "Revenue growth",
+    company: 1.3,
+    peerMedian: 3.1,
+    unit: "percent",
+  },
+  {
+    label: "Margin",
+    company: 9.1,
+    peerMedian: 10.8,
+    unit: "percent",
+  },
+  {
+    label: "TSR",
+    company: 4.2,
+    peerMedian: 8.7,
+    unit: "percent",
+  },
+];
+
 const getEprMaturityLabel = (score: number) => {
   if (score >= 4.25) return "Advanced";
   if (score >= 2.75) return "Developing";
@@ -317,24 +464,6 @@ const mockInputs = {
 };
 
 const opportunity = estimateOpportunity(mockInputs);
-
-  const leverData = [
-  {
-    name: "Pricing",
-    value: opportunity.pricing.marginUpliftBps,
-    width: "35%",
-  },
-  {
-    name: "Promotions",
-    value: opportunity.promotions.marginUpliftBps,
-    width: "55%",
-  },
-  {
-    name: "Markdown",
-    value: opportunity.markdown.marginUpliftBps,
-    width: "20%",
-  },
-];
 
   const activeWorkflowStep =
     activeTab !== "overview"
@@ -515,7 +644,8 @@ const opportunity = estimateOpportunity(mockInputs);
         <OpportunitySection
           opportunity={opportunity}
           analysisMode={analysisMode}
-          leverData={leverData}
+          scopeInputs={retailerScopeInputs}
+          clientContext={clientContext}
         />
       )}
     </div>
@@ -1383,45 +1513,66 @@ function RetailerOverviewSection({
       <section className={`${sectionCard} space-y-4`}>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-            Retailer Overview
+            Financial Performance
           </p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
-            {retailerName}
+            {retailerName} financial trajectory
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-            Directional view of pricing, promotional, and margin signals for the current diagnostic.
+            Mock 10-K style data showing revenue, EBITDA, and margin trends over time.
           </p>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
-          {[
-            {
-              label: "Pricing posture",
-              value: "Value-sensitive",
-              detail: "Targeted increases need close KVI guardrails.",
-            },
-            {
-              label: "Promo pressure",
-              value: "Elevated",
-              detail: "Discount activity appears to be a key traffic lever.",
-            },
-            {
-              label: "Margin watch",
-              value: "Active",
-              detail: "Cost inflation and labor pressure remain relevant.",
-            },
-          ].map((item) => (
-            <div key={item.label} className={subCard}>
+          {mockFinancialPerformance.map((series) => (
+            <div key={series.label}>{renderMiniLineChart(series)}</div>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+            Profitability & Efficiency
+          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+            Returns, capital intensity, and cost structure
+          </h3>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {mockProfitabilityMetrics.map((metric) => (
+            <div key={metric.label} className={subCard}>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-                {item.label}
+                {metric.label}
               </p>
-              <p className="mt-2 text-lg font-bold tracking-tight text-[var(--ui-navy)]">
-                {item.value}
+              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+                {metric.value}
               </p>
-              <p className="mt-1 text-xs leading-5 text-gray-500">
-                {item.detail}
+              <p className="mt-1 text-xs font-medium text-gray-600">
+                {metric.benchmark}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-gray-500">
+                {metric.note}
               </p>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+            Market Position vs Peers
+          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+            Company performance against peer median
+          </h3>
+        </div>
+
+        <div className="space-y-3">
+          {mockPeerComparisons.map((metric) => (
+            <div key={metric.label}>{renderPeerComparisonBar(metric)}</div>
           ))}
         </div>
       </section>
@@ -1429,19 +1580,25 @@ function RetailerOverviewSection({
       <section className={`${sectionCard} space-y-3`}>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-            Key Insights
+            Key Insights (Data-driven)
           </p>
           <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-            Pricing and margin implications
+            What the data suggests
           </h3>
         </div>
 
         <div className="space-y-2 text-sm leading-6 text-gray-600">
           <p>
-            • Promotional intensity and value messaging should be reviewed before recommending broad price moves.
+            • Revenue growth has slowed to roughly +1.3%, lagging the peer median of +3.1% and suggesting potential pricing, traffic, or assortment challenges.
           </p>
           <p>
-            • Margin pressure suggests the strongest opportunity is likely in selective price architecture, promo efficiency, and pack-level trade-offs.
+            • EBITDA margin has declined from 11.4% to 9.1%, indicating sustained cost pressure, promotional intensity, or mix dilution.
+          </p>
+          <p>
+            • ROIC trails peers by 180 bps while working capital intensity is higher, pointing to efficiency upside beyond headline price changes.
+          </p>
+          <p>
+            • TSR is below the peer median, reinforcing the need for margin recovery and clearer growth drivers.
           </p>
         </div>
       </section>
@@ -1479,27 +1636,531 @@ function RetailerOverviewSection({
   );
 }
 
+function renderMiniLineChart(series: FinancialSeries) {
+  const values = series.values.map((point) => point.value);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const valueRange = maxValue - minValue || 1;
+  const chartPoints = series.values
+    .map((point, index) => {
+      const x =
+        series.values.length === 1
+          ? 50
+          : (index / (series.values.length - 1)) * 100;
+      const y = 42 - ((point.value - minValue) / valueRange) * 34;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  const latestPoint = series.values[series.values.length - 1];
+  const firstPoint = series.values[0];
+  const change = latestPoint.value - firstPoint.value;
+  const displayValue =
+    series.unit === "currency"
+      ? `$${latestPoint.value.toFixed(1)}B`
+      : `${latestPoint.value.toFixed(1)}%`;
+  const displayChange =
+    series.unit === "currency"
+      ? `${change >= 0 ? "+" : ""}$${change.toFixed(1)}B vs ${firstPoint.year}`
+      : `${change >= 0 ? "+" : ""}${change.toFixed(1)} pts vs ${firstPoint.year}`;
+
+  return (
+    <div className={subCard}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+            {series.label}
+          </p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+            {displayValue}
+          </p>
+        </div>
+        <p
+          className={`rounded-full px-2 py-1 text-xs font-semibold ${
+            change >= 0
+              ? "bg-blue-50 text-[var(--ui-blue)]"
+              : "bg-amber-50 text-amber-700"
+          }`}
+        >
+          {displayChange}
+        </p>
+      </div>
+
+      <svg
+        viewBox="0 0 100 46"
+        className="mt-4 h-20 w-full overflow-visible"
+        role="img"
+        aria-label={`${series.label} trend`}
+      >
+        <polyline
+          points={chartPoints}
+          fill="none"
+          stroke="var(--ui-blue)"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="3"
+        />
+        {series.values.map((point, index) => {
+          const x =
+            series.values.length === 1
+              ? 50
+              : (index / (series.values.length - 1)) * 100;
+          const y = 42 - ((point.value - minValue) / valueRange) * 34;
+
+          return (
+            <circle
+              key={`${point.year}-${point.value}`}
+              cx={x}
+              cy={y}
+              r={2.4}
+              fill="white"
+              stroke="var(--ui-blue)"
+              strokeWidth="2"
+            />
+          );
+        })}
+      </svg>
+
+      <div className="mt-2 flex justify-between text-[11px] font-medium text-gray-500">
+        {series.values.map((point) => (
+          <span key={point.year}>{point.year}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function renderPeerComparisonBar(metric: PeerComparisonMetric) {
+  const maxValue = Math.max(metric.company, metric.peerMedian, 1);
+  const companyWidth = `${Math.max((metric.company / maxValue) * 100, 4)}%`;
+  const peerWidth = `${Math.max((metric.peerMedian / maxValue) * 100, 4)}%`;
+  const formatValue = (value: number) =>
+    metric.unit === "percent" ? `${value.toFixed(1)}%` : value.toFixed(1);
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-[var(--ui-navy)]">
+          {metric.label}
+        </p>
+        <p className="text-xs font-medium text-gray-500">
+          Company vs peer median
+        </p>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        <div className="grid grid-cols-[92px_1fr_48px] items-center gap-2 text-xs">
+          <span className="font-semibold text-[var(--ui-blue)]">
+            Company
+          </span>
+          <div className="h-2 rounded-full bg-gray-200">
+            <div
+              className="h-full rounded-full bg-[var(--ui-blue)]"
+              style={{ width: companyWidth }}
+            />
+          </div>
+          <span className="text-right font-semibold text-[var(--ui-text)]">
+            {formatValue(metric.company)}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[92px_1fr_48px] items-center gap-2 text-xs">
+          <span className="font-semibold text-gray-500">Peer median</span>
+          <div className="h-2 rounded-full bg-gray-200">
+            <div
+              className="h-full rounded-full bg-gray-400"
+              style={{ width: peerWidth }}
+            />
+          </div>
+          <span className="text-right font-semibold text-[var(--ui-text)]">
+            {formatValue(metric.peerMedian)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OpportunitySection({
   opportunity,
   analysisMode,
-  leverData,
+  scopeInputs,
+  clientContext,
 }: {
   opportunity: Opportunity;
   analysisMode: AnalysisMode;
-  leverData: LeverData[];
+  scopeInputs: RetailerScopeInputs;
+  clientContext: ClientContext;
 }) {
+  const initialLeverContributions: LeverContributions = {
+    pricing: parseBpsValue(opportunity.pricing.marginUpliftBps),
+    promotions: parseBpsValue(opportunity.promotions.marginUpliftBps),
+    markdown: parseBpsValue(opportunity.markdown.marginUpliftBps),
+  };
+  const initialScopePct = parsePercentageInput(
+    scopeInputs.addressableRevenuePct,
+    defaultAddressableRevenuePct
+  );
+  const initialEprAdjustment = Math.round((3 - clientContext.eprAverageScore) * 12);
+  const initialScopeAdjustment = Math.round((initialScopePct - defaultAddressableRevenuePct) * 0.4);
+  const initialClientDataAdjustment =
+    analysisMode === "hybrid" && clientContext.uploadedClientData.length > 0 ? 15 : 0;
+
+  const [scenario, setScenario] = useState<Scenario>("Base");
+  const [estimateComponents, setEstimateComponents] =
+    useState<EstimateComponents>({
+      baseBenchmarkAdjustment: 0,
+      eprAdjustment: initialEprAdjustment,
+      scopeAdjustment: initialScopeAdjustment,
+      clientDataAdjustment: initialClientDataAdjustment,
+    });
+  const [leverContributions, setLeverContributions] =
+    useState<LeverContributions>(initialLeverContributions);
+  const [confidenceInputs, setConfidenceInputs] = useState<ConfidenceInputs>({
+    overall: analysisMode === "hybrid" ? 72 : 60,
+    benchmarkRelevance: 70,
+    dataQuality: clientContext.uploadedClientData.length > 0 ? 76 : 48,
+    assumptionStrength: 66,
+  });
+  const [assumptions, setAssumptions] = useState<AssumptionInputs>({
+    elasticity: 100,
+    promoIncrementality: 100,
+    markdownRecovery: 100,
+  });
+  const [driverStatuses, setDriverStatuses] = useState<DriverStatuses>({
+    pricing: "highConfidence",
+    promotions: "needsReview",
+    markdown: "needsReview",
+  });
+  const [actions, setActions] = useState<ActionCard[]>([
+    {
+      id: "price-pack",
+      title: "Rebalance price-pack architecture",
+      lever: "Pricing",
+      effort: "Medium",
+      included: true,
+      highlighted: true,
+    },
+    {
+      id: "promo-frequency",
+      title: "Reduce blanket promotional frequency",
+      lever: "Promotions",
+      effort: "Medium",
+      included: true,
+      highlighted: false,
+    },
+    {
+      id: "promo-kvis",
+      title: "Reallocate promotions away from non-KVIs",
+      lever: "Promotions",
+      effort: "Low",
+      included: true,
+      highlighted: false,
+    },
+    {
+      id: "markdown-timing",
+      title: "Improve markdown timing discipline",
+      lever: "Markdown",
+      effort: "Medium",
+      included: true,
+      highlighted: false,
+    },
+    {
+      id: "pack-rationalization",
+      title: "Rationalize pack assortment",
+      lever: "Markdown",
+      effort: "High",
+      included: false,
+      highlighted: false,
+    },
+  ]);
+
+  const totalRevenue = parseCurrencyInput(
+    scopeInputs.annualRevenue,
+    defaultRetailerRevenue
+  );
+  const scopedRevenuePct = parsePercentageInput(
+    scopeInputs.addressableRevenuePct,
+    defaultAddressableRevenuePct
+  );
+  const addressableRevenue = totalRevenue * (scopedRevenuePct / 100);
+  const includedCategories = scopeCategories.filter(
+    (category) => scopeInputs.categorySelections[category] === "included"
+  );
+  const selectedLeverLabels = scopeLeverGroups
+    .flatMap((group) => group.levers)
+    .filter((lever) => scopeInputs.selectedLeverIds.includes(lever.id))
+    .map((lever) => lever.label);
+  const selectedLeverFamilies = scopeLeverGroups
+    .filter((group) =>
+      group.levers.some((lever) => scopeInputs.selectedLeverIds.includes(lever.id))
+    )
+    .map((group) => group.group);
+  const leverScopeFactors: LeverContributions = {
+    pricing: selectedLeverFamilies.includes("Pricing") ? 1 : 0,
+    promotions: selectedLeverFamilies.includes("Promotions") ? 1 : 0,
+    markdown: selectedLeverFamilies.includes("Markdown") ? 1 : 0,
+  };
+  const scopedLeverContributions: LeverContributions = {
+    pricing: Math.round(leverContributions.pricing * leverScopeFactors.pricing),
+    promotions: Math.round(leverContributions.promotions * leverScopeFactors.promotions),
+    markdown: Math.round(leverContributions.markdown * leverScopeFactors.markdown),
+  };
+  const baseBenchmarkBps =
+    scopedLeverContributions.pricing +
+    scopedLeverContributions.promotions +
+    scopedLeverContributions.markdown +
+    estimateComponents.baseBenchmarkAdjustment;
+  const rawOpportunityBps =
+    baseBenchmarkBps +
+    estimateComponents.eprAdjustment +
+    estimateComponents.scopeAdjustment +
+    estimateComponents.clientDataAdjustment;
+  const confidenceAverage =
+    (confidenceInputs.overall +
+      confidenceInputs.benchmarkRelevance +
+      confidenceInputs.dataQuality +
+      confidenceInputs.assumptionStrength) /
+    400;
+  const confidenceMultiplier = 0.85 + confidenceAverage * 0.3;
+  const assumptionMultiplier =
+    (assumptions.elasticity +
+      assumptions.promoIncrementality +
+      assumptions.markdownRecovery) /
+    300;
+  const totalOpportunityBps = Math.max(
+    0,
+    Math.round(rawOpportunityBps * confidenceMultiplier * assumptionMultiplier)
+  );
+  const revenueImpactPct = totalOpportunityBps / 100;
+  const totalOpportunityDollars = addressableRevenue * (totalOpportunityBps / 10000);
+  const confidenceLabel =
+    confidenceInputs.overall >= 75
+      ? "High"
+      : confidenceInputs.overall >= 55
+        ? "Medium"
+        : "Low";
+
+  const updateEstimateComponent = (
+    key: keyof EstimateComponents,
+    value: number
+  ) => {
+    setEstimateComponents({
+      ...estimateComponents,
+      [key]: value,
+    });
+  };
+
+  const updateLeverContribution = (
+    key: keyof LeverContributions,
+    value: number
+  ) => {
+    setLeverContributions({
+      ...leverContributions,
+      [key]: value,
+    });
+  };
+
+  const updateConfidenceInput = (key: keyof ConfidenceInputs, value: number) => {
+    setConfidenceInputs({
+      ...confidenceInputs,
+      [key]: value,
+    });
+  };
+
+  const updateAssumption = (key: keyof AssumptionInputs, value: number) => {
+    setAssumptions({
+      ...assumptions,
+      [key]: value,
+    });
+  };
+
+  const applyScenario = (nextScenario: Scenario) => {
+    const scenarioMultiplier =
+      nextScenario === "Conservative" ? 0.8 : nextScenario === "Aggressive" ? 1.2 : 1;
+
+    setScenario(nextScenario);
+    setLeverContributions({
+      pricing: Math.round(initialLeverContributions.pricing * scenarioMultiplier),
+      promotions: Math.round(initialLeverContributions.promotions * scenarioMultiplier),
+      markdown: Math.round(initialLeverContributions.markdown * scenarioMultiplier),
+    });
+    setEstimateComponents({
+      baseBenchmarkAdjustment:
+        nextScenario === "Conservative" ? -10 : nextScenario === "Aggressive" ? 10 : 0,
+      eprAdjustment:
+        nextScenario === "Conservative"
+          ? initialEprAdjustment - 10
+          : nextScenario === "Aggressive"
+            ? initialEprAdjustment + 8
+            : initialEprAdjustment,
+      scopeAdjustment:
+        nextScenario === "Conservative"
+          ? initialScopeAdjustment - 6
+          : nextScenario === "Aggressive"
+            ? initialScopeAdjustment + 6
+            : initialScopeAdjustment,
+      clientDataAdjustment:
+        nextScenario === "Conservative"
+          ? Math.max(0, initialClientDataAdjustment - 5)
+          : nextScenario === "Aggressive"
+            ? initialClientDataAdjustment + 10
+            : initialClientDataAdjustment,
+    });
+    setConfidenceInputs({
+      overall: nextScenario === "Conservative" ? 62 : nextScenario === "Aggressive" ? 78 : 72,
+      benchmarkRelevance: nextScenario === "Conservative" ? 64 : nextScenario === "Aggressive" ? 76 : 70,
+      dataQuality:
+        nextScenario === "Conservative"
+          ? 58
+          : nextScenario === "Aggressive"
+            ? 82
+            : clientContext.uploadedClientData.length > 0
+              ? 76
+              : 48,
+      assumptionStrength: nextScenario === "Conservative" ? 60 : nextScenario === "Aggressive" ? 74 : 66,
+    });
+    setAssumptions({
+      elasticity: nextScenario === "Conservative" ? 92 : nextScenario === "Aggressive" ? 108 : 100,
+      promoIncrementality:
+        nextScenario === "Conservative" ? 90 : nextScenario === "Aggressive" ? 112 : 100,
+      markdownRecovery:
+        nextScenario === "Conservative" ? 92 : nextScenario === "Aggressive" ? 110 : 100,
+    });
+  };
+
+  const moveAction = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= actions.length) return;
+
+    const nextActions = [...actions];
+    [nextActions[index], nextActions[nextIndex]] = [
+      nextActions[nextIndex],
+      nextActions[index],
+    ];
+    setActions(nextActions);
+  };
+
+  const toggleAction = (actionId: string, key: "included" | "highlighted") => {
+    setActions(
+      actions.map((action) =>
+        action.id === actionId ? { ...action, [key]: !action[key] } : action
+      )
+    );
+  };
+
+  const leverRows: {
+    key: keyof LeverContributions;
+    name: string;
+    reason: string;
+  }[] = [
+    {
+      key: "pricing",
+      name: "Pricing",
+      reason: "Price-pack architecture and KVI guardrails drive selective margin capture.",
+    },
+    {
+      key: "promotions",
+      name: "Promotions",
+      reason: "Promo depth and frequency create room to improve incrementality.",
+    },
+    {
+      key: "markdown",
+      name: "Markdown",
+      reason: "Timing and recovery discipline reduce clearance leakage.",
+    },
+  ];
+  const maxLeverBps = Math.max(
+    120,
+    leverContributions.pricing,
+    leverContributions.promotions,
+    leverContributions.markdown
+  );
+  const estimateRows = [
+    {
+      key: "baseBenchmarkAdjustment" as const,
+      label: "Base benchmark estimate",
+      contribution: baseBenchmarkBps,
+      min: -40,
+      max: 40,
+      value: estimateComponents.baseBenchmarkAdjustment,
+      explanation:
+        "Starts from the in-scope lever benchmark, then lets you trim or stretch the base view.",
+    },
+    {
+      key: "eprAdjustment" as const,
+      label: "EPR / maturity adjustment",
+      contribution: estimateComponents.eprAdjustment,
+      min: -40,
+      max: 40,
+      value: estimateComponents.eprAdjustment,
+      explanation:
+        "Reflects how pricing maturity changes achievability versus the benchmark.",
+    },
+    {
+      key: "scopeAdjustment" as const,
+      label: "Scope adjustment",
+      contribution: estimateComponents.scopeAdjustment,
+      min: -30,
+      max: 30,
+      value: estimateComponents.scopeAdjustment,
+      explanation:
+        "Adjusts for the size and shape of categories and levers included in scope.",
+    },
+    {
+      key: "clientDataAdjustment" as const,
+      label: "Client data adjustment",
+      contribution: estimateComponents.clientDataAdjustment,
+      min: -20,
+      max: 35,
+      value: estimateComponents.clientDataAdjustment,
+      explanation:
+        "Adds or reduces value based on client uploads and specificity of internal inputs.",
+    },
+  ];
+
   return (
     <div className="space-y-5">
+      <section className="space-y-3">
+        <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Scenario
+            </p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+              Interactive opportunity sizing workspace
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(["Base", "Conservative", "Aggressive"] as Scenario[]).map(
+              (scenarioOption) => (
+                <button
+                  key={scenarioOption}
+                  type="button"
+                  onClick={() => applyScenario(scenarioOption)}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                    scenario === scenarioOption
+                      ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
+                  }`}
+                >
+                  {scenarioOption}
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      </section>
+
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {[
-          { label: "Revenue %", value: opportunity.totalRevenueUpliftPct },
-          { label: "Margin bps", value: opportunity.totalMarginUpliftBps },
+          {
+            label: "Revenue % / addressable impact",
+            value: `${formatSignedPct(revenueImpactPct)} / ${formatCurrencyShort(totalOpportunityDollars)}`,
+          },
+          { label: "Margin bps", value: formatSignedBps(totalOpportunityBps) },
           {
             label: "Total opportunity",
-            value:
-              analysisMode === "hybrid"
-                ? "+135 bps"
-                : opportunity.totalMarginUpliftBps,
+            value: formatCurrencyShort(totalOpportunityDollars),
           },
         ].map((item) => (
           <div key={item.label} className={metricCard}>
@@ -1513,140 +2174,394 @@ function OpportunitySection({
         ))}
       </section>
 
-      <section className={sectionCard}>
-        <h2 className="mb-4 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Opportunity sizing breakdown</h2>
+      <p className="text-sm leading-6 text-gray-600">
+        <span className="font-semibold text-[var(--ui-text)]">Based on:</span>{" "}
+        {formatCurrencyShort(addressableRevenue)} in scope ({scopedRevenuePct}% of total business),{" "}
+        {selectedLeverLabels.length > 0 ? selectedLeverLabels.join(", ") : "no selected levers"},{" "}
+        and {clientContext.eprMaturityLabel} EPR maturity ({clientContext.eprAverageScore.toFixed(1)}/5).
+      </p>
 
-        <div className="divide-y divide-gray-200 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-600">
-          <div className="flex justify-between px-4 py-3">
-            <span>Base estimate (external data)</span>
-            <span className="font-semibold text-[var(--ui-text)]">
-              {opportunity.totalMarginUpliftBps}
-            </span>
-          </div>
-
-          <div className="flex justify-between px-4 py-3">
-            <span>Context adjustment</span>
-            <span className="font-semibold text-[var(--ui-text)]">−20 bps</span>
-          </div>
-
-          <div className="flex justify-between px-4 py-3">
-            <span>Client data adjustment</span>
-            <span className="font-semibold text-[var(--ui-text)]">
-              {analysisMode === "hybrid" ? "+15 bps" : "+0 bps"}
-            </span>
-          </div>
-
-          <div className="flex justify-between bg-white px-4 py-3">
-            <span className="font-semibold text-[var(--ui-text)]">Final estimate</span>
-            <span className="font-bold text-[var(--ui-blue)]">
-              {analysisMode === "hybrid"
-                ? "+135 bps"
-                : opportunity.totalMarginUpliftBps}
-            </span>
-          </div>
+      <section className={`${sectionCard} space-y-4`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+            What&apos;s in scope
+          </p>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+            Scope context carried into sizing
+          </h2>
         </div>
-
-        <div className="mt-3 text-sm font-medium text-gray-600">
-          Confidence: {analysisMode === "hybrid" ? "Medium-High" : "Medium"}
-        </div>
-
-        <div className="mt-2 text-xs text-gray-500">
-          Based on public signals, contextual inputs, and available client data
-        </div>
-      </section>
-
-      <section className={sectionCard}>
-        <h2 className="mb-4 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-          Total Estimated Value Opportunity
-        </h2>
-
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="flex flex-wrap gap-2">
           {[
-            { value: opportunity.totalRevenueUpliftPct, label: "Revenue Growth" },
-            { value: opportunity.totalMarginUpliftBps, label: "Margin Expansion" },
-            { value: "Flat–+1.0%", label: "Unit Impact" },
-            { value: "Moderate", label: "Confidence" },
-          ].map((item) => (
-            <div key={item.label} className={subCard}>
-              <p className="text-2xl font-bold tracking-tight text-[var(--ui-navy)]">{item.value}</p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-gray-500">{item.label}</p>
-            </div>
+            `${formatCurrencyShort(addressableRevenue)} revenue in scope`,
+            `${scopedRevenuePct}% of business`,
+            ...(includedCategories.length > 0 ? includedCategories : ["No categories selected"]),
+            ...(selectedLeverLabels.length > 0 ? selectedLeverLabels : ["No levers selected"]),
+          ].map((chip) => (
+            <span
+              key={chip}
+              className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--ui-blue)]"
+            >
+              {chip}
+            </span>
           ))}
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className={`${sectionCard} space-y-3`}>
-          <p className="font-semibold text-[var(--ui-navy)]">Key drivers of opportunity</p>
-
-          <div className="space-y-2 text-sm leading-6 text-gray-600">
-            <p>
-              • Pricing misalignment vs competitors{" "}
-              <span className="font-semibold text-[var(--ui-blue)]">
-                ({opportunity.pricing.marginUpliftBps})
-              </span>
+      <section className={`${sectionCard} space-y-4`}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Estimate Builder
             </p>
-
-            <p>
-              • High promo intensity and depth{" "}
-              <span className="font-semibold text-[var(--ui-blue)]">
-                ({opportunity.promotions.marginUpliftBps})
-              </span>
-            </p>
-
-            <p>
-              • Elevated markdown activity vs peers{" "}
-              <span className="font-semibold text-[var(--ui-blue)]">
-                ({opportunity.markdown.marginUpliftBps})
-              </span>
-            </p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+              Opportunity sizing breakdown
+            </h2>
+          </div>
+          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-semibold text-[var(--ui-blue)]">
+            Live total: {formatSignedBps(totalOpportunityBps)}
           </div>
         </div>
 
-        <div className={`${sectionCard} space-y-3`}>
-          <p className="font-semibold text-[var(--ui-navy)]">Confidence & assumptions</p>
-          <p className="text-sm font-medium text-gray-600">Confidence: Medium</p>
-          <div className="space-y-1 text-sm leading-6 text-gray-600">
-            <p>• Based on public signals only</p>
-            <p>• No retailer internal elasticity data used</p>
-            <p>• Estimates are directional and benchmark-based</p>
-          </div>
-        </div>
-      </section>
-
-      <section className={sectionCard}>
-        <h2 className="mb-4 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Value by Lever</h2>
-
-        <div className="space-y-4">
-          {leverData.map((lever) => (
-            <div key={lever.name} className={subCard}>
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="font-semibold text-[var(--ui-navy)]">{lever.name}</p>
-                  <p className="text-sm text-gray-500">{lever.value}</p>
+        <div className="space-y-3">
+          {estimateRows.map((row) => (
+            <div
+              key={row.key}
+              className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 lg:grid-cols-[1fr_120px_220px]"
+            >
+              <div>
+                <p className="font-semibold text-[var(--ui-navy)]">{row.label}</p>
+                <p className="mt-1 text-sm leading-5 text-gray-600">{row.explanation}</p>
+              </div>
+              <p className="text-xl font-bold text-[var(--ui-blue)]">
+                {formatSignedBps(row.contribution)}
+              </p>
+              <div>
+                <input
+                  type="range"
+                  min={row.min}
+                  max={row.max}
+                  value={row.value}
+                  onChange={(event) =>
+                    updateEstimateComponent(row.key, Number(event.target.value))
+                  }
+                  className="w-full accent-[var(--ui-blue)]"
+                />
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateEstimateComponent(
+                        row.key,
+                        clampNumber(row.value - 5, row.min, row.max)
+                      )
+                    }
+                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600"
+                  >
+                    -5
+                  </button>
+                  <span className="text-xs font-semibold text-gray-500">
+                    Adjustment {formatSignedBps(row.value)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateEstimateComponent(
+                        row.key,
+                        clampNumber(row.value + 5, row.min, row.max)
+                      )
+                    }
+                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600"
+                  >
+                    +5
+                  </button>
                 </div>
               </div>
-
-              <div className="h-3 w-full rounded-full bg-gray-200 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[var(--ui-blue)]"
-                  style={{ width: lever.width }}
-                />
-              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className={sectionCard}>
-        <h2 className="mb-4 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Top Actions</h2>
+      <section className={`${sectionCard} space-y-4`}>
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+          Value by Lever
+        </h2>
 
-        <div className="space-y-3 text-sm">
-          <div className={subCard}>1. Rebalance price-pack architecture</div>
-          <div className={subCard}>2. Reduce blanket promotional frequency</div>
-          <div className={subCard}>3. Reallocate promotions away from non-KVIs</div>
-          <div className={subCard}>4. Improve markdown timing discipline</div>
-          <div className={subCard}>5. Rationalize pack assortment</div>
+        <div className="space-y-4">
+          {leverRows.map((lever) => {
+            const rawValue = leverContributions[lever.key];
+            const scopedValue = scopedLeverContributions[lever.key];
+            const isInScope = leverScopeFactors[lever.key] > 0;
+
+            return (
+              <div key={lever.key} className={subCard}>
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-[var(--ui-navy)]">{lever.name}</p>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                          isInScope
+                            ? "border-blue-100 bg-blue-50 text-[var(--ui-blue)]"
+                            : "border-gray-200 bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {isInScope ? "In scope" : "Out of scope"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Current contribution: {formatSignedBps(scopedValue)}
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold text-[var(--ui-blue)]">
+                    {formatSignedBps(rawValue)}
+                  </p>
+                </div>
+
+                <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    className="h-full rounded-full bg-[var(--ui-blue)]"
+                    style={{ width: `${Math.min((rawValue / maxLeverBps) * 100, 100)}%` }}
+                  />
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="120"
+                  value={rawValue}
+                  onChange={(event) =>
+                    updateLeverContribution(lever.key, Number(event.target.value))
+                  }
+                  className="mt-3 w-full accent-[var(--ui-blue)]"
+                />
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateLeverContribution(
+                        lever.key,
+                        clampNumber(rawValue - 5, 0, 120)
+                      )
+                    }
+                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600"
+                  >
+                    -5 bps
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateLeverContribution(
+                        lever.key,
+                        clampNumber(rawValue + 5, 0, 120)
+                      )
+                    }
+                    className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600"
+                  >
+                    +5 bps
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+          Key Drivers of Opportunity
+        </h2>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          {leverRows.map((driver) => (
+            <div key={driver.key} className={subCard}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-[var(--ui-navy)]">{driver.name}</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--ui-blue)]">
+                    {formatSignedBps(scopedLeverContributions[driver.key])}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDriverStatuses({
+                      ...driverStatuses,
+                      [driver.key]:
+                        driverStatuses[driver.key] === "highConfidence"
+                          ? "needsReview"
+                          : "highConfidence",
+                    })
+                  }
+                  className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
+                    driverStatuses[driver.key] === "highConfidence"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {driverStatuses[driver.key] === "highConfidence"
+                    ? "High confidence"
+                    : "Needs review"}
+                </button>
+              </div>
+              <p className="mt-3 text-sm leading-5 text-gray-600">{driver.reason}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Confidence & Assumptions
+            </p>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+              Editable confidence model
+            </h2>
+          </div>
+          <p className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-[var(--ui-navy)]">
+            {confidenceLabel} confidence
+          </p>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          {[
+            ["overall", "Overall confidence"],
+            ["benchmarkRelevance", "Benchmark relevance"],
+            ["dataQuality", "Data quality"],
+            ["assumptionStrength", "Assumption strength"],
+          ].map(([key, label]) => (
+            <label key={key} className={subCard}>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-[var(--ui-navy)]">
+                  {label}
+                </span>
+                <span className="text-sm font-bold text-[var(--ui-blue)]">
+                  {confidenceInputs[key as keyof ConfidenceInputs]}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={confidenceInputs[key as keyof ConfidenceInputs]}
+                onChange={(event) =>
+                  updateConfidenceInput(
+                    key as keyof ConfidenceInputs,
+                    Number(event.target.value)
+                  )
+                }
+                className="mt-3 w-full accent-[var(--ui-blue)]"
+              />
+            </label>
+          ))}
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          {[
+            ["elasticity", "Elasticity"],
+            ["promoIncrementality", "Promo incrementality"],
+            ["markdownRecovery", "Markdown recovery"],
+          ].map(([key, label]) => (
+            <label key={key} className={subCard}>
+              <span className="text-sm font-semibold text-[var(--ui-navy)]">
+                {label}
+              </span>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="number"
+                  min="80"
+                  max="120"
+                  value={assumptions[key as keyof AssumptionInputs]}
+                  onChange={(event) =>
+                    updateAssumption(
+                      key as keyof AssumptionInputs,
+                      clampNumber(Number(event.target.value), 80, 120)
+                    )
+                  }
+                  className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+                />
+                <span className="text-sm text-gray-500">% of base</span>
+              </div>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <h2 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+          Top Actions
+        </h2>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          {actions.map((action, index) => {
+            const leverKey = action.lever.toLowerCase() as keyof LeverContributions;
+            const estimatedImpact = Math.round(scopedLeverContributions[leverKey] * 0.35);
+
+            return (
+              <div
+                key={action.id}
+                className={`rounded-xl border p-4 shadow-sm ${
+                  action.highlighted
+                    ? "border-[var(--ui-blue)] bg-blue-50"
+                    : "border-gray-200 bg-white"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--ui-navy)]">
+                      {index + 1}. {action.title}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {action.lever} | Impact {formatSignedBps(estimatedImpact)} | Effort {action.effort}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveAction(index, -1)}
+                      disabled={index === 0}
+                      className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600 disabled:opacity-40"
+                    >
+                      Up
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveAction(index, 1)}
+                      disabled={index === actions.length - 1}
+                      className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600 disabled:opacity-40"
+                    >
+                      Down
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleAction(action.id, "included")}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                      action.included
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-gray-200 bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {action.included ? "Included in memo" : "Not in memo"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleAction(action.id, "highlighted")}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                      action.highlighted
+                        ? "border-blue-200 bg-white text-[var(--ui-blue)]"
+                        : "border-gray-200 bg-gray-50 text-gray-600"
+                    }`}
+                  >
+                    {action.highlighted ? "Priority" : "Mark priority"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
     </div>
