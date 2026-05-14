@@ -119,10 +119,6 @@ type RetailerHeadline = {
   category: HeadlineCategory;
   title: string;
 };
-type RetailerNewsFeed = {
-  summary: string;
-  headlines: RetailerHeadline[];
-};
 type FinancialDataPoint = {
   year: string;
   value: number;
@@ -132,17 +128,39 @@ type FinancialSeries = {
   unit: "currency" | "percent";
   values: FinancialDataPoint[];
 };
-type ProfitabilityMetric = {
-  label: string;
-  value: string;
-  benchmark: string;
-  note: string;
+type RetailerProfileSource = "external" | "uploaded_pdf";
+type SourcedFinancialSeries = FinancialSeries & {
+  source: RetailerProfileSource | null;
 };
-type PeerComparisonMetric = {
+type SourcedProfitabilityMetric = {
   label: string;
-  company: number;
-  peerMedian: number;
+  value: string | null;
+  benchmark: string | null;
+  note: string | null;
+  source: RetailerProfileSource | null;
+};
+type SourcedPeerComparisonMetric = {
+  label: string;
+  company: number | null;
+  peerMedian: number | null;
   unit: "percent";
+  source: RetailerProfileSource | null;
+};
+type SourcedRetailerHeadline = RetailerHeadline & {
+  source: RetailerProfileSource;
+};
+type RetailerProfile = {
+  retailerName: string;
+  financials: SourcedFinancialSeries[];
+  profitability: SourcedProfitabilityMetric[];
+  marketPosition: SourcedPeerComparisonMetric[];
+  insights: string[];
+  headlines: SourcedRetailerHeadline[];
+  sources: Record<string, RetailerProfileSource>;
+};
+type SupplementalPdfStatus = {
+  fileName: string;
+  status: "Parsed" | "No fields found" | "Unable to parse";
 };
 
 const sectionCard =
@@ -515,118 +533,349 @@ const newsCategoryStyles: Record<HeadlineCategory, string> = {
   Operations: "border-gray-200 bg-gray-100 text-gray-700",
 };
 
-const getMockRetailerNews = (
-  retailerName: string
-): RetailerNewsFeed => ({
-  summary:
-    "Recent signals suggest increased promotional activity and margin pressure driven by cost inflation, competitive intensity, and sharper value messaging.",
-  headlines: [
-    {
-      category: "Pricing",
-      title: `${retailerName} tests targeted price increases on premium private-label categories`,
-    },
-    {
-      category: "Promotions",
-      title: `${retailerName} expands digital coupon events amid heavier weekly discounting`,
-    },
-    {
-      category: "Cost / Margin",
-      title: `${retailerName} flags freight and labor pressure as near-term margin headwinds`,
-    },
-    {
-      category: "Operations",
-      title: `${retailerName} rebalances stores with smaller-format openings and select closures`,
-    },
-    {
-      category: "Strategy",
-      title: `${retailerName} sharpens value messaging and speeds promo decision cycles`,
-    },
-  ],
-});
-
-const mockFinancialPerformance: FinancialSeries[] = [
-  {
-    label: "Revenue",
-    unit: "currency",
-    values: [
-      { year: "FY20", value: 42.1 },
-      { year: "FY21", value: 44.8 },
-      { year: "FY22", value: 45.7 },
-      { year: "FY23", value: 46.4 },
-      { year: "FY24", value: 47.0 },
-    ],
-  },
-  {
-    label: "EBITDA",
-    unit: "currency",
-    values: [
-      { year: "FY20", value: 4.8 },
-      { year: "FY21", value: 5.0 },
-      { year: "FY22", value: 4.7 },
-      { year: "FY23", value: 4.5 },
-      { year: "FY24", value: 4.3 },
-    ],
-  },
-  {
-    label: "Margin",
-    unit: "percent",
-    values: [
-      { year: "FY20", value: 11.4 },
-      { year: "FY21", value: 11.2 },
-      { year: "FY22", value: 10.3 },
-      { year: "FY23", value: 9.7 },
-      { year: "FY24", value: 9.1 },
-    ],
-  },
+const emptyRetailerFinancials = (): SourcedFinancialSeries[] => [
+  { label: "Revenue", unit: "currency", values: [], source: null },
+  { label: "EBITDA", unit: "currency", values: [], source: null },
+  { label: "Margin", unit: "percent", values: [], source: null },
 ];
 
-const mockProfitabilityMetrics: ProfitabilityMetric[] = [
-  {
-    label: "ROIC",
-    value: "8.6%",
-    benchmark: "Peer median: 10.4%",
-    note: "Below peer returns",
-  },
+const emptyRetailerProfitability = (): SourcedProfitabilityMetric[] => [
+  { label: "ROIC", value: null, benchmark: null, note: null, source: null },
   {
     label: "Working capital / revenue",
-    value: "6.8%",
-    benchmark: "Peer median: 5.1%",
-    note: "More capital tied up",
+    value: null,
+    benchmark: null,
+    note: null,
+    source: null,
   },
-  {
-    label: "COGS",
-    value: "68.4%",
-    benchmark: "FY20: 66.9%",
-    note: "Cost pressure up",
-  },
-  {
-    label: "SG&A",
-    value: "22.5%",
-    benchmark: "FY20: 21.7%",
-    note: "Operating cost drag",
-  },
+  { label: "Cost structure", value: null, benchmark: null, note: null, source: null },
 ];
 
-const mockPeerComparisons: PeerComparisonMetric[] = [
-  {
-    label: "Revenue growth",
-    company: 1.3,
-    peerMedian: 3.1,
-    unit: "percent",
-  },
-  {
-    label: "Margin",
-    company: 9.1,
-    peerMedian: 10.8,
-    unit: "percent",
-  },
-  {
-    label: "TSR",
-    company: 4.2,
-    peerMedian: 8.7,
-    unit: "percent",
-  },
+const emptyRetailerMarketPosition = (): SourcedPeerComparisonMetric[] => [
+  { label: "Revenue growth", company: null, peerMedian: null, unit: "percent", source: null },
+  { label: "Margin", company: null, peerMedian: null, unit: "percent", source: null },
+  { label: "TSR", company: null, peerMedian: null, unit: "percent", source: null },
 ];
+
+const createEmptyRetailerProfile = (retailerName = ""): RetailerProfile => ({
+  retailerName,
+  financials: emptyRetailerFinancials(),
+  profitability: emptyRetailerProfitability(),
+  marketPosition: emptyRetailerMarketPosition(),
+  insights: [],
+  headlines: [],
+  sources: {},
+});
+
+const hasFinancialValues = (series: SourcedFinancialSeries) =>
+  series.values.length > 0;
+
+const hasMetricValue = (metric: SourcedProfitabilityMetric) =>
+  Boolean(metric.value);
+
+const hasPeerMetricValue = (metric: SourcedPeerComparisonMetric) =>
+  metric.company !== null || metric.peerMedian !== null;
+
+const mergeByLabel = <T extends { label: string }>(
+  fallbackItems: T[],
+  priorityItems: T[],
+  hasValue: (item: T) => boolean
+) => {
+  const labels = Array.from(
+    new Set([
+      ...fallbackItems.map((item) => item.label),
+      ...priorityItems.map((item) => item.label),
+    ])
+  );
+
+  return labels.map((label) => {
+    const priorityItem = priorityItems.find((item) => item.label === label);
+    const fallbackItem = fallbackItems.find((item) => item.label === label);
+
+    if (priorityItem && hasValue(priorityItem)) return priorityItem;
+    return fallbackItem || priorityItem;
+  }) as T[];
+};
+
+const mergeRetailerProfiles = (
+  externalProfile: RetailerProfile,
+  uploadedProfile: RetailerProfile
+): RetailerProfile => ({
+  retailerName: uploadedProfile.retailerName || externalProfile.retailerName,
+  financials: mergeByLabel(
+    externalProfile.financials,
+    uploadedProfile.financials,
+    hasFinancialValues
+  ),
+  profitability: mergeByLabel(
+    externalProfile.profitability,
+    uploadedProfile.profitability,
+    hasMetricValue
+  ),
+  marketPosition: mergeByLabel(
+    externalProfile.marketPosition,
+    uploadedProfile.marketPosition,
+    hasPeerMetricValue
+  ),
+  insights:
+    uploadedProfile.insights.length > 0
+      ? uploadedProfile.insights
+      : externalProfile.insights,
+  headlines:
+    uploadedProfile.headlines.length > 0
+      ? uploadedProfile.headlines
+      : externalProfile.headlines,
+  sources: {
+    ...externalProfile.sources,
+    ...uploadedProfile.sources,
+  },
+});
+
+const normalizeUploadedText = (text: string) =>
+  text.replace(/\s+/g, " ").replace(/[^\x20-\x7E]/g, " ").trim();
+
+const extractFirstMatch = (text: string, patterns: RegExp[]) => {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return match;
+  }
+
+  return null;
+};
+
+const parseCurrencyToBillions = (rawValue: string | undefined) => {
+  if (!rawValue) return null;
+  const numericValue = Number(rawValue.replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(numericValue)) return null;
+  const normalizedValue = rawValue.toLowerCase();
+
+  if (/\b(million|mn|m)\b/.test(normalizedValue)) return numericValue / 1000;
+  if (/\b(billion|bn|b)\b/.test(normalizedValue)) return numericValue;
+  return null;
+};
+
+const parsePercentValue = (rawValue: string | undefined) => {
+  if (!rawValue) return null;
+  const numericValue = Number(rawValue.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(numericValue) ? numericValue : null;
+};
+
+const formatExtractedCurrency = (valueInBillions: number) =>
+  `$${valueInBillions.toFixed(valueInBillions >= 10 ? 1 : 2)}B`;
+
+const buildUploadedFinancialSeries = (
+  label: string,
+  unit: "currency" | "percent",
+  value: number | null
+): SourcedFinancialSeries => ({
+  label,
+  unit,
+  values: value === null ? [] : [{ year: "Uploaded PDF", value }],
+  source: value === null ? null : "uploaded_pdf",
+});
+
+const parseRetailerFactPackPdf = async (
+  file: File,
+  retailerName: string
+): Promise<RetailerProfile> => {
+  const emptyProfile = createEmptyRetailerProfile(retailerName);
+  const rawText = await file.text().catch(() => "");
+  const text = normalizeUploadedText(rawText);
+  if (!text) return emptyProfile;
+
+  const revenueMatch = extractFirstMatch(text, [
+    /\brevenue\b.{0,80}?(\$?\s?\d+(?:\.\d+)?\s?(?:billion|bn|b|million|mn|m)\b)/i,
+    /\bsales\b.{0,80}?(\$?\s?\d+(?:\.\d+)?\s?(?:billion|bn|b|million|mn|m)\b)/i,
+  ]);
+  const ebitdaMatch = extractFirstMatch(text, [
+    /\bEBITDA\b.{0,80}?(\$?\s?\d+(?:\.\d+)?\s?(?:billion|bn|b|million|mn|m)\b)/i,
+    /\bEBITA\b.{0,80}?(\$?\s?\d+(?:\.\d+)?\s?(?:billion|bn|b|million|mn|m)\b)/i,
+  ]);
+  const marginMatch = extractFirstMatch(text, [
+    /\b(?:EBITDA|EBITA|operating)?\s*margin\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+  ]);
+  const roicMatch = extractFirstMatch(text, [
+    /\bROIC\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+    /\breturn on invested capital\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+  ]);
+  const workingCapitalMatch = extractFirstMatch(text, [
+    /\bworking capital\b.{0,80}?\brevenue\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+  ]);
+  const costStructureMatch = extractFirstMatch(text, [
+    /\bcost structure\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+    /\bCOGS\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+    /\bSG&A\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+  ]);
+  const revenueGrowthPeerMatch = extractFirstMatch(text, [
+    /\brevenue growth\b.{0,80}?(\d+(?:\.\d+)?%).{0,80}?\bpeer(?: median)?\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+  ]);
+  const marginPeerMatch = extractFirstMatch(text, [
+    /\bmargin\b.{0,80}?(\d+(?:\.\d+)?%).{0,80}?\bpeer(?: median)?\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+  ]);
+  const tsrPeerMatch = extractFirstMatch(text, [
+    /\bTSR\b.{0,80}?(\d+(?:\.\d+)?%).{0,80}?\bpeer(?: median)?\b.{0,80}?(\d+(?:\.\d+)?%)/i,
+  ]);
+
+  const revenueValue = parseCurrencyToBillions(revenueMatch?.[1]);
+  const ebitdaValue = parseCurrencyToBillions(ebitdaMatch?.[1]);
+  const marginValue = parsePercentValue(marginMatch?.[1]);
+  const roicValue = parsePercentValue(roicMatch?.[1]);
+  const workingCapitalValue = parsePercentValue(workingCapitalMatch?.[1]);
+  const costStructureValue = parsePercentValue(costStructureMatch?.[1]);
+  const revenueGrowthValue = parsePercentValue(revenueGrowthPeerMatch?.[1]);
+  const revenueGrowthPeerValue = parsePercentValue(revenueGrowthPeerMatch?.[2]);
+  const marginPeerCompanyValue = parsePercentValue(marginPeerMatch?.[1]);
+  const marginPeerMedianValue = parsePercentValue(marginPeerMatch?.[2]);
+  const tsrValue = parsePercentValue(tsrPeerMatch?.[1]);
+  const tsrPeerValue = parsePercentValue(tsrPeerMatch?.[2]);
+  const extractedHeadlines = text
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) =>
+      /\b(pric|promo|cost|margin|strateg|operat|peer|EBITDA|EBITA|ROIC)\w*/i.test(
+        sentence
+      )
+    )
+    .slice(0, 5)
+    .map<SourcedRetailerHeadline>((sentence) => ({
+      title: sentence.slice(0, 180),
+      category: categorizeHeadline(sentence),
+      source: "uploaded_pdf",
+    }));
+
+  const uploadedProfile: RetailerProfile = {
+    ...emptyProfile,
+    financials: [
+      buildUploadedFinancialSeries("Revenue", "currency", revenueValue),
+      buildUploadedFinancialSeries("EBITDA", "currency", ebitdaValue),
+      buildUploadedFinancialSeries("Margin", "percent", marginValue),
+    ],
+    profitability: [
+      {
+        label: "ROIC",
+        value: roicValue === null ? null : `${roicValue.toFixed(1)}%`,
+        benchmark: null,
+        note: "Extracted from uploaded retailer fact pack.",
+        source: roicValue === null ? null : "uploaded_pdf",
+      },
+      {
+        label: "Working capital / revenue",
+        value:
+          workingCapitalValue === null
+            ? null
+            : `${workingCapitalValue.toFixed(1)}%`,
+        benchmark: null,
+        note: "Extracted from uploaded retailer fact pack.",
+        source: workingCapitalValue === null ? null : "uploaded_pdf",
+      },
+      {
+        label: "Cost structure",
+        value:
+          costStructureValue === null ? null : `${costStructureValue.toFixed(1)}%`,
+        benchmark: null,
+        note: "Extracted from uploaded retailer fact pack.",
+        source: costStructureValue === null ? null : "uploaded_pdf",
+      },
+    ],
+    marketPosition: [
+      {
+        label: "Revenue growth",
+        company: revenueGrowthValue,
+        peerMedian: revenueGrowthPeerValue,
+        unit: "percent",
+        source:
+          revenueGrowthValue === null && revenueGrowthPeerValue === null
+            ? null
+            : "uploaded_pdf",
+      },
+      {
+        label: "Margin",
+        company: marginPeerCompanyValue,
+        peerMedian: marginPeerMedianValue,
+        unit: "percent",
+        source:
+          marginPeerCompanyValue === null && marginPeerMedianValue === null
+            ? null
+            : "uploaded_pdf",
+      },
+      {
+        label: "TSR",
+        company: tsrValue,
+        peerMedian: tsrPeerValue,
+        unit: "percent",
+        source: tsrValue === null && tsrPeerValue === null ? null : "uploaded_pdf",
+      },
+    ],
+    insights: [
+      ...(revenueValue === null ? [] : [`Revenue: ${formatExtractedCurrency(revenueValue)}`]),
+      ...(ebitdaValue === null ? [] : [`EBITDA / EBITA: ${formatExtractedCurrency(ebitdaValue)}`]),
+      ...(marginValue === null ? [] : [`Margin: ${marginValue.toFixed(1)}%`]),
+      ...(roicValue === null ? [] : [`ROIC: ${roicValue.toFixed(1)}%`]),
+      ...(costStructureValue === null ? [] : [`Cost structure: ${costStructureValue.toFixed(1)}%`]),
+    ],
+    headlines: extractedHeadlines,
+    sources: {},
+  };
+
+  uploadedProfile.financials.forEach((series) => {
+    if (series.source) uploadedProfile.sources[`financials.${series.label}`] = series.source;
+  });
+  uploadedProfile.profitability.forEach((metric) => {
+    if (metric.source) uploadedProfile.sources[`profitability.${metric.label}`] = metric.source;
+  });
+  uploadedProfile.marketPosition.forEach((metric) => {
+    if (metric.source) uploadedProfile.sources[`marketPosition.${metric.label}`] = metric.source;
+  });
+  if (uploadedProfile.headlines.length > 0) {
+    uploadedProfile.sources.headlines = "uploaded_pdf";
+  }
+
+  return uploadedProfile;
+};
+
+const categorizeHeadline = (headline: string): HeadlineCategory => {
+  const normalizedHeadline = headline.toLowerCase();
+  if (normalizedHeadline.includes("promo") || normalizedHeadline.includes("discount")) {
+    return "Promotions";
+  }
+  if (normalizedHeadline.includes("cost") || normalizedHeadline.includes("margin")) {
+    return "Cost / Margin";
+  }
+  if (normalizedHeadline.includes("strateg") || normalizedHeadline.includes("growth")) {
+    return "Strategy";
+  }
+  if (normalizedHeadline.includes("operat") || normalizedHeadline.includes("supply")) {
+    return "Operations";
+  }
+  return "Pricing";
+};
+
+const fetchRetailerData = async (retailerName: string): Promise<RetailerProfile> => {
+  const profile = createEmptyRetailerProfile(retailerName);
+  const endpoint = process.env.NEXT_PUBLIC_RETAILER_DATA_ENDPOINT;
+  if (!endpoint) return profile;
+
+  try {
+    const response = await fetch(
+      `${endpoint}?retailerName=${encodeURIComponent(retailerName)}`
+    );
+    if (!response.ok) return profile;
+    const externalProfile = (await response.json()) as Partial<RetailerProfile>;
+
+    return {
+      ...profile,
+      ...externalProfile,
+      retailerName: externalProfile.retailerName || retailerName,
+      financials: externalProfile.financials || profile.financials,
+      profitability: externalProfile.profitability || profile.profitability,
+      marketPosition: externalProfile.marketPosition || profile.marketPosition,
+      insights: externalProfile.insights || profile.insights,
+      headlines: externalProfile.headlines || profile.headlines,
+      sources: externalProfile.sources || profile.sources,
+    };
+  } catch {
+    return profile;
+  }
+};
 
 const getEprMaturityLabel = (score: number) => {
   if (score >= 4.25) return "Advanced";
@@ -640,6 +889,11 @@ export default function Home() {
     useState<OverviewTab>("prompts");
   const [retailerInput, setRetailerInput] = useState("");
   const [selectedRetailer, setSelectedRetailer] = useState("Retailer");
+  const [retailerProfile, setRetailerProfile] = useState<RetailerProfile>(() =>
+    createEmptyRetailerProfile("Retailer")
+  );
+  const [supplementalPdfStatus, setSupplementalPdfStatus] =
+    useState<SupplementalPdfStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [eprScores, setEprScores] = useState<EprScores>(initialEprScores);
   const [additionalClientContext, setAdditionalClientContext] = useState("");
@@ -749,6 +1003,47 @@ export default function Home() {
 
   const clearFiles = () => {
     setUploadedClientData([]);
+  };
+
+  const confirmRetailerInput = async (nameInput: string) => {
+    const retailerName = nameInput.trim();
+    if (!retailerName) return;
+
+    setSelectedRetailer(retailerName);
+    setIsLoading(true);
+    const externalProfile = await fetchRetailerData(retailerName);
+    setRetailerProfile(externalProfile);
+    setSupplementalPdfStatus(null);
+    setIsLoading(false);
+  };
+
+  const handleSupplementalPdfUpload = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+
+    const retailerName = retailerProfile.retailerName || selectedRetailer;
+    try {
+      const uploadedProfile = await parseRetailerFactPackPdf(file, retailerName);
+      const hasUploadedData =
+        uploadedProfile.financials.some(hasFinancialValues) ||
+        uploadedProfile.profitability.some(hasMetricValue) ||
+        uploadedProfile.marketPosition.some(hasPeerMetricValue) ||
+        uploadedProfile.headlines.length > 0 ||
+        uploadedProfile.insights.length > 0;
+
+      setRetailerProfile((currentProfile) =>
+        mergeRetailerProfiles(currentProfile, uploadedProfile)
+      );
+      setSupplementalPdfStatus({
+        fileName: file.name,
+        status: hasUploadedData ? "Parsed" : "No fields found",
+      });
+    } catch {
+      setSupplementalPdfStatus({
+        fileName: file.name,
+        status: "Unable to parse",
+      });
+    }
   };
 
 const mockInputs = {
@@ -917,8 +1212,7 @@ const opportunity = estimateOpportunity(mockInputs);
                       <PromptsSection
                         retailerInput={retailerInput}
                         setRetailerInput={setRetailerInput}
-                        setIsLoading={setIsLoading}
-                        setSelectedRetailer={setSelectedRetailer}
+                        confirmRetailerInput={confirmRetailerInput}
                         eprScores={eprScores}
                         setEprScores={setEprScores}
                         clientContext={clientContext}
@@ -952,8 +1246,10 @@ const opportunity = estimateOpportunity(mockInputs);
 
                     {activeOverviewTab === "retailerOverview" && (
                       <RetailerOverviewSection
-                        selectedRetailer={selectedRetailer}
+                        retailerProfile={retailerProfile}
                         competitors={retailerCompetitors}
+                        handleSupplementalPdfUpload={handleSupplementalPdfUpload}
+                        supplementalPdfStatus={supplementalPdfStatus}
                       />
                     )}
 
@@ -1267,8 +1563,7 @@ const opportunity = estimateOpportunity(mockInputs);
 function PromptsSection({
   retailerInput,
   setRetailerInput,
-  setIsLoading,
-  setSelectedRetailer,
+  confirmRetailerInput,
   eprScores,
   setEprScores,
   clientContext,
@@ -1282,8 +1577,7 @@ function PromptsSection({
 }: {
   retailerInput: string;
   setRetailerInput: (value: string) => void;
-  setIsLoading: (value: boolean) => void;
-  setSelectedRetailer: (value: string) => void;
+  confirmRetailerInput: (value: string) => void;
   eprScores: EprScores;
   setEprScores: (value: EprScores) => void;
   clientContext: ClientContext;
@@ -1296,6 +1590,7 @@ function PromptsSection({
   clearFiles: () => void;
 }) {
   const hasRequiredClientUpload = uploadedClientData.length > 0;
+  const canPopulateRetailer = retailerInput.trim().length > 0;
 
   return (
     <div className="space-y-4">
@@ -1312,35 +1607,33 @@ function PromptsSection({
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setRetailerInput(e.target.value)
                 }
+                onBlur={() => confirmRetailerInput(retailerInput)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    confirmRetailerInput(retailerInput);
+                  }
+                }}
                 placeholder="Enter retailer name"
                 className="w-80 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
               />
 
               <button
                 type="button"
-                disabled={!hasRequiredClientUpload}
-                onClick={() => {
-                  if (!hasRequiredClientUpload) return;
-
-                  const name = retailerInput.trim() || "Retailer";
-                  setIsLoading(true);
-                  setSelectedRetailer(name);
-
-                  setTimeout(() => {
-                    setIsLoading(false);
-                  }, 2000);
-                }}
+                disabled={!canPopulateRetailer}
+                onClick={() => confirmRetailerInput(retailerInput)}
                 className={`rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition ${
-                  hasRequiredClientUpload
+                  canPopulateRetailer
                     ? "bg-[var(--ui-blue)] text-white hover:opacity-90"
                     : "cursor-not-allowed bg-gray-200 text-gray-500"
                 }`}
               >
-                {hasRequiredClientUpload
-                  ? "Run Diagnostic"
-                  : "Upload client data to run"}
+                Populate retailer data
               </button>
             </div>
+            <p className="text-xs leading-5 text-gray-500">
+              Confirming the retailer name fetches external data for Retailer Overview. Client uploads are optional for this trigger.
+            </p>
           </div>
         </div>
       </section>
@@ -2152,17 +2445,69 @@ function ScopeOfDiagnosticSection({
 }
 
 function RetailerOverviewSection({
-  selectedRetailer,
+  retailerProfile,
   competitors,
+  handleSupplementalPdfUpload,
+  supplementalPdfStatus,
 }: {
-  selectedRetailer: string;
+  retailerProfile: RetailerProfile;
   competitors: RetailerCompetitor[];
+  handleSupplementalPdfUpload: (files: FileList | null) => void;
+  supplementalPdfStatus: SupplementalPdfStatus | null;
 }) {
-  const retailerName = selectedRetailer.trim() || "Retailer";
-  const news = getMockRetailerNews(retailerName);
+  const retailerName = retailerProfile.retailerName.trim() || "Retailer";
 
   return (
     <div className="space-y-4">
+      <section className={`${sectionCard} space-y-4`}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Supplemental Data Upload
+            </p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+              Add retailer fact pack context
+            </h2>
+            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-gray-600">
+              Upload retailer fact pack (e.g., McKinsey Value Intelligence PDF) to supplement external data
+            </p>
+          </div>
+
+          {supplementalPdfStatus && (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+              <p className="font-semibold text-[var(--ui-text)]">
+                {supplementalPdfStatus.status}
+              </p>
+              <p>{supplementalPdfStatus.fileName}</p>
+            </div>
+          )}
+        </div>
+
+        <label
+          className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-6 text-center transition hover:border-[var(--ui-blue)] hover:bg-white"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleSupplementalPdfUpload(e.dataTransfer.files);
+          }}
+        >
+          <input
+            type="file"
+            accept=".pdf,application/pdf"
+            className="hidden"
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              handleSupplementalPdfUpload(e.target.files)
+            }
+          />
+          <p className="font-medium text-[var(--ui-text)]">
+            Drop PDF here or browse
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Optional. Extracted fields override external values only when present.
+          </p>
+        </label>
+      </section>
+
       <section className={`${sectionCard} space-y-4`}>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
@@ -2172,12 +2517,12 @@ function RetailerOverviewSection({
             {retailerName} financial trajectory
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-            Mock 10-K style data showing revenue, EBITDA, and margin trends over time.
+            Best available sourced data. Missing external or uploaded values remain not available.
           </p>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
-          {mockFinancialPerformance.map((series) => (
+          {retailerProfile.financials.map((series) => (
             <div key={series.label}>{renderMiniLineChart(series)}</div>
           ))}
         </div>
@@ -2194,20 +2539,27 @@ function RetailerOverviewSection({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {mockProfitabilityMetrics.map((metric) => (
+          {retailerProfile.profitability.map((metric) => (
             <div key={metric.label} className={subCard}>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-                {metric.label}
-              </p>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                  {metric.label}
+                </p>
+                {renderSourceBadge(metric.source)}
+              </div>
               <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
-                {metric.value}
+                {metric.value || "Not available"}
               </p>
-              <p className="mt-1 text-xs font-medium text-gray-600">
-                {metric.benchmark}
-              </p>
-              <p className="mt-2 text-xs leading-5 text-gray-500">
-                {metric.note}
-              </p>
+              {metric.benchmark && (
+                <p className="mt-1 text-xs font-medium text-gray-600">
+                  {metric.benchmark}
+                </p>
+              )}
+              {metric.note && (
+                <p className="mt-2 text-xs leading-5 text-gray-500">
+                  {metric.note}
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -2231,7 +2583,7 @@ function RetailerOverviewSection({
         </div>
 
         <div className="space-y-3">
-          {mockPeerComparisons.map((metric) => (
+          {retailerProfile.marketPosition.map((metric) => (
             <div key={metric.label}>{renderPeerComparisonBar(metric)}</div>
           ))}
         </div>
@@ -2248,18 +2600,13 @@ function RetailerOverviewSection({
         </div>
 
         <div className="space-y-2 text-sm leading-6 text-gray-600">
-          <p>
-            • Revenue growth has slowed to roughly +1.3%, lagging the peer median of +3.1% and suggesting potential pricing, traffic, or assortment challenges.
-          </p>
-          <p>
-            • EBITDA margin has declined from 11.4% to 9.1%, indicating sustained cost pressure, promotional intensity, or mix dilution.
-          </p>
-          <p>
-            • ROIC trails peers by 180 bps while working capital intensity is higher, pointing to efficiency upside beyond headline price changes.
-          </p>
-          <p>
-            • TSR is below the peer median, reinforcing the need for margin recovery and clearer growth drivers.
-          </p>
+          {retailerProfile.insights.length > 0 ? (
+            retailerProfile.insights.map((insight) => (
+              <p key={insight}>• {insight}</p>
+            ))
+          ) : (
+            <p>Not available</p>
+          )}
         </div>
       </section>
 
@@ -2272,31 +2619,73 @@ function RetailerOverviewSection({
             Recent signals to monitor
           </h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-            {news.summary}
+            Recent sourced headlines tagged for pricing, promotions, cost, strategy, or operations.
           </p>
         </div>
 
         <ul className="space-y-2">
-          {news.headlines.map((headline) => (
-            <li
-              key={`${headline.category}-${headline.title}`}
-              className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 sm:flex-row sm:items-center"
-            >
-              <span
-                className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-semibold ${newsCategoryStyles[headline.category]}`}
+          {retailerProfile.headlines.length > 0 ? (
+            retailerProfile.headlines.map((headline) => (
+              <li
+                key={`${headline.category}-${headline.title}`}
+                className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 sm:flex-row sm:items-center"
               >
-                {headline.category}
-              </span>
-              <span className="leading-5">• {headline.title}</span>
+                <span
+                  className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-semibold ${newsCategoryStyles[headline.category]}`}
+                >
+                  {headline.category}
+                </span>
+                <span className="leading-5">• {headline.title}</span>
+                {renderSourceBadge(headline.source)}
+              </li>
+            ))
+          ) : (
+            <li className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+              Not available
             </li>
-          ))}
+          )}
         </ul>
       </section>
     </div>
   );
 }
 
-function renderMiniLineChart(series: FinancialSeries) {
+function renderSourceBadge(source: RetailerProfileSource | null) {
+  if (!source) {
+    return (
+      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+        Not available
+      </span>
+    );
+  }
+
+  return (
+    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ui-blue)]">
+      {source === "uploaded_pdf" ? "Uploaded PDF" : "External"}
+    </span>
+  );
+}
+
+function renderMiniLineChart(series: SourcedFinancialSeries) {
+  if (series.values.length === 0) {
+    return (
+      <div className={subCard}>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+            {series.label}
+          </p>
+          {renderSourceBadge(series.source)}
+        </div>
+        <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+          Not available
+        </p>
+        <p className="mt-3 text-xs leading-5 text-gray-500">
+          No sourced value found from external data or uploaded PDF.
+        </p>
+      </div>
+    );
+  }
+
   const values = series.values.map((point) => point.value);
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
@@ -2334,15 +2723,18 @@ function renderMiniLineChart(series: FinancialSeries) {
             {displayValue}
           </p>
         </div>
-        <p
-          className={`rounded-full px-2 py-1 text-xs font-semibold ${
-            change >= 0
-              ? "bg-blue-50 text-[var(--ui-blue)]"
-              : "bg-amber-50 text-amber-700"
-          }`}
-        >
-          {displayChange}
-        </p>
+        <div className="space-y-1 text-right">
+          {renderSourceBadge(series.source)}
+          <p
+            className={`rounded-full px-2 py-1 text-xs font-semibold ${
+              change >= 0
+                ? "bg-blue-50 text-[var(--ui-blue)]"
+                : "bg-amber-50 text-amber-700"
+            }`}
+          >
+            {displayChange}
+          </p>
+        </div>
       </div>
 
       <svg
@@ -2389,10 +2781,16 @@ function renderMiniLineChart(series: FinancialSeries) {
   );
 }
 
-function renderPeerComparisonBar(metric: PeerComparisonMetric) {
-  const maxValue = Math.max(metric.company, metric.peerMedian, 1);
-  const companyWidth = `${Math.max((metric.company / maxValue) * 100, 4)}%`;
-  const peerWidth = `${Math.max((metric.peerMedian / maxValue) * 100, 4)}%`;
+function renderPeerComparisonBar(metric: SourcedPeerComparisonMetric) {
+  const hasCompanyValue = metric.company !== null;
+  const hasPeerValue = metric.peerMedian !== null;
+  const maxValue = Math.max(metric.company || 0, metric.peerMedian || 0, 1);
+  const companyWidth = hasCompanyValue
+    ? `${Math.max(((metric.company || 0) / maxValue) * 100, 4)}%`
+    : "0%";
+  const peerWidth = hasPeerValue
+    ? `${Math.max(((metric.peerMedian || 0) / maxValue) * 100, 4)}%`
+    : "0%";
   const formatValue = (value: number) =>
     metric.unit === "percent" ? `${value.toFixed(1)}%` : value.toFixed(1);
 
@@ -2402,9 +2800,7 @@ function renderPeerComparisonBar(metric: PeerComparisonMetric) {
         <p className="text-sm font-semibold text-[var(--ui-navy)]">
           {metric.label}
         </p>
-        <p className="text-xs font-medium text-gray-500">
-          Company vs peer median
-        </p>
+        {renderSourceBadge(metric.source)}
       </div>
 
       <div className="mt-3 space-y-2">
@@ -2419,7 +2815,7 @@ function renderPeerComparisonBar(metric: PeerComparisonMetric) {
             />
           </div>
           <span className="text-right font-semibold text-[var(--ui-text)]">
-            {formatValue(metric.company)}
+            {hasCompanyValue ? formatValue(metric.company || 0) : "N/A"}
           </span>
         </div>
 
@@ -2432,7 +2828,7 @@ function renderPeerComparisonBar(metric: PeerComparisonMetric) {
             />
           </div>
           <span className="text-right font-semibold text-[var(--ui-text)]">
-            {formatValue(metric.peerMedian)}
+            {hasPeerValue ? formatValue(metric.peerMedian || 0) : "N/A"}
           </span>
         </div>
       </div>
