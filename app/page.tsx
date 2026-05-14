@@ -76,6 +76,13 @@ type ActionCard = {
 };
 type CategoryScopeStatus = "included" | "excluded";
 type CategoryScopeSelections = Partial<Record<string, CategoryScopeStatus>>;
+type ScopeCategory = {
+  id: string;
+  name: string;
+  source: "AI suggested" | "Manual override";
+  reason: string;
+  defaultStatus: CategoryScopeStatus;
+};
 type ScopeLever = {
   id: string;
   label: string;
@@ -89,6 +96,7 @@ type RetailerScopeInputs = {
   storeCount: string;
   retailerFormat: string;
   addressableRevenuePct: string;
+  categories: ScopeCategory[];
   categorySelections: CategoryScopeSelections;
   selectedLeverIds: string[];
 };
@@ -147,14 +155,37 @@ const metricCard =
 
 const defaultRetailerRevenue = 10000000000;
 const defaultAddressableRevenuePct = 60;
-const scopeCategories = [
-  "Grocery",
-  "Household",
-  "Health & Beauty",
-  "Apparel",
-  "Electronics",
-  "Seasonal",
+const createScopeCategory = (
+  name: string,
+  reason: string,
+  defaultStatus: CategoryScopeStatus = "included",
+  source: ScopeCategory["source"] = "AI suggested"
+): ScopeCategory => ({
+  id: `${source === "Manual override" ? "manual" : "ai"}-${name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")}`,
+  name,
+  source,
+  reason,
+  defaultStatus,
+});
+const fallbackScopeCategories: ScopeCategory[] = [
+  createScopeCategory("Grocery", "Baseline retail category placeholder."),
+  createScopeCategory("Household", "Baseline retail category placeholder."),
+  createScopeCategory("Health & Beauty", "Baseline retail category placeholder."),
+  createScopeCategory("Apparel", "Baseline retail category placeholder."),
+  createScopeCategory("Electronics", "Baseline retail category placeholder.", "excluded"),
+  createScopeCategory("Seasonal", "Baseline retail category placeholder."),
 ];
+const normalizeCategorySelections = (
+  categories: ScopeCategory[],
+  previousSelections: CategoryScopeSelections = {}
+): CategoryScopeSelections =>
+  categories.reduce<CategoryScopeSelections>((selections, category) => {
+    selections[category.name] =
+      previousSelections[category.name] ?? category.defaultStatus;
+    return selections;
+  }, {});
 const scopeLeverGroups: ScopeLeverGroup[] = [
   {
     group: "Pricing",
@@ -184,12 +215,8 @@ const initialRetailerScopeInputs: RetailerScopeInputs = {
   storeCount: "",
   retailerFormat: "",
   addressableRevenuePct: String(defaultAddressableRevenuePct),
-  categorySelections: {
-    Grocery: "included",
-    Household: "included",
-    "Health & Beauty": "included",
-    Electronics: "excluded",
-  },
+  categories: fallbackScopeCategories,
+  categorySelections: normalizeCategorySelections(fallbackScopeCategories),
   selectedLeverIds: scopeLeverGroups.flatMap((group) =>
     group.levers.map((lever) => lever.id)
   ),
@@ -289,6 +316,79 @@ const initialStructuredContext: ClientStructuredContext = {
   retailerFormat: "",
   scopeSignal: "",
 };
+const categoryTemplates: Record<string, ScopeCategory[]> = {
+  grocery: [
+    createScopeCategory("Fresh grocery", "Core traffic-driving grocery category."),
+    createScopeCategory("Center store", "Shelf-stable grocery categories with price perception impact."),
+    createScopeCategory("Household essentials", "Comparable basket-building category for everyday value."),
+    createScopeCategory("Health & beauty", "Margin-rich adjacent category with promo sensitivity."),
+    createScopeCategory("General merchandise", "Adjacent cross-shop category.", "excluded"),
+    createScopeCategory("Seasonal", "Event-driven category that may need separate treatment."),
+  ],
+  mass: [
+    createScopeCategory("Grocery", "High-frequency category that anchors price perception."),
+    createScopeCategory("Household essentials", "Everyday basket category with broad competitive overlap."),
+    createScopeCategory("Health & beauty", "Core mass retail category with national-brand benchmarks."),
+    createScopeCategory("Apparel", "Discretionary category with different pricing cadence."),
+    createScopeCategory("Electronics", "High-comparison category that may require separate rules.", "excluded"),
+    createScopeCategory("Seasonal", "Event-led assortment with promo and markdown relevance."),
+  ],
+  specialty: [
+    createScopeCategory("Core category", "Primary specialty category for the diagnostic."),
+    createScopeCategory("Accessories", "Attach-rate category with margin opportunity."),
+    createScopeCategory("Premium assortment", "Higher-ticket products with price architecture relevance."),
+    createScopeCategory("Entry price points", "Opening-price products that shape value perception."),
+    createScopeCategory("Clearance / outlet", "Markdown-heavy category that may need distinct treatment.", "excluded"),
+  ],
+  club: [
+    createScopeCategory("Bulk grocery", "High-volume club category with pack-size pricing logic."),
+    createScopeCategory("Household essentials", "Large-pack category with strong value perception."),
+    createScopeCategory("Fresh", "Traffic-driving category with quality and price signals."),
+    createScopeCategory("General merchandise", "Cross-category club assortment with margin range."),
+    createScopeCategory("Seasonal / treasure hunt", "Event and opportunistic buys that may be scoped separately."),
+  ],
+  other: fallbackScopeCategories,
+};
+
+const generateCategorySuggestions = ({
+  retailerName,
+  structuredContext,
+  scopeInputs,
+  uploadedClientData,
+  additionalClientContext,
+}: {
+  retailerName: string;
+  structuredContext: ClientStructuredContext;
+  scopeInputs: RetailerScopeInputs;
+  uploadedClientData: UploadedClientDataMetadata[];
+  additionalClientContext: string;
+}) => {
+  const formatSignal =
+    scopeInputs.retailerFormat || structuredContext.retailerFormat || "Other";
+  const templateKey = inferCompetitorTemplateKey(
+    formatSignal,
+    `${retailerName} ${additionalClientContext}`
+  );
+  const pricingModel = structuredContext.pricingModel || "current pricing model";
+  const scopeSignal = structuredContext.scopeSignal || "diagnostic scope";
+  const contextSignal =
+    uploadedClientData.length > 0
+      ? "uploaded client context"
+      : additionalClientContext.trim()
+        ? "client context notes"
+        : "format-based placeholders";
+
+  return (categoryTemplates[templateKey] || categoryTemplates.other).map(
+    (category) => ({
+      ...category,
+      id: `${category.id}-${pricingModel}-${scopeSignal}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-"),
+      reason: `Suggested from ${formatSignal} format, ${pricingModel} pricing, ${scopeSignal.toLowerCase()} scope, and ${contextSignal}.`,
+    })
+  );
+};
+
 const createCompetitor = (
   name: string,
   format: string,
@@ -552,6 +652,8 @@ export default function Home() {
   >([]);
   const [retailerScopeInputs, setRetailerScopeInputs] =
     useState<RetailerScopeInputs>(initialRetailerScopeInputs);
+  const [categoryListManuallyEdited, setCategoryListManuallyEdited] =
+    useState(false);
   const [retailerCompetitors, setRetailerCompetitors] = useState<
     RetailerCompetitor[]
   >(() =>
@@ -577,6 +679,38 @@ export default function Home() {
     structuredContext: structuredClientContext,
     uploadedClientData,
   };
+
+  useEffect(() => {
+    if (categoryListManuallyEdited) return;
+
+    setRetailerScopeInputs((currentScopeInputs: RetailerScopeInputs) => {
+      const generatedCategories = generateCategorySuggestions({
+        retailerName: selectedRetailer,
+        structuredContext: structuredClientContext,
+        scopeInputs: currentScopeInputs,
+        uploadedClientData,
+        additionalClientContext,
+      });
+
+      return {
+        ...currentScopeInputs,
+        categories: generatedCategories,
+        categorySelections: normalizeCategorySelections(
+          generatedCategories,
+          currentScopeInputs.categorySelections
+        ),
+      };
+    });
+  }, [
+    additionalClientContext,
+    categoryListManuallyEdited,
+    retailerScopeInputs.retailerFormat,
+    selectedRetailer,
+    structuredClientContext.pricingModel,
+    structuredClientContext.retailerFormat,
+    structuredClientContext.scopeSignal,
+    uploadedClientData,
+  ]);
 
   useEffect(() => {
     if (competitorsManuallyEdited) return;
@@ -734,100 +868,109 @@ const opportunity = estimateOpportunity(mockInputs);
               ))}
             </div>
 
-      {activeTab === "overview" && (
-  isLoading ? (
-    <section className="brand-card space-y-6 rounded-2xl border border-gray-200 bg-white p-10 shadow-sm">
-      <h2 className="text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
-        Analyzing {selectedRetailer}...
-      </h2>
+            {activeTab === "overview" && (
+              <>
+                {isLoading ? (
+                  <section className="brand-card space-y-6 rounded-2xl border border-gray-200 bg-white p-10 shadow-sm">
+                    <h2 className="text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+                      Analyzing {selectedRetailer}...
+                    </h2>
 
-      <div className="space-y-3 text-sm text-gray-600">
-        <p>✓ Scraping pricing data</p>
-        <p>✓ Building price ladder</p>
-        <p>✓ Analyzing promo intensity</p>
-        <p>✓ Evaluating markdown patterns</p>
-        <p className="font-semibold text-[var(--ui-blue)]">→ Synthesizing results</p>
-      </div>
-    </section>
-  ) : (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-gray-200 bg-white px-4 pt-3 shadow-sm">
-        <div className="flex flex-wrap gap-5 border-b border-gray-200">
-        {[
-          ["prompts", "Client Context"],
-          ["retailer", "Scope of Diagnostic"],
-          ["retailerOverview", "Retailer Overview"],
-          ["opportunity", "Opportunity Size"],
-        ].map(([tabId, label]) => (
-          <button
-            key={tabId}
-            type="button"
-            onClick={() => setActiveOverviewTab(tabId as OverviewTab)}
-            className={`border-b-2 px-1 pb-3 text-sm font-semibold transition ${
-              activeOverviewTab === tabId
-                ? "border-[var(--ui-blue)] text-[var(--ui-navy)]"
-                : "border-transparent text-gray-500 hover:text-[var(--ui-navy)]"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        </div>
-      </div>
+                    <div className="space-y-3 text-sm text-gray-600">
+                      <p>✓ Scraping pricing data</p>
+                      <p>✓ Building price ladder</p>
+                      <p>✓ Analyzing promo intensity</p>
+                      <p>✓ Evaluating markdown patterns</p>
+                      <p className="font-semibold text-[var(--ui-blue)]">
+                        → Synthesizing results
+                      </p>
+                    </div>
+                  </section>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-gray-200 bg-white px-4 pt-3 shadow-sm">
+                      <div className="flex flex-wrap gap-5 border-b border-gray-200">
+                        {[
+                          ["prompts", "Client Context"],
+                          ["retailer", "Scope of Diagnostic"],
+                          ["retailerOverview", "Retailer Overview"],
+                          ["opportunity", "Opportunity Size"],
+                        ].map(([tabId, label]) => (
+                          <button
+                            key={tabId}
+                            type="button"
+                            onClick={() =>
+                              setActiveOverviewTab(tabId as OverviewTab)
+                            }
+                            className={`border-b-2 px-1 pb-3 text-sm font-semibold transition ${
+                              activeOverviewTab === tabId
+                                ? "border-[var(--ui-blue)] text-[var(--ui-navy)]"
+                                : "border-transparent text-gray-500 hover:text-[var(--ui-navy)]"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-      {activeOverviewTab === "prompts" && (
-        <PromptsSection
-          retailerInput={retailerInput}
-          setRetailerInput={setRetailerInput}
-          setIsLoading={setIsLoading}
-          setSelectedRetailer={setSelectedRetailer}
-          eprScores={eprScores}
-          setEprScores={setEprScores}
-          clientContext={clientContext}
-          additionalClientContext={additionalClientContext}
-          setAdditionalClientContext={setAdditionalClientContext}
-          structuredClientContext={structuredClientContext}
-          setStructuredClientContext={setStructuredClientContext}
-          uploadedClientData={uploadedClientData}
-          handleFileUpload={handleFileUpload}
-          clearFiles={clearFiles}
-        />
-      )}
+                    {activeOverviewTab === "prompts" && (
+                      <PromptsSection
+                        retailerInput={retailerInput}
+                        setRetailerInput={setRetailerInput}
+                        setIsLoading={setIsLoading}
+                        setSelectedRetailer={setSelectedRetailer}
+                        eprScores={eprScores}
+                        setEprScores={setEprScores}
+                        clientContext={clientContext}
+                        additionalClientContext={additionalClientContext}
+                        setAdditionalClientContext={setAdditionalClientContext}
+                        structuredClientContext={structuredClientContext}
+                        setStructuredClientContext={setStructuredClientContext}
+                        uploadedClientData={uploadedClientData}
+                        handleFileUpload={handleFileUpload}
+                        clearFiles={clearFiles}
+                      />
+                    )}
 
-      {activeOverviewTab === "retailer" && (
-        <ScopeOfDiagnosticSection
-          selectedRetailer={selectedRetailer}
-          clientContext={clientContext}
-          scopeInputs={retailerScopeInputs}
-          setScopeInputs={setRetailerScopeInputs}
-          competitors={retailerCompetitors}
-          setCompetitors={setRetailerCompetitors}
-          competitorsManuallyEdited={competitorsManuallyEdited}
-          setCompetitorsManuallyEdited={setCompetitorsManuallyEdited}
-        />
-      )}
+                    {activeOverviewTab === "retailer" && (
+                      <ScopeOfDiagnosticSection
+                        selectedRetailer={selectedRetailer}
+                        clientContext={clientContext}
+                        scopeInputs={retailerScopeInputs}
+                        setScopeInputs={setRetailerScopeInputs}
+                        setCategoryListManuallyEdited={
+                          setCategoryListManuallyEdited
+                        }
+                        competitors={retailerCompetitors}
+                        setCompetitors={setRetailerCompetitors}
+                        competitorsManuallyEdited={competitorsManuallyEdited}
+                        setCompetitorsManuallyEdited={
+                          setCompetitorsManuallyEdited
+                        }
+                      />
+                    )}
 
-      {activeOverviewTab === "retailerOverview" && (
-        <RetailerOverviewSection
-          selectedRetailer={selectedRetailer}
-          competitors={retailerCompetitors}
-        />
-      )}
+                    {activeOverviewTab === "retailerOverview" && (
+                      <RetailerOverviewSection
+                        selectedRetailer={selectedRetailer}
+                        competitors={retailerCompetitors}
+                      />
+                    )}
 
-      {activeOverviewTab === "opportunity" && (
-        <OpportunitySection
-          opportunity={opportunity}
-          analysisMode={analysisMode}
-          scopeInputs={retailerScopeInputs}
-          clientContext={clientContext}
-          competitors={retailerCompetitors}
-        />
-      )}
-    </div>
-
-  )
-
-)}
+                    {activeOverviewTab === "opportunity" && (
+                      <OpportunitySection
+                        opportunity={opportunity}
+                        analysisMode={analysisMode}
+                        scopeInputs={retailerScopeInputs}
+                        clientContext={clientContext}
+                        competitors={retailerCompetitors}
+                      />
+                    )}
+                  </div>
+                )}
+              </>
+            )}
 
       {activeTab === "pricing" && (
         <div className="space-y-5">
@@ -1413,6 +1556,7 @@ function ScopeOfDiagnosticSection({
   clientContext,
   scopeInputs,
   setScopeInputs,
+  setCategoryListManuallyEdited,
   competitors,
   setCompetitors,
   competitorsManuallyEdited,
@@ -1422,16 +1566,19 @@ function ScopeOfDiagnosticSection({
   clientContext: ClientContext;
   scopeInputs: RetailerScopeInputs;
   setScopeInputs: (value: RetailerScopeInputs) => void;
+  setCategoryListManuallyEdited: (value: boolean) => void;
   competitors: RetailerCompetitor[];
   setCompetitors: (value: RetailerCompetitor[]) => void;
   competitorsManuallyEdited: boolean;
   setCompetitorsManuallyEdited: (value: boolean) => void;
 }) {
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [newCompetitorName, setNewCompetitorName] = useState("");
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const {
     annualRevenue,
     addressableRevenuePct,
+    categories,
     categorySelections,
     selectedLeverIds,
   } = scopeInputs;
@@ -1446,12 +1593,12 @@ function ScopeOfDiagnosticSection({
     defaultAddressableRevenuePct
   );
   const addressableRevenue = totalRevenue * (scopedRevenuePct / 100);
-  const includedCategories = scopeCategories.filter(
-    (category) => categorySelections[category] === "included"
-  );
-  const excludedCategories = scopeCategories.filter(
-    (category) => categorySelections[category] === "excluded"
-  );
+  const includedCategories = categories
+    .filter((category) => categorySelections[category.name] === "included")
+    .map((category) => category.name);
+  const excludedCategories = categories
+    .filter((category) => categorySelections[category.name] === "excluded")
+    .map((category) => category.name);
   const selectedLeverLabels = scopeLeverGroups
     .flatMap((group) => group.levers)
     .filter((lever) => selectedLeverIds.includes(lever.id))
@@ -1467,6 +1614,47 @@ function ScopeOfDiagnosticSection({
         [category]: categorySelections[category] === status ? undefined : status,
       },
     });
+  };
+
+  const addCategory = () => {
+    const trimmedName = newCategoryName.trim();
+    if (!trimmedName) return;
+
+    const categoryAlreadyExists = categories.some(
+      (category) => category.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (categoryAlreadyExists) {
+      setNewCategoryName("");
+      return;
+    }
+
+    updateScopeInputs({
+      categories: [
+        ...categories,
+        createScopeCategory(
+          trimmedName,
+          "Added manually by the user for this diagnostic.",
+          "included",
+          "Manual override"
+        ),
+      ],
+      categorySelections: {
+        ...categorySelections,
+        [trimmedName]: "included",
+      },
+    });
+    setCategoryListManuallyEdited(true);
+    setNewCategoryName("");
+  };
+
+  const removeCategory = (categoryName: string) => {
+    updateScopeInputs({
+      categories: categories.filter((category) => category.name !== categoryName),
+      categorySelections: Object.fromEntries(
+        Object.entries(categorySelections).filter(([name]) => name !== categoryName)
+      ) as CategoryScopeSelections,
+    });
+    setCategoryListManuallyEdited(true);
   };
 
   const toggleLever = (leverId: string) => {
@@ -1634,31 +1822,57 @@ function ScopeOfDiagnosticSection({
           </div>
 
           <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-            <p className="text-sm font-semibold text-[var(--ui-navy)]">
-              Category selection / exclusion
-            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-[var(--ui-navy)]">
+                  Category selection / exclusion
+                </p>
+                <p className="mt-1 text-xs leading-5 text-gray-500">
+                  Mark categories as included or excluded to shape the scope summary.
+                </p>
+              </div>
+              <span className="w-fit rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-[var(--ui-blue)]">
+                Suggested by AI
+              </span>
+            </div>
             <p className="mt-1 text-xs leading-5 text-gray-500">
-              Mark categories as included or excluded to shape the scope summary.
+              Starting list uses retailer format, pricing model, scope signal, and available client context. Add or remove categories as needed.
             </p>
 
             <div className="mt-4 space-y-2">
-              {scopeCategories.map((category) => (
+              {categories.map((category) => (
                 <div
-                  key={category}
-                  className="grid gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 sm:grid-cols-[1fr_auto] sm:items-center"
+                  key={category.id}
+                  className="grid gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 sm:grid-cols-[1fr_auto_auto] sm:items-center"
                 >
-                  <p className="text-sm font-semibold text-[var(--ui-text)]">
-                    {category}
-                  </p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-[var(--ui-text)]">
+                        {category.name}
+                      </p>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                          category.source === "AI suggested"
+                            ? "border-blue-100 bg-blue-50 text-[var(--ui-blue)]"
+                            : "border-gray-200 bg-white text-gray-600"
+                        }`}
+                      >
+                        {category.source}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-4 text-gray-500">
+                      {category.reason}
+                    </p>
+                  </div>
                   <div className="flex gap-1.5">
                     {(["included", "excluded"] as CategoryScopeStatus[]).map(
                       (status) => (
                         <button
                           key={status}
                           type="button"
-                          onClick={() => setCategoryScope(category, status)}
+                          onClick={() => setCategoryScope(category.name, status)}
                           className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold capitalize transition ${
-                            categorySelections[category] === status
+                            categorySelections[category.name] === status
                               ? status === "included"
                                 ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
                                 : "border-gray-500 bg-gray-100 text-gray-700"
@@ -1670,8 +1884,39 @@ function ScopeOfDiagnosticSection({
                       )
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => removeCategory(category.name)}
+                    className="w-fit rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-500 transition hover:border-red-300 hover:text-red-600"
+                  >
+                    Remove
+                  </button>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3 sm:flex-row">
+              <input
+                value={newCategoryName}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setNewCategoryName(e.target.value)
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCategory();
+                  }
+                }}
+                placeholder="Add a category"
+                className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+              />
+              <button
+                type="button"
+                onClick={addCategory}
+                className="rounded-lg bg-[var(--ui-blue)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              >
+                Add category
+              </button>
             </div>
 
             <div className="mt-4 grid gap-2 text-xs leading-5 text-gray-600 sm:grid-cols-2">
@@ -2338,9 +2583,9 @@ function OpportunitySection({
     defaultAddressableRevenuePct
   );
   const addressableRevenue = totalRevenue * (scopedRevenuePct / 100);
-  const includedCategories = scopeCategories.filter(
-    (category) => scopeInputs.categorySelections[category] === "included"
-  );
+  const includedCategories = scopeInputs.categories
+    .filter((category) => scopeInputs.categorySelections[category.name] === "included")
+    .map((category) => category.name);
   const selectedLeverLabels = scopeLeverGroups
     .flatMap((group) => group.levers)
     .filter((lever) => scopeInputs.selectedLeverIds.includes(lever.id))
