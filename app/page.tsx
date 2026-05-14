@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 import PricingLadderModule from "@/components/PricingLadderModule";
 import PriceZoneModule from "@/components/PriceZoneModule";
 import PromoCalendarModule from "@/components/PromoCalendarModule";
@@ -91,6 +91,16 @@ type RetailerScopeInputs = {
   addressableRevenuePct: string;
   categorySelections: CategoryScopeSelections;
   selectedLeverIds: string[];
+};
+type RetailerCompetitor = {
+  id: string;
+  name: string;
+  format: string;
+  scale: string;
+  relationship: string;
+  pricePosition: string;
+  reason: string;
+  source: "AI suggested" | "Manual override";
 };
 type HeadlineCategory =
   | "Pricing"
@@ -279,6 +289,125 @@ const initialStructuredContext: ClientStructuredContext = {
   retailerFormat: "",
   scopeSignal: "",
 };
+const createCompetitor = (
+  name: string,
+  format: string,
+  scale: string,
+  relationship: string,
+  pricePosition: string,
+  reason: string,
+  source: RetailerCompetitor["source"] = "AI suggested"
+): RetailerCompetitor => ({
+  id: `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${format
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")}`,
+  name,
+  format,
+  scale,
+  relationship,
+  pricePosition,
+  reason,
+  source,
+});
+
+const competitorTemplates: Record<string, RetailerCompetitor[]> = {
+  grocery: [
+    createCompetitor("Kroger", "Grocery", "National", "Direct competitor", "Mid-market", "Large grocery operator with comparable category and pricing dynamics."),
+    createCompetitor("Albertsons", "Grocery", "National", "Direct competitor", "Mid-market", "Traditional grocer with similar promo and assortment decisions."),
+    createCompetitor("Publix", "Grocery", "Regional", "Direct competitor", "Premium", "Regional grocer with strong fresh and service-led positioning."),
+    createCompetitor("Aldi", "Discount grocery", "National", "Adjacent competitor", "Value", "Hard discounter that pressures opening price points."),
+    createCompetitor("Walmart", "Mass / grocery", "National", "Adjacent competitor", "Value / EDLP", "Broad value retailer that anchors grocery price expectations."),
+  ],
+  mass: [
+    createCompetitor("Walmart", "Mass", "National", "Direct competitor", "Value / EDLP", "National mass retailer with strong price leadership signals."),
+    createCompetitor("Target", "Mass", "National", "Direct competitor", "Mid-market", "Mass merchant with comparable omnichannel and category breadth."),
+    createCompetitor("Amazon", "Marketplace", "National", "Adjacent competitor", "Dynamic / value", "Digital benchmark for price transparency and convenience."),
+    createCompetitor("Costco", "Club", "National", "Adjacent competitor", "Value", "Membership model that pressures basket-level value perception."),
+  ],
+  specialty: [
+    createCompetitor("Best Buy", "Specialty", "National", "Direct competitor", "Mid-market", "Specialty retailer with category-led price architecture."),
+    createCompetitor("Dick's Sporting Goods", "Specialty", "National", "Direct competitor", "Premium / mid-market", "Specialty peer with branded assortment and promo decisions."),
+    createCompetitor("Amazon", "Marketplace", "National", "Adjacent competitor", "Dynamic / value", "Online price benchmark across specialty categories."),
+    createCompetitor("Target", "Mass", "National", "Adjacent competitor", "Mid-market", "Mass merchant competing on select destination categories."),
+  ],
+  club: [
+    createCompetitor("Costco", "Club", "National", "Direct competitor", "Value", "Membership club with strong basket-level value positioning."),
+    createCompetitor("Sam's Club", "Club", "National", "Direct competitor", "Value", "Club peer with similar pack-size and member-price dynamics."),
+    createCompetitor("BJ's Wholesale Club", "Club", "Regional", "Direct competitor", "Value", "Regional club operator with comparable membership economics."),
+    createCompetitor("Walmart", "Mass", "National", "Adjacent competitor", "Value / EDLP", "Adjacent EDLP benchmark for trip consolidation."),
+  ],
+  other: [
+    createCompetitor("Walmart", "Mass", "National", "Adjacent competitor", "Value / EDLP", "Broad national benchmark for value perception."),
+    createCompetitor("Target", "Mass", "National", "Adjacent competitor", "Mid-market", "Scaled omnichannel retailer with broad category overlap."),
+    createCompetitor("Amazon", "Marketplace", "National", "Adjacent competitor", "Dynamic / value", "Digital price transparency and convenience benchmark."),
+    createCompetitor("Costco", "Club", "National", "Adjacent competitor", "Value", "Membership value benchmark for larger baskets."),
+  ],
+};
+
+const inferCompetitorTemplateKey = (
+  retailerFormat: string,
+  additionalContext: string
+) => {
+  const combinedContext = `${retailerFormat} ${additionalContext}`.toLowerCase();
+  if (combinedContext.includes("grocery") || combinedContext.includes("fresh")) {
+    return "grocery";
+  }
+  if (combinedContext.includes("mass") || combinedContext.includes("general")) {
+    return "mass";
+  }
+  if (combinedContext.includes("club") || combinedContext.includes("membership")) {
+    return "club";
+  }
+  if (combinedContext.includes("specialty")) {
+    return "specialty";
+  }
+  return "other";
+};
+
+const generateCompetitorSuggestions = ({
+  retailerName,
+  structuredContext,
+  scopeInputs,
+  uploadedClientData,
+  additionalClientContext,
+}: {
+  retailerName: string;
+  structuredContext: ClientStructuredContext;
+  scopeInputs: RetailerScopeInputs;
+  uploadedClientData: UploadedClientDataMetadata[];
+  additionalClientContext: string;
+}) => {
+  const formatSignal =
+    scopeInputs.retailerFormat || structuredContext.retailerFormat || "Other";
+  const templateKey = inferCompetitorTemplateKey(
+    formatSignal,
+    additionalClientContext
+  );
+  const pricingModel = structuredContext.pricingModel || "current pricing model";
+  const scopeSignal = structuredContext.scopeSignal || "diagnostic scope";
+  const contextSignal =
+    uploadedClientData.length > 0
+      ? "uploaded client context"
+      : additionalClientContext.trim()
+        ? "client context notes"
+        : "format-based placeholders";
+  const retailerNameNormalized = retailerName.trim().toLowerCase();
+
+  return (competitorTemplates[templateKey] || competitorTemplates.other)
+    .filter(
+      (competitor) =>
+        competitor.name.trim().toLowerCase() !== retailerNameNormalized
+    )
+    .slice(0, 6)
+    .map((competitor) => ({
+      ...competitor,
+      id: `${competitor.id}-${pricingModel}-${scopeSignal}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-"),
+      reason: `Selected from ${formatSignal} format, ${pricingModel} pricing, ${scopeSignal.toLowerCase()} scope, and ${contextSignal}.`,
+    }));
+};
+
 const newsCategoryStyles: Record<HeadlineCategory, string> = {
   Pricing: "border-blue-200 bg-blue-50 text-blue-700",
   Promotions: "border-purple-200 bg-purple-50 text-purple-700",
@@ -423,6 +552,19 @@ export default function Home() {
   >([]);
   const [retailerScopeInputs, setRetailerScopeInputs] =
     useState<RetailerScopeInputs>(initialRetailerScopeInputs);
+  const [retailerCompetitors, setRetailerCompetitors] = useState<
+    RetailerCompetitor[]
+  >(() =>
+    generateCompetitorSuggestions({
+      retailerName: "Retailer",
+      structuredContext: initialStructuredContext,
+      scopeInputs: initialRetailerScopeInputs,
+      uploadedClientData: [],
+      additionalClientContext: "",
+    })
+  );
+  const [competitorsManuallyEdited, setCompetitorsManuallyEdited] =
+    useState(false);
 
   const eprAverageScore =
     eprQuestions.reduce((total, question) => total + eprScores[question.id], 0) /
@@ -435,6 +577,29 @@ export default function Home() {
     structuredContext: structuredClientContext,
     uploadedClientData,
   };
+
+  useEffect(() => {
+    if (competitorsManuallyEdited) return;
+
+    setRetailerCompetitors(
+      generateCompetitorSuggestions({
+        retailerName: selectedRetailer,
+        structuredContext: structuredClientContext,
+        scopeInputs: retailerScopeInputs,
+        uploadedClientData,
+        additionalClientContext,
+      })
+    );
+  }, [
+    additionalClientContext,
+    competitorsManuallyEdited,
+    retailerScopeInputs.retailerFormat,
+    selectedRetailer,
+    structuredClientContext.pricingModel,
+    structuredClientContext.retailerFormat,
+    structuredClientContext.scopeSignal,
+    uploadedClientData,
+  ]);
 
   const handleFileUpload = (files: FileList | null) => {
     if (!files) return;
@@ -631,13 +796,22 @@ const opportunity = estimateOpportunity(mockInputs);
 
       {activeOverviewTab === "retailer" && (
         <ScopeOfDiagnosticSection
+          selectedRetailer={selectedRetailer}
+          clientContext={clientContext}
           scopeInputs={retailerScopeInputs}
           setScopeInputs={setRetailerScopeInputs}
+          competitors={retailerCompetitors}
+          setCompetitors={setRetailerCompetitors}
+          competitorsManuallyEdited={competitorsManuallyEdited}
+          setCompetitorsManuallyEdited={setCompetitorsManuallyEdited}
         />
       )}
 
       {activeOverviewTab === "retailerOverview" && (
-        <RetailerOverviewSection selectedRetailer={selectedRetailer} />
+        <RetailerOverviewSection
+          selectedRetailer={selectedRetailer}
+          competitors={retailerCompetitors}
+        />
       )}
 
       {activeOverviewTab === "opportunity" && (
@@ -646,6 +820,7 @@ const opportunity = estimateOpportunity(mockInputs);
           analysisMode={analysisMode}
           scopeInputs={retailerScopeInputs}
           clientContext={clientContext}
+          competitors={retailerCompetitors}
         />
       )}
     </div>
@@ -1234,12 +1409,26 @@ function PromptsSection({
 }
 
 function ScopeOfDiagnosticSection({
+  selectedRetailer,
+  clientContext,
   scopeInputs,
   setScopeInputs,
+  competitors,
+  setCompetitors,
+  competitorsManuallyEdited,
+  setCompetitorsManuallyEdited,
 }: {
+  selectedRetailer: string;
+  clientContext: ClientContext;
   scopeInputs: RetailerScopeInputs;
   setScopeInputs: (value: RetailerScopeInputs) => void;
+  competitors: RetailerCompetitor[];
+  setCompetitors: (value: RetailerCompetitor[]) => void;
+  competitorsManuallyEdited: boolean;
+  setCompetitorsManuallyEdited: (value: boolean) => void;
 }) {
+  const [newCompetitorName, setNewCompetitorName] = useState("");
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const {
     annualRevenue,
     addressableRevenuePct,
@@ -1286,6 +1475,92 @@ function ScopeOfDiagnosticSection({
         ? selectedLeverIds.filter((selectedLeverId) => selectedLeverId !== leverId)
         : [...selectedLeverIds, leverId],
     });
+  };
+
+  const currentCompetitorRecommendation = () =>
+    generateCompetitorSuggestions({
+      retailerName: selectedRetailer,
+      structuredContext: clientContext.structuredContext,
+      scopeInputs,
+      uploadedClientData: clientContext.uploadedClientData,
+      additionalClientContext: clientContext.additionalContext,
+    });
+
+  const replaceWithRecommendedCompetitors = () => {
+    setCompetitors(currentCompetitorRecommendation());
+    setCompetitorsManuallyEdited(false);
+    setShowRegenerateConfirm(false);
+  };
+
+  const handleRegenerateCompetitors = () => {
+    if (competitorsManuallyEdited) {
+      setShowRegenerateConfirm(true);
+      return;
+    }
+
+    replaceWithRecommendedCompetitors();
+  };
+
+  const markCompetitorsEdited = (nextCompetitors: RetailerCompetitor[]) => {
+    setCompetitors(nextCompetitors);
+    setCompetitorsManuallyEdited(true);
+    setShowRegenerateConfirm(false);
+  };
+
+  const updateCompetitorName = (competitorId: string, name: string) => {
+    markCompetitorsEdited(
+      competitors.map((competitor) =>
+        competitor.id === competitorId
+          ? {
+              ...competitor,
+              name,
+              source: "Manual override",
+              reason: "User-edited competitor carried forward into the diagnostic.",
+            }
+          : competitor
+      )
+    );
+  };
+
+  const removeCompetitor = (competitorId: string) => {
+    markCompetitorsEdited(
+      competitors.filter((competitor) => competitor.id !== competitorId)
+    );
+  };
+
+  const moveCompetitor = (competitorId: string, direction: -1 | 1) => {
+    const currentIndex = competitors.findIndex(
+      (competitor) => competitor.id === competitorId
+    );
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= competitors.length) {
+      return;
+    }
+
+    const reorderedCompetitors = [...competitors];
+    const [competitorToMove] = reorderedCompetitors.splice(currentIndex, 1);
+    reorderedCompetitors.splice(nextIndex, 0, competitorToMove);
+    markCompetitorsEdited(reorderedCompetitors);
+  };
+
+  const addCompetitor = () => {
+    const trimmedName = newCompetitorName.trim();
+    if (!trimmedName) return;
+
+    markCompetitorsEdited([
+      ...competitors,
+      {
+        id: `manual-${Date.now()}`,
+        name: trimmedName,
+        format: scopeInputs.retailerFormat || clientContext.structuredContext.retailerFormat || "Retail",
+        scale: "TBD",
+        relationship: "Manual competitor",
+        pricePosition: "TBD",
+        reason: "Added manually by the user for this diagnostic.",
+        source: "Manual override",
+      },
+    ]);
+    setNewCompetitorName("");
   };
 
   return (
@@ -1473,6 +1748,175 @@ function ScopeOfDiagnosticSection({
         </div>
       </div>
 
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Retailer Competitors
+            </p>
+            <h3 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+              Recommended competitive set
+            </h3>
+            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-gray-600">
+              Suggested competitor set based on retailer format, pricing model, and available context. Review and edit as needed.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleRegenerateCompetitors}
+              className="rounded-xl border border-[var(--ui-blue)] bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-blue)] transition hover:bg-blue-50"
+            >
+              Regenerate
+            </button>
+            {competitorsManuallyEdited && (
+              <button
+                type="button"
+                onClick={replaceWithRecommendedCompetitors}
+                className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-600 transition hover:border-[var(--ui-blue)]"
+              >
+                Reset to AI
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-gray-700">
+          <span className="font-semibold text-[var(--ui-navy)]">
+            Recommendation logic:
+          </span>{" "}
+          using {scopeInputs.retailerFormat || clientContext.structuredContext.retailerFormat || "retailer format"}, {clientContext.structuredContext.pricingModel || "pricing model"}, {clientContext.structuredContext.scopeSignal || "scope signal"}, and {clientContext.uploadedClientData.length > 0 ? "uploaded client files" : "available context notes"}.
+        </div>
+
+        {showRegenerateConfirm && (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              Manual edits are present. Regenerating will replace the current list.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={replaceWithRecommendedCompetitors}
+                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white"
+              >
+                Replace list
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRegenerateConfirm(false)}
+                className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900"
+              >
+                Keep edits
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 space-y-3">
+          {competitors.map((competitor, index) => (
+            <div
+              key={competitor.id}
+              className="rounded-2xl border border-gray-200 bg-gray-50 p-3"
+            >
+              <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-start">
+                <div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <input
+                      value={competitor.name}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        updateCompetitorName(competitor.id, e.target.value)
+                      }
+                      aria-label={`Competitor ${index + 1} name`}
+                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100 sm:max-w-xs"
+                    />
+                    <span
+                      className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                        competitor.source === "AI suggested"
+                          ? "border-blue-200 bg-blue-50 text-blue-700"
+                          : "border-gray-200 bg-white text-gray-600"
+                      }`}
+                    >
+                      {competitor.source}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-xs leading-5 text-gray-500">
+                    {competitor.reason}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {[
+                      competitor.format,
+                      competitor.scale,
+                      competitor.relationship,
+                      competitor.pricePosition,
+                    ].map((chip) => (
+                      <span
+                        key={`${competitor.id}-${chip}`}
+                        className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-600"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 lg:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => moveCompetitor(competitor.id, -1)}
+                    disabled={index === 0}
+                    className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-[var(--ui-blue)] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveCompetitor(competitor.id, 1)}
+                    disabled={index === competitors.length - 1}
+                    className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-[var(--ui-blue)] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Down
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeCompetitor(competitor.id)}
+                    className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-red-300 hover:text-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3 sm:flex-row">
+          <input
+            value={newCompetitorName}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setNewCompetitorName(e.target.value)
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCompetitor();
+              }
+            }}
+            placeholder="Add a competitor"
+            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+          />
+          <button
+            type="button"
+            onClick={addCompetitor}
+            className="rounded-lg bg-[var(--ui-blue)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+          >
+            Add competitor
+          </button>
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
           Scope Summary
@@ -1502,8 +1946,10 @@ function ScopeOfDiagnosticSection({
 
 function RetailerOverviewSection({
   selectedRetailer,
+  competitors,
 }: {
   selectedRetailer: string;
+  competitors: RetailerCompetitor[];
 }) {
   const retailerName = selectedRetailer.trim() || "Retailer";
   const news = getMockRetailerNews(retailerName);
@@ -1568,6 +2014,13 @@ function RetailerOverviewSection({
           <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
             Company performance against peer median
           </h3>
+          <p className="mt-2 text-sm leading-6 text-gray-600">
+            Peer view anchored on{" "}
+            {competitors.length > 0
+              ? competitors.map((competitor) => competitor.name).join(", ")
+              : "the selected competitor set"}
+            .
+          </p>
         </div>
 
         <div className="space-y-3">
@@ -1785,11 +2238,13 @@ function OpportunitySection({
   analysisMode,
   scopeInputs,
   clientContext,
+  competitors,
 }: {
   opportunity: Opportunity;
   analysisMode: AnalysisMode;
   scopeInputs: RetailerScopeInputs;
   clientContext: ClientContext;
+  competitors: RetailerCompetitor[];
 }) {
   const initialLeverContributions: LeverContributions = {
     pricing: parseBpsValue(opportunity.pricing.marginUpliftBps),
@@ -2196,6 +2651,9 @@ function OpportunitySection({
             `${scopedRevenuePct}% of business`,
             ...(includedCategories.length > 0 ? includedCategories : ["No categories selected"]),
             ...(selectedLeverLabels.length > 0 ? selectedLeverLabels : ["No levers selected"]),
+            ...(competitors.length > 0
+              ? competitors.map((competitor) => `Peer: ${competitor.name}`)
+              : ["No competitors selected"]),
           ].map((chip) => (
             <span
               key={chip}
