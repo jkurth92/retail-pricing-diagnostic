@@ -64,6 +64,20 @@ type RetailerScopeInputs = {
   categorySelections: CategoryScopeSelections;
   selectedLeverIds: string[];
 };
+type HeadlineCategory =
+  | "Pricing"
+  | "Promotions"
+  | "Cost / Margin"
+  | "Strategy"
+  | "Operations";
+type RetailerHeadline = {
+  category: HeadlineCategory;
+  title: string;
+};
+type RetailerNewsFeed = {
+  summary: string;
+  headlines: RetailerHeadline[];
+};
 
 const sectionCard =
   "brand-card rounded-2xl border border-gray-200 bg-white p-5 shadow-sm";
@@ -202,6 +216,42 @@ const initialStructuredContext: ClientStructuredContext = {
   retailerFormat: "",
   scopeSignal: "",
 };
+const newsCategoryStyles: Record<HeadlineCategory, string> = {
+  Pricing: "border-blue-200 bg-blue-50 text-blue-700",
+  Promotions: "border-purple-200 bg-purple-50 text-purple-700",
+  "Cost / Margin": "border-amber-200 bg-amber-50 text-amber-700",
+  Strategy: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  Operations: "border-gray-200 bg-gray-100 text-gray-700",
+};
+
+const getMockRetailerNews = (
+  retailerName: string
+): RetailerNewsFeed => ({
+  summary:
+    "Recent signals suggest increased promotional activity and margin pressure driven by cost inflation, competitive intensity, and sharper value messaging.",
+  headlines: [
+    {
+      category: "Pricing",
+      title: `${retailerName} tests targeted price increases on premium private-label categories`,
+    },
+    {
+      category: "Promotions",
+      title: `${retailerName} expands digital coupon events amid heavier weekly discounting`,
+    },
+    {
+      category: "Cost / Margin",
+      title: `${retailerName} flags freight and labor pressure as near-term margin headwinds`,
+    },
+    {
+      category: "Operations",
+      title: `${retailerName} rebalances stores with smaller-format openings and select closures`,
+    },
+    {
+      category: "Strategy",
+      title: `${retailerName} sharpens value messaging and speeds promo decision cycles`,
+    },
+  ],
+});
 
 const getEprMaturityLabel = (score: number) => {
   if (score >= 4.25) return "Advanced";
@@ -1325,18 +1375,107 @@ function RetailerOverviewSection({
 }: {
   selectedRetailer: string;
 }) {
+  const retailerName = selectedRetailer.trim() || "Retailer";
+  const news = getMockRetailerNews(retailerName);
+
   return (
-    <section className={`${sectionCard} space-y-2`}>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-        Retailer Overview
-      </p>
-      <h2 className="text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
-        {selectedRetailer}
-      </h2>
-      <p className="text-sm leading-6 text-gray-600">
-        Retailer overview content will be added in a future step.
-      </p>
-    </section>
+    <div className="space-y-4">
+      <section className={`${sectionCard} space-y-4`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+            Retailer Overview
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+            {retailerName}
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
+            Directional view of pricing, promotional, and margin signals for the current diagnostic.
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            {
+              label: "Pricing posture",
+              value: "Value-sensitive",
+              detail: "Targeted increases need close KVI guardrails.",
+            },
+            {
+              label: "Promo pressure",
+              value: "Elevated",
+              detail: "Discount activity appears to be a key traffic lever.",
+            },
+            {
+              label: "Margin watch",
+              value: "Active",
+              detail: "Cost inflation and labor pressure remain relevant.",
+            },
+          ].map((item) => (
+            <div key={item.label} className={subCard}>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                {item.label}
+              </p>
+              <p className="mt-2 text-lg font-bold tracking-tight text-[var(--ui-navy)]">
+                {item.value}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-gray-500">
+                {item.detail}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-3`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+            Key Insights
+          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+            Pricing and margin implications
+          </h3>
+        </div>
+
+        <div className="space-y-2 text-sm leading-6 text-gray-600">
+          <p>
+            • Promotional intensity and value messaging should be reviewed before recommending broad price moves.
+          </p>
+          <p>
+            • Margin pressure suggests the strongest opportunity is likely in selective price architecture, promo efficiency, and pack-level trade-offs.
+          </p>
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+            News & Headlines
+          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+            Recent signals to monitor
+          </h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
+            {news.summary}
+          </p>
+        </div>
+
+        <ul className="space-y-2">
+          {news.headlines.map((headline) => (
+            <li
+              key={`${headline.category}-${headline.title}`}
+              className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 sm:flex-row sm:items-center"
+            >
+              <span
+                className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-semibold ${newsCategoryStyles[headline.category]}`}
+              >
+                {headline.category}
+              </span>
+              <span className="leading-5">• {headline.title}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 }
 
