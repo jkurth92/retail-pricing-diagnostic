@@ -64,8 +64,6 @@ type AssumptionInputs = {
   promoIncrementality: number;
   markdownRecovery: number;
 };
-type DriverStatus = "highConfidence" | "needsReview";
-type DriverStatuses = Record<keyof LeverContributions, DriverStatus>;
 type ActionCard = {
   id: string;
   title: string;
@@ -965,7 +963,6 @@ const opportunity = estimateOpportunity(mockInputs);
                         analysisMode={analysisMode}
                         scopeInputs={retailerScopeInputs}
                         clientContext={clientContext}
-                        competitors={retailerCompetitors}
                       />
                     )}
                   </div>
@@ -2448,13 +2445,11 @@ function OpportunitySection({
   analysisMode,
   scopeInputs,
   clientContext,
-  competitors,
 }: {
   opportunity: Opportunity;
   analysisMode: AnalysisMode;
   scopeInputs: RetailerScopeInputs;
   clientContext: ClientContext;
-  competitors: RetailerCompetitor[];
 }) {
   const initialLeverContributions: LeverContributions = {
     pricing: parseBpsValue(opportunity.pricing.marginUpliftBps),
@@ -2490,11 +2485,6 @@ function OpportunitySection({
     elasticity: 100,
     promoIncrementality: 100,
     markdownRecovery: 100,
-  });
-  const [driverStatuses, setDriverStatuses] = useState<DriverStatuses>({
-    pricing: "highConfidence",
-    promotions: "needsReview",
-    markdown: "needsReview",
   });
   const [actions, setActions] = useState<ActionCard[]>([
     {
@@ -2556,10 +2546,6 @@ function OpportunitySection({
   const includedCategories = scopeInputs.categories
     .filter((category) => scopeInputs.categorySelections[category.name] === "included")
     .map((category) => category.name);
-  const selectedLeverLabels = scopeLeverGroups
-    .flatMap((group) => group.levers)
-    .filter((lever) => scopeInputs.selectedLeverIds.includes(lever.id))
-    .map((lever) => lever.label);
   const selectedLeverFamilies = scopeLeverGroups
     .filter((group) =>
       group.levers.some((lever) => scopeInputs.selectedLeverIds.includes(lever.id))
@@ -2609,40 +2595,6 @@ function OpportunitySection({
       : confidenceInputs.overall >= 55
         ? "Medium"
         : "Low";
-
-  const updateEstimateComponent = (
-    key: keyof EstimateComponents,
-    value: number
-  ) => {
-    setEstimateComponents({
-      ...estimateComponents,
-      [key]: value,
-    });
-  };
-
-  const updateLeverContribution = (
-    key: keyof LeverContributions,
-    value: number
-  ) => {
-    setLeverContributions({
-      ...leverContributions,
-      [key]: value,
-    });
-  };
-
-  const updateConfidenceInput = (key: keyof ConfidenceInputs, value: number) => {
-    setConfidenceInputs({
-      ...confidenceInputs,
-      [key]: value,
-    });
-  };
-
-  const updateAssumption = (key: keyof AssumptionInputs, value: number) => {
-    setAssumptions({
-      ...assumptions,
-      [key]: value,
-    });
-  };
 
   const applyScenario = (nextScenario: Scenario) => {
     const scenarioMultiplier =
@@ -2698,19 +2650,7 @@ function OpportunitySection({
     });
   };
 
-  const moveAction = (index: number, direction: -1 | 1) => {
-    const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= actions.length) return;
-
-    const nextActions = [...actions];
-    [nextActions[index], nextActions[nextIndex]] = [
-      nextActions[nextIndex],
-      nextActions[index],
-    ];
-    setActions(nextActions);
-  };
-
-  const toggleAction = (actionId: string, key: "included" | "highlighted") => {
+  const toggleAction = (actionId: string, key: "included") => {
     setActions(
       actions.map((action) =>
         action.id === actionId ? { ...action, [key]: !action[key] } : action
@@ -2739,55 +2679,6 @@ function OpportunitySection({
       reason: `Retailer signal: markdown and inventory management scores ${clientContext.eprScores.markdownInventoryManagement}/5, suggesting timing and recovery leakage in seasonal or slow-moving inventory.`,
     },
   ];
-  const maxLeverBps = Math.max(
-    120,
-    leverContributions.pricing,
-    leverContributions.promotions,
-    leverContributions.markdown
-  );
-  const estimateRows = [
-    {
-      key: "baseBenchmarkAdjustment" as const,
-      label: "Base benchmark estimate",
-      contribution: baseBenchmarkBps,
-      min: -40,
-      max: 40,
-      value: estimateComponents.baseBenchmarkAdjustment,
-      explanation:
-        "Starts from the in-scope lever benchmark, then lets you trim or stretch the base view.",
-    },
-    {
-      key: "eprAdjustment" as const,
-      label: "EPR / maturity adjustment",
-      contribution: estimateComponents.eprAdjustment,
-      min: -40,
-      max: 40,
-      value: estimateComponents.eprAdjustment,
-      explanation:
-        "Reflects how pricing maturity changes achievability versus the benchmark.",
-    },
-    {
-      key: "scopeAdjustment" as const,
-      label: "Scope adjustment",
-      contribution: estimateComponents.scopeAdjustment,
-      min: -30,
-      max: 30,
-      value: estimateComponents.scopeAdjustment,
-      explanation:
-        "Adjusts for the size and shape of categories and levers included in scope.",
-    },
-    {
-      key: "clientDataAdjustment" as const,
-      label: "Client data adjustment",
-      contribution: estimateComponents.clientDataAdjustment,
-      min: -20,
-      max: 35,
-      value: estimateComponents.clientDataAdjustment,
-      explanation:
-        "Adds or reduces value based on client uploads and specificity of internal inputs.",
-    },
-  ];
-
   return (
     <div className="space-y-5">
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -2874,78 +2765,49 @@ function OpportunitySection({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Confidence & Assumptions
+              Confidence & Sensitivity
             </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-              Editable confidence model
+              {confidenceLabel} confidence estimate
             </h2>
           </div>
-          <p className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-[var(--ui-navy)]">
-            {confidenceLabel} confidence
-          </p>
+          <div className="flex flex-wrap gap-2">
+            {(["Base", "Conservative", "Aggressive"] as Scenario[]).map(
+              (scenarioOption) => (
+                <button
+                  key={scenarioOption}
+                  type="button"
+                  onClick={() => applyScenario(scenarioOption)}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                    scenario === scenarioOption
+                      ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
+                  }`}
+                >
+                  {scenarioOption}
+                </button>
+              )
+            )}
+          </div>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-2">
-          {[
-            ["overall", "Overall confidence"],
-            ["benchmarkRelevance", "Benchmark relevance"],
-            ["dataQuality", "Data quality"],
-            ["assumptionStrength", "Assumption strength"],
-          ].map(([key, label]) => (
-            <label key={key} className={subCard}>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-[var(--ui-navy)]">
-                  {label}
-                </span>
-                <span className="text-sm font-bold text-[var(--ui-blue)]">
-                  {confidenceInputs[key as keyof ConfidenceInputs]}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={confidenceInputs[key as keyof ConfidenceInputs]}
-                onChange={(event) =>
-                  updateConfidenceInput(
-                    key as keyof ConfidenceInputs,
-                    Number(event.target.value)
-                  )
-                }
-                className="mt-3 w-full accent-[var(--ui-blue)]"
-              />
-            </label>
-          ))}
-        </div>
-
-        <div className="grid gap-3 lg:grid-cols-3">
-          {[
-            ["elasticity", "Elasticity"],
-            ["promoIncrementality", "Promo incrementality"],
-            ["markdownRecovery", "Markdown recovery"],
-          ].map(([key, label]) => (
-            <label key={key} className={subCard}>
-              <span className="text-sm font-semibold text-[var(--ui-navy)]">
-                {label}
-              </span>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="number"
-                  min="80"
-                  max="120"
-                  value={assumptions[key as keyof AssumptionInputs]}
-                  onChange={(event) =>
-                    updateAssumption(
-                      key as keyof AssumptionInputs,
-                      clampNumber(Number(event.target.value), 80, 120)
-                    )
-                  }
-                  className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-                />
-                <span className="text-sm text-gray-500">% of base</span>
-              </div>
-            </label>
-          ))}
+        <div className="grid gap-3 lg:grid-cols-[220px_1fr]">
+          <div className={subCard}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+              Confidence level
+            </p>
+            <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-blue)]">
+              {confidenceLabel}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-gray-500">
+              Scenario: {scenario}
+            </p>
+          </div>
+          <div className={`${subCard} space-y-2 text-sm leading-6 text-gray-600`}>
+            <p>• Benchmark-based estimate calibrated to selected levers and current EPR maturity.</p>
+            <p>• No client elasticity curve is available, so demand response remains an uncertainty.</p>
+            <p>• Promo incrementality and markdown recovery are assumed from diagnostic signals.</p>
+          </div>
         </div>
       </section>
 
@@ -2955,74 +2817,38 @@ function OpportunitySection({
         </h2>
 
         <div className="grid gap-3 lg:grid-cols-2">
-          {actions.map((action, index) => {
-            const leverKey = action.lever.toLowerCase() as keyof LeverContributions;
-            const estimatedImpact = Math.round(scopedLeverContributions[leverKey] * 0.35);
-
-            return (
-              <div
-                key={action.id}
-                className={`rounded-xl border p-4 shadow-sm ${
-                  action.highlighted
-                    ? "border-[var(--ui-blue)] bg-blue-50"
-                    : "border-gray-200 bg-white"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--ui-navy)]">
-                      {index + 1}. {action.title}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {action.lever} | Impact {formatSignedBps(estimatedImpact)} | Effort {action.effort}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => moveAction(index, -1)}
-                      disabled={index === 0}
-                      className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600 disabled:opacity-40"
-                    >
-                      Up
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveAction(index, 1)}
-                      disabled={index === actions.length - 1}
-                      className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600 disabled:opacity-40"
-                    >
-                      Down
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => toggleAction(action.id, "included")}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                      action.included
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-gray-200 bg-gray-100 text-gray-500"
-                    }`}
-                  >
-                    {action.included ? "Included in memo" : "Not in memo"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleAction(action.id, "highlighted")}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                      action.highlighted
-                        ? "border-blue-200 bg-white text-[var(--ui-blue)]"
-                        : "border-gray-200 bg-gray-50 text-gray-600"
-                    }`}
-                  >
-                    {action.highlighted ? "Priority" : "Mark priority"}
-                  </button>
-                </div>
+          {actions.map((action, index) => (
+            <div
+              key={action.id}
+              className={`rounded-xl border p-4 shadow-sm ${
+                action.highlighted
+                  ? "border-[var(--ui-blue)] bg-blue-50"
+                  : "border-gray-200 bg-white"
+              }`}
+            >
+              <div>
+                <p className="text-sm font-semibold text-[var(--ui-navy)]">
+                  {index + 1}. {action.title}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {action.lever} | Impact {action.impactRange} | Effort {action.effort}
+                </p>
               </div>
-            );
-          })}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleAction(action.id, "included")}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    action.included
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  {action.included ? "Included in memo" : "Not in memo"}
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>
