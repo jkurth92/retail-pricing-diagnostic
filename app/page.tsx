@@ -8,7 +8,7 @@ import MarkdownModule from "@/components/MarkdownModule";
 import { estimateOpportunity } from "./utils/opportunityEngine";
 
 type Tab = "overview" | "pricing" | "promotions" | "markdown";
-type OverviewTab = "prompts" | "retailer" | "opportunity";
+type OverviewTab = "prompts" | "retailer" | "retailerOverview" | "opportunity";
 type AnalysisMode = "external" | "hybrid";
 type EprDimension =
   | "strategicPricePositioning"
@@ -289,7 +289,8 @@ const opportunity = estimateOpportunity(mockInputs);
   const activeWorkflowStep =
     activeTab !== "overview"
       ? "Analysis"
-      : activeOverviewTab === "retailer"
+      : activeOverviewTab === "retailer" ||
+          activeOverviewTab === "retailerOverview"
         ? "Context"
         : activeOverviewTab === "opportunity"
           ? "Opportunity"
@@ -409,8 +410,9 @@ const opportunity = estimateOpportunity(mockInputs);
       <div className="rounded-2xl border border-gray-200 bg-white px-4 pt-3 shadow-sm">
         <div className="flex flex-wrap gap-5 border-b border-gray-200">
         {[
-          ["prompts", "Prompts"],
-          ["retailer", "Retailer Overview"],
+          ["prompts", "Client Context"],
+          ["retailer", "Scope of Diagnostic"],
+          ["retailerOverview", "Retailer Overview"],
           ["opportunity", "Opportunity Size"],
         ].map(([tabId, label]) => (
           <button
@@ -449,12 +451,14 @@ const opportunity = estimateOpportunity(mockInputs);
       )}
 
       {activeOverviewTab === "retailer" && (
-        <RetailerOverviewSection
-          selectedRetailer={selectedRetailer}
-          analysisMode={analysisMode}
+        <ScopeOfDiagnosticSection
           scopeInputs={retailerScopeInputs}
           setScopeInputs={setRetailerScopeInputs}
         />
+      )}
+
+      {activeOverviewTab === "retailerOverview" && (
+        <RetailerOverviewSection selectedRetailer={selectedRetailer} />
       )}
 
       {activeOverviewTab === "opportunity" && (
@@ -1049,21 +1053,15 @@ function PromptsSection({
   );
 }
 
-function RetailerOverviewSection({
-  selectedRetailer,
-  analysisMode,
+function ScopeOfDiagnosticSection({
   scopeInputs,
   setScopeInputs,
 }: {
-  selectedRetailer: string;
-  analysisMode: AnalysisMode;
   scopeInputs: RetailerScopeInputs;
   setScopeInputs: (value: RetailerScopeInputs) => void;
 }) {
   const {
     annualRevenue,
-    storeCount,
-    retailerFormat,
     addressableRevenuePct,
     categorySelections,
     selectedLeverIds,
@@ -1112,100 +1110,6 @@ function RetailerOverviewSection({
 
   return (
     <section className={`${sectionCard} space-y-6`}>
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-            Retailer snapshot
-          </p>
-          <h2 className="text-3xl font-bold tracking-tight text-[var(--ui-navy)]">
-            {selectedRetailer}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 sm:grid-cols-3 md:min-w-[420px]">
-          {[
-            { label: "Retailer", value: selectedRetailer },
-            {
-              label: "Scope",
-              value:
-                includedCategories.length > 0
-                  ? `${includedCategories.length} categories`
-                  : "Define categories",
-            },
-            {
-              label: "Mode",
-              value:
-                analysisMode === "hybrid"
-                  ? "External + client inputs"
-                  : "External only",
-            },
-          ].map((item) => (
-            <div key={item.label} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                {item.label}
-              </p>
-              <p className="mt-0.5 truncate font-semibold text-[var(--ui-text)]">
-                {item.value}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-          Retailer Snapshot
-        </p>
-        <div className="grid gap-3 lg:grid-cols-3">
-          <label className={subCard}>
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-              Annual revenue
-            </span>
-            <input
-              value={annualRevenue}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                updateScopeInputs({ annualRevenue: e.target.value })
-              }
-              placeholder="$10,000,000,000"
-              inputMode="decimal"
-              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-            />
-          </label>
-
-          <label className={subCard}>
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-              Store count
-            </span>
-            <input
-              value={storeCount}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                updateScopeInputs({ storeCount: e.target.value })
-              }
-              placeholder="1,250"
-              inputMode="numeric"
-              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-            />
-          </label>
-
-          <label className={subCard}>
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-              Format
-            </span>
-            <input
-              value={retailerFormat}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                updateScopeInputs({ retailerFormat: e.target.value })
-              }
-              placeholder="Grocery / Mass / Specialty"
-              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-            />
-          </label>
-        </div>
-        <p className="text-xs text-gray-500">
-          Manual inputs are placeholders for scoping and can be replaced by uploaded client data.
-        </p>
-      </div>
-
       <div className="space-y-5 rounded-2xl border border-blue-200 bg-blue-50/60 p-5 shadow-sm">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ui-blue)]">
@@ -1412,37 +1316,26 @@ function RetailerOverviewSection({
         )}
       </div>
 
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-          Recent Signals
-        </p>
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm font-semibold text-[var(--ui-text)]">
-              Latest press release highlights
-            </p>
-            <div className="mt-2 space-y-1 text-xs text-gray-600">
-              <p>• Pricing architecture update pending source feed</p>
-              <p>• Promotional calendar activity to be summarized</p>
-              <p>• Store opening or remodel signals awaiting refresh</p>
-            </div>
-          </div>
+    </section>
+  );
+}
 
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm font-semibold text-[var(--ui-text)]">
-              Relevant headlines
-            </p>
-            <div className="mt-2 space-y-1 text-xs text-gray-600">
-              <p>• Pricing and promo headlines will populate here</p>
-              <p>• Markdown, input cost, and margin pressure mentions</p>
-              <p>• Leadership or operating model changes to monitor</p>
-            </div>
-          </div>
-        </div>
-        <p className="text-xs text-gray-500">
-          Recent signals are informational only and do not affect scoping logic.
-        </p>
-      </div>
+function RetailerOverviewSection({
+  selectedRetailer,
+}: {
+  selectedRetailer: string;
+}) {
+  return (
+    <section className={`${sectionCard} space-y-2`}>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+        Retailer Overview
+      </p>
+      <h2 className="text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+        {selectedRetailer}
+      </h2>
+      <p className="text-sm leading-6 text-gray-600">
+        Retailer overview content will be added in a future step.
+      </p>
     </section>
   );
 }
