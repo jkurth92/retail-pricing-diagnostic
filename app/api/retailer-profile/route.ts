@@ -48,12 +48,16 @@ type RetailerProfileResponse = {
   market: {
     revenueGrowth: number | null;
     margin: number | null;
+    tsr?: number | null;
   };
   headlines: {
     title: string;
     date: string | null;
     source: string | null;
+    url?: string | null;
+    category?: string | null;
   }[];
+  sourceMetadata?: Record<string, string>;
 };
 
 type FmpIncomeStatement = {
@@ -84,9 +88,18 @@ type FmpNewsItem = {
   title?: string;
   publishedDate?: string;
   site?: string;
+  url?: string;
 };
 type FmpProfileItem = Record<string, unknown>;
 type FmpQuoteItem = Record<string, unknown>;
+type FmpHistoricalPriceItem = {
+  date?: string;
+  close?: number;
+  adjClose?: number;
+};
+type FmpHistoricalPriceResponse = {
+  historical?: FmpHistoricalPriceItem[];
+};
 type SecCompanyFactUnit = {
   fy?: number;
   fp?: string;
@@ -120,7 +133,15 @@ type SecFinancialResult = {
   revenue: FinancialPoint[];
   ebitda: FinancialPoint[];
   margin: FinancialPoint[];
+  revenueGrowth: number | null;
+  workingCapitalToRevenue: number | null;
   sourceStatus: SourceStatus;
+  sourceMetadata: Record<string, string>;
+};
+type MarketDataResult = {
+  tsr: number | null;
+  sourceStatus: SourceStatus;
+  sourceMetadata: Record<string, string>;
 };
 
 const notRequestedStatus: EndpointStatus = {
@@ -176,8 +197,10 @@ const emptyProfile = (
   market: {
     revenueGrowth: null,
     margin: null,
+    tsr: null,
   },
   headlines: [],
+  sourceMetadata: {},
 });
 
 const getYear = (item: { calendarYear?: string; date?: string }) =>
@@ -190,6 +213,11 @@ const toPercent = (value: number | undefined) => {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   return Math.abs(value) <= 1 ? value * 100 : value;
 };
+
+const calculatePercent = (numerator: number | null, denominator: number | null) =>
+  numerator !== null && denominator !== null && denominator !== 0
+    ? (numerator / denominator) * 100
+    : null;
 
 const hasUsableData = <T,>(data: T | null) =>
   Array.isArray(data) ? data.length > 0 : data !== null;
@@ -328,6 +356,36 @@ const fmpFetch = async <T>(
   }
 };
 
+const categorizeHeadline = (headline: string) => {
+  const normalizedHeadline = headline.toLowerCase();
+  if (normalizedHeadline.includes("promo") || normalizedHeadline.includes("discount")) {
+    return "Promotions";
+  }
+  if (
+    normalizedHeadline.includes("cost") ||
+    normalizedHeadline.includes("margin") ||
+    normalizedHeadline.includes("profit")
+  ) {
+    return "Cost / Margin";
+  }
+  if (
+    normalizedHeadline.includes("strateg") ||
+    normalizedHeadline.includes("growth") ||
+    normalizedHeadline.includes("acquir") ||
+    normalizedHeadline.includes("invest")
+  ) {
+    return "Strategy";
+  }
+  if (
+    normalizedHeadline.includes("operat") ||
+    normalizedHeadline.includes("supply") ||
+    normalizedHeadline.includes("store")
+  ) {
+    return "Operations";
+  }
+  return "Pricing";
+};
+
 const fetchHeadlines = async (
   ticker: string,
   fmpApiKey: string
@@ -345,6 +403,8 @@ const fetchHeadlines = async (
         title: article.title || "",
         date: article.publishedDate || null,
         source: article.site || null,
+        url: article.url || null,
+        category: categorizeHeadline(article.title || ""),
       })),
     endpointStatus: endpointStatusFromResult(newsItems),
     sourceStatus: sourceStatusFromResult(newsItems),
@@ -392,11 +452,14 @@ const fetchPublicRssHeadlines = async (
           itemXml.match(/<title>(.*?)<\/title>/)?.[1] ||
           "";
         const date = itemXml.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || null;
+        const link = itemXml.match(/<link>(.*?)<\/link>/)?.[1] || null;
 
         return {
           title,
           date,
           source: "Yahoo Finance RSS",
+          url: link,
+          category: categorizeHeadline(title),
         };
       })
       .filter((headline) => headline.title);
@@ -501,6 +564,34 @@ const getSecConceptSeries = (
   return [];
 };
 
+const latestPoint = (series: FinancialPoint[]) =>
+  series.length > 0 ? series[series.length - 1] : null;
+
+const calculateGrowthFromSeries = (series: FinancialPoint[]) => {
+  if (series.length < 2) return null;
+  const previousPoint = series[series.length - 2];
+  const currentPoint = series[series.length - 1];
+
+  if (!previousPoint || !currentPoint || previousPoint.value === 0) return null;
+  return ((currentPoint.value - previousPoint.value) / previousPoint.value) * 100;
+};
+
+const calculateMatchedMarginSeries = (
+  numeratorSeries: FinancialPoint[],
+  denominatorSeries: FinancialPoint[]
+) =>
+  numeratorSeries.flatMap((numeratorPoint) => {
+    const denominatorPoint = denominatorSeries.find(
+      (point) => point.year === numeratorPoint.year
+    );
+    const value = calculatePercent(
+      numeratorPoint.value,
+      denominatorPoint?.value ?? null
+    );
+
+    return value === null ? [] : [{ year: numeratorPoint.year, value }];
+  });
+
 const fetchSecFinancials = async (
   cik: string | null
 ): Promise<SecFinancialResult> => {
@@ -509,12 +600,15 @@ const fetchSecFinancials = async (
       revenue: [],
       ebitda: [],
       margin: [],
+      revenueGrowth: null,
+      workingCapitalToRevenue: null,
       sourceStatus: {
         status: "empty",
         statusCode: null,
         error: "No CIK available for SEC company facts lookup.",
         keys: [],
       },
+      sourceMetadata: {},
     };
   }
 
@@ -540,12 +634,15 @@ const fetchSecFinancials = async (
         revenue: [],
         ebitda: [],
         margin: [],
+        revenueGrowth: null,
+        workingCapitalToRevenue: null,
         sourceStatus: {
           status: "failed",
           statusCode: response.status,
           error,
           keys: [],
         },
+        sourceMetadata: {},
       };
     }
 
@@ -559,9 +656,64 @@ const fetchSecFinancials = async (
     const ebitda = getSecConceptSeries(companyFacts, [
       "EarningsBeforeInterestTaxesDepreciationAmortization",
       "EarningsBeforeInterestTaxesDepreciationAndAmortization",
+      "OperatingIncomeLoss",
     ]);
-    const margin: FinancialPoint[] = [];
-    const hasFinancialData = revenue.length > 0 || ebitda.length > 0;
+    const currentAssets = getSecConceptSeries(companyFacts, ["AssetsCurrent"]);
+    const currentLiabilities = getSecConceptSeries(companyFacts, [
+      "LiabilitiesCurrent",
+    ]);
+    const margin = calculateMatchedMarginSeries(ebitda, revenue);
+    const revenueGrowth = calculateGrowthFromSeries(revenue);
+    const latestRevenue = latestPoint(revenue);
+    const latestCurrentAssets = currentAssets.find(
+      (point) => point.year === latestRevenue?.year
+    );
+    const latestCurrentLiabilities = currentLiabilities.find(
+      (point) => point.year === latestRevenue?.year
+    );
+    const workingCapital =
+      latestCurrentAssets && latestCurrentLiabilities
+        ? latestCurrentAssets.value - latestCurrentLiabilities.value
+        : null;
+    const workingCapitalToRevenue = calculatePercent(
+      workingCapital,
+      latestRevenue?.value ?? null
+    );
+    const hasFinancialData =
+      revenue.length > 0 ||
+      ebitda.length > 0 ||
+      margin.length > 0 ||
+      revenueGrowth !== null ||
+      workingCapitalToRevenue !== null;
+    const sourceMetadata = {
+      ...(revenue.length > 0
+        ? { "financials.revenue": "SEC company facts: revenue concept" }
+        : {}),
+      ...(ebitda.length > 0
+        ? {
+            "financials.ebitda":
+              "SEC company facts: EBITDA concept or OperatingIncomeLoss as EBITA",
+          }
+        : {}),
+      ...(margin.length > 0
+        ? {
+            "financials.margin":
+              "Computed as EBITDA/EBITA divided by revenue for matching fiscal years",
+          }
+        : {}),
+      ...(revenueGrowth !== null
+        ? {
+            "market.revenueGrowth":
+              "Computed as latest SEC revenue year-over-year growth",
+          }
+        : {}),
+      ...(workingCapitalToRevenue !== null
+        ? {
+            "profitability.workingCapital":
+              "Computed as (current assets - current liabilities) / revenue from SEC company facts",
+          }
+        : {}),
+    };
 
     console.log(
       "[retailer-profile] SEC source result:",
@@ -569,6 +721,9 @@ const fetchSecFinancials = async (
         status: hasFinancialData ? "success" : "empty",
         revenuePoints: revenue.length,
         ebitdaPoints: ebitda.length,
+        marginPoints: margin.length,
+        revenueGrowthAvailable: revenueGrowth !== null,
+        workingCapitalToRevenueAvailable: workingCapitalToRevenue !== null,
         keys: usGaapKeys.slice(0, 40),
       })
     );
@@ -577,12 +732,15 @@ const fetchSecFinancials = async (
       revenue,
       ebitda,
       margin,
+      revenueGrowth,
+      workingCapitalToRevenue,
       sourceStatus: {
         status: hasFinancialData ? "success" : "empty",
         statusCode: response.status,
         error: null,
         keys: usGaapKeys,
       },
+      sourceMetadata,
     };
   } catch (error) {
     const message =
@@ -593,14 +751,85 @@ const fetchSecFinancials = async (
       revenue: [],
       ebitda: [],
       margin: [],
+      revenueGrowth: null,
+      workingCapitalToRevenue: null,
       sourceStatus: {
         status: "failed",
         statusCode: null,
         error: message,
         keys: [],
       },
+      sourceMetadata: {},
     };
   }
+};
+
+const fetchMarketData = async (
+  ticker: string,
+  fmpApiKey: string | undefined
+): Promise<MarketDataResult> => {
+  if (!fmpApiKey) {
+    return {
+      tsr: null,
+      sourceStatus: {
+        status: "not_requested",
+        statusCode: null,
+        error: "FMP_API_KEY is not configured. Skipping historical price source.",
+        keys: [],
+      },
+      sourceMetadata: {},
+    };
+  }
+
+  const result = await fmpFetch<FmpHistoricalPriceResponse>(
+    `/historical-price-full/${encodeURIComponent(ticker)}?timeseries=260`,
+    fmpApiKey
+  );
+  const sortedPrices = (result.data?.historical || [])
+    .filter((price) => typeof (price.adjClose ?? price.close) === "number")
+    .sort((left, right) => String(left.date || "").localeCompare(String(right.date || "")));
+  const firstPrice = sortedPrices[0]?.adjClose ?? sortedPrices[0]?.close ?? null;
+  const latestPrice =
+    sortedPrices[sortedPrices.length - 1]?.adjClose ??
+    sortedPrices[sortedPrices.length - 1]?.close ??
+    null;
+  const tsr = calculatePercent(
+    latestPrice !== null && firstPrice !== null ? latestPrice - firstPrice : null,
+    firstPrice
+  );
+  const status: SourceStatus["status"] =
+    tsr !== null
+      ? "success"
+      : result.error
+        ? "failed"
+        : "empty";
+
+  console.log(
+    "[retailer-profile] Historical price source result:",
+    JSON.stringify({
+      status,
+      points: sortedPrices.length,
+      tsrAvailable: tsr !== null,
+      keys: result.keys,
+    })
+  );
+
+  return {
+    tsr,
+    sourceStatus: {
+      status,
+      statusCode: result.status,
+      error: result.error,
+      keys: result.keys,
+    },
+    sourceMetadata:
+      tsr === null
+        ? {}
+        : {
+            "market.tsr":
+              "Computed from FMP historical adjusted close over available lookback window",
+          },
+  };
 };
 
 export async function GET(request: Request) {
@@ -639,6 +868,7 @@ export async function GET(request: Request) {
       profile: Boolean(fmpApiKey),
       quote: Boolean(fmpApiKey),
       secFinancials: Boolean(directoryEntry?.cik),
+      historicalPrices: Boolean(fmpApiKey),
       headlines: true,
     })
   );
@@ -676,8 +906,9 @@ export async function GET(request: Request) {
     })
   );
 
-  const [secFinancials, newsResult] = await Promise.all([
+  const [secFinancials, marketData, newsResult] = await Promise.all([
     fetchSecFinancials(directoryEntry?.cik || null),
+    fetchMarketData(ticker, fmpApiKey),
     fetchHeadlinesWithFallback(ticker, fmpApiKey),
   ]);
   const incomeStatementResult: FmpFetchResult<FmpIncomeStatement[]> = {
@@ -717,6 +948,7 @@ export async function GET(request: Request) {
     sourceStatus.quote,
     sourceStatus.secFinancials,
     sourceStatus.headlines,
+    marketData.sourceStatus,
   ].filter((status) => status.status === "success").length;
 
   console.log(
@@ -725,6 +957,7 @@ export async function GET(request: Request) {
       profile: sourceStatus.profile.status,
       quote: sourceStatus.quote.status,
       secFinancials: sourceStatus.secFinancials.status,
+      historicalPrices: marketData.sourceStatus.status,
       headlines: sourceStatus.headlines.status,
       successfulSources: usableSources,
     })
@@ -768,19 +1001,26 @@ export async function GET(request: Request) {
         toPercent(latestRatio?.returnOnInvestedCapital) ??
         toPercent(latestRatio?.returnOnCapitalEmployed),
       workingCapital:
+        secFinancials.workingCapitalToRevenue ??
         toPercent(latestRatio?.workingCapitalRevenueRatio) ??
         toPercent(latestRatio?.workingCapitalRatio),
     },
     market: {
       revenueGrowth:
+        secFinancials.revenueGrowth ??
         toPercent(latestGrowthMetric?.revenueGrowth) ??
         toPercent(latestGrowthMetric?.grossProfitGrowth),
       margin:
         latestMargin ??
         toPercent(latestRatio?.ebitdaMargin) ??
         toPercent(latestRatio?.operatingProfitMargin),
+      tsr: marketData.tsr,
     },
     headlines: newsResult.headlines,
+    sourceMetadata: {
+      ...secFinancials.sourceMetadata,
+      ...marketData.sourceMetadata,
+    },
   };
 
   return NextResponse.json(profile);

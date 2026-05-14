@@ -150,6 +150,7 @@ type SourcedRetailerHeadline = RetailerHeadline & {
   source: RetailerProfileSource;
   date?: string | null;
   publisher?: string | null;
+  url?: string | null;
 };
 type RetailerProfile = {
   retailerName: string;
@@ -179,12 +180,16 @@ type RetailerProfileApiResponse = {
   market: {
     revenueGrowth: number | null;
     margin: number | null;
+    tsr?: number | null;
   };
   headlines: {
     title: string;
     date: string | null;
     source: string | null;
+    url?: string | null;
+    category?: string | null;
   }[];
+  sourceMetadata?: Record<string, string>;
 };
 
 const sectionCard =
@@ -873,6 +878,23 @@ const categorizeHeadline = (headline: string): HeadlineCategory => {
   return "Pricing";
 };
 
+const normalizeHeadlineCategory = (
+  category: string | null | undefined,
+  title: string
+): HeadlineCategory => {
+  const validCategories: HeadlineCategory[] = [
+    "Pricing",
+    "Promotions",
+    "Cost / Margin",
+    "Strategy",
+    "Operations",
+  ];
+
+  return validCategories.includes(category as HeadlineCategory)
+    ? (category as HeadlineCategory)
+    : categorizeHeadline(title);
+};
+
 const formatPercentMetric = (value: number | null) =>
   value === null ? null : `${value.toFixed(1)}%`;
 
@@ -975,10 +997,10 @@ const mapApiResponseToRetailerProfile = (
       },
       {
         label: "TSR",
-        company: null,
+        company: response.market.tsr ?? null,
         peerMedian: null,
         unit: "percent",
-        source: null,
+        source: response.market.tsr === null || response.market.tsr === undefined ? null : "external",
       },
     ],
     insights,
@@ -986,7 +1008,8 @@ const mapApiResponseToRetailerProfile = (
       title: headline.title,
       date: headline.date,
       publisher: headline.source,
-      category: categorizeHeadline(headline.title),
+      url: headline.url || null,
+      category: normalizeHeadlineCategory(headline.category, headline.title),
       source: "external",
     })),
     sources: {
@@ -1011,6 +1034,9 @@ const mapApiResponseToRetailerProfile = (
       ...(response.market.margin === null
         ? {}
         : { "marketPosition.Margin": "external" as const }),
+      ...(response.market.tsr === null || response.market.tsr === undefined
+        ? {}
+        : { "marketPosition.TSR": "external" as const }),
       ...(response.headlines.length > 0 ? { headlines: "external" as const } : {}),
     },
   };
@@ -2829,7 +2855,18 @@ function RetailerOverviewSection({
                 >
                   {headline.category}
                 </span>
-                <span className="leading-5">• {headline.title}</span>
+                {headline.url ? (
+                  <a
+                    href={headline.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="leading-5 text-[var(--ui-blue)] underline-offset-2 hover:underline"
+                  >
+                    • {headline.title}
+                  </a>
+                ) : (
+                  <span className="leading-5">• {headline.title}</span>
+                )}
                 {(headline.date || headline.publisher) && (
                   <span className="text-xs text-gray-500">
                     {[
