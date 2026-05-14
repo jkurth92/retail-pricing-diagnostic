@@ -50,6 +50,27 @@ export const retailerDirectory: RetailerDirectoryEntry[] = [
     cik: "0000764478",
   },
   {
+    name: "Amazon",
+    aliases: ["amazon", "amazon.com", "amazon.com inc"],
+    ownership: "public",
+    ticker: "AMZN",
+    cik: "0001018724",
+  },
+  {
+    name: "Lowe's",
+    aliases: ["lowe's", "lowes", "lowe's companies"],
+    ownership: "public",
+    ticker: "LOW",
+    cik: "0000060667",
+  },
+  {
+    name: "Albertsons",
+    aliases: ["albertsons", "albertsons companies"],
+    ownership: "public",
+    ticker: "ACI",
+    cik: "0001646972",
+  },
+  {
     name: "Aldi",
     aliases: ["aldi"],
     ownership: "private",

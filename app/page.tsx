@@ -146,6 +146,18 @@ type SourcedPeerComparisonMetric = {
   unit: "percent";
   source: RetailerProfileSource | null;
 };
+type PeerMetricDetail = {
+  name: string;
+  value: number | null;
+};
+type PeerBenchmark = {
+  benchmarkValue: number | null;
+  details: PeerMetricDetail[];
+  availableCount: number;
+  totalCount: number;
+  isSelectedSet: boolean;
+  isLoading: boolean;
+};
 type SourcedRetailerHeadline = RetailerHeadline & {
   source: RetailerProfileSource;
   date?: string | null;
@@ -456,38 +468,228 @@ const createCompetitor = (
   source,
 });
 
-const competitorTemplates: Record<string, RetailerCompetitor[]> = {
-  grocery: [
-    createCompetitor("Kroger", "Grocery", "National", "Direct competitor", "Mid-market", "Large grocery operator with comparable category and pricing dynamics."),
-    createCompetitor("Albertsons", "Grocery", "National", "Direct competitor", "Mid-market", "Traditional grocer with similar promo and assortment decisions."),
-    createCompetitor("Publix", "Grocery", "Regional", "Direct competitor", "Premium", "Regional grocer with strong fresh and service-led positioning."),
-    createCompetitor("Aldi", "Discount grocery", "National", "Adjacent competitor", "Value", "Hard discounter that pressures opening price points."),
-    createCompetitor("Walmart", "Mass / grocery", "National", "Adjacent competitor", "Value / EDLP", "Broad value retailer that anchors grocery price expectations."),
-  ],
-  mass: [
-    createCompetitor("Walmart", "Mass", "National", "Direct competitor", "Value / EDLP", "National mass retailer with strong price leadership signals."),
-    createCompetitor("Target", "Mass", "National", "Direct competitor", "Mid-market", "Mass merchant with comparable omnichannel and category breadth."),
-    createCompetitor("Amazon", "Marketplace", "National", "Adjacent competitor", "Dynamic / value", "Digital benchmark for price transparency and convenience."),
-    createCompetitor("Costco", "Club", "National", "Adjacent competitor", "Value", "Membership model that pressures basket-level value perception."),
-  ],
-  specialty: [
-    createCompetitor("Best Buy", "Specialty", "National", "Direct competitor", "Mid-market", "Specialty retailer with category-led price architecture."),
-    createCompetitor("Dick's Sporting Goods", "Specialty", "National", "Direct competitor", "Premium / mid-market", "Specialty peer with branded assortment and promo decisions."),
-    createCompetitor("Amazon", "Marketplace", "National", "Adjacent competitor", "Dynamic / value", "Online price benchmark across specialty categories."),
-    createCompetitor("Target", "Mass", "National", "Adjacent competitor", "Mid-market", "Mass merchant competing on select destination categories."),
-  ],
-  club: [
-    createCompetitor("Costco", "Club", "National", "Direct competitor", "Value", "Membership club with strong basket-level value positioning."),
-    createCompetitor("Sam's Club", "Club", "National", "Direct competitor", "Value", "Club peer with similar pack-size and member-price dynamics."),
-    createCompetitor("BJ's Wholesale Club", "Club", "Regional", "Direct competitor", "Value", "Regional club operator with comparable membership economics."),
-    createCompetitor("Walmart", "Mass", "National", "Adjacent competitor", "Value / EDLP", "Adjacent EDLP benchmark for trip consolidation."),
-  ],
-  other: [
-    createCompetitor("Walmart", "Mass", "National", "Adjacent competitor", "Value / EDLP", "Broad national benchmark for value perception."),
-    createCompetitor("Target", "Mass", "National", "Adjacent competitor", "Mid-market", "Scaled omnichannel retailer with broad category overlap."),
-    createCompetitor("Amazon", "Marketplace", "National", "Adjacent competitor", "Dynamic / value", "Digital price transparency and convenience benchmark."),
-    createCompetitor("Costco", "Club", "National", "Adjacent competitor", "Value", "Membership value benchmark for larger baskets."),
-  ],
+type CompetitorCandidate = {
+  name: string;
+  formats: string[];
+  sectors: string[];
+  pricingSignals: string[];
+  scale: string;
+  geography: string;
+  pricePosition: string;
+  adjacency: "direct" | "adjacent";
+};
+
+const competitorCandidatePool: CompetitorCandidate[] = [
+  {
+    name: "Walmart",
+    formats: ["mass", "grocery", "general merchandise"],
+    sectors: ["mass", "food", "drug", "household"],
+    pricingSignals: ["edlp", "value"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Value / EDLP",
+    adjacency: "direct",
+  },
+  {
+    name: "Amazon",
+    formats: ["marketplace", "digital", "mass"],
+    sectors: ["mass", "apparel", "specialty", "electronics", "household"],
+    pricingSignals: ["dynamic", "value"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Dynamic / value",
+    adjacency: "adjacent",
+  },
+  {
+    name: "Costco",
+    formats: ["club", "membership", "grocery", "mass"],
+    sectors: ["club", "food", "household", "mass"],
+    pricingSignals: ["value", "edlp"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Value",
+    adjacency: "adjacent",
+  },
+  {
+    name: "Kroger",
+    formats: ["grocery", "supermarket"],
+    sectors: ["food", "drug", "grocery"],
+    pricingSignals: ["high-low", "loyalty", "hybrid"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Mid-market",
+    adjacency: "direct",
+  },
+  {
+    name: "Albertsons",
+    formats: ["grocery", "supermarket"],
+    sectors: ["food", "drug", "grocery"],
+    pricingSignals: ["high-low", "loyalty", "hybrid"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Mid-market",
+    adjacency: "direct",
+  },
+  {
+    name: "Meijer",
+    formats: ["supercenter", "grocery", "mass"],
+    sectors: ["food", "mass", "household"],
+    pricingSignals: ["hybrid", "value"],
+    scale: "Regional",
+    geography: "Midwest",
+    pricePosition: "Value / mid-market",
+    adjacency: "direct",
+  },
+  {
+    name: "Sprouts",
+    formats: ["specialty grocery", "grocery"],
+    sectors: ["food", "natural grocery", "specialty"],
+    pricingSignals: ["high-low", "premium"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Premium / specialty",
+    adjacency: "adjacent",
+  },
+  {
+    name: "Publix",
+    formats: ["grocery", "supermarket"],
+    sectors: ["food", "grocery"],
+    pricingSignals: ["high-low", "premium"],
+    scale: "Regional",
+    geography: "Southeast",
+    pricePosition: "Premium",
+    adjacency: "direct",
+  },
+  {
+    name: "Aldi",
+    formats: ["discount grocery", "grocery"],
+    sectors: ["food", "grocery", "discount"],
+    pricingSignals: ["edlp", "value"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Value",
+    adjacency: "adjacent",
+  },
+  {
+    name: "Nordstrom",
+    formats: ["department store", "apparel", "specialty"],
+    sectors: ["apparel", "fashion", "department store"],
+    pricingSignals: ["premium", "high-low"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Premium",
+    adjacency: "direct",
+  },
+  {
+    name: "Kohl's",
+    formats: ["department store", "apparel"],
+    sectors: ["apparel", "home", "department store"],
+    pricingSignals: ["high-low", "promo"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Mid-market / promotional",
+    adjacency: "direct",
+  },
+  {
+    name: "Macy's",
+    formats: ["department store", "apparel"],
+    sectors: ["apparel", "fashion", "department store"],
+    pricingSignals: ["high-low", "promo"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Mid-market",
+    adjacency: "direct",
+  },
+  {
+    name: "Best Buy",
+    formats: ["specialty", "electronics"],
+    sectors: ["electronics", "specialty"],
+    pricingSignals: ["price match", "promo"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Mid-market",
+    adjacency: "direct",
+  },
+  {
+    name: "Home Depot",
+    formats: ["home improvement", "specialty"],
+    sectors: ["home", "hardlines", "specialty"],
+    pricingSignals: ["edlp", "promo"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Mid-market / value",
+    adjacency: "direct",
+  },
+  {
+    name: "Lowe's",
+    formats: ["home improvement", "specialty"],
+    sectors: ["home", "hardlines", "specialty"],
+    pricingSignals: ["edlp", "promo"],
+    scale: "National",
+    geography: "US",
+    pricePosition: "Mid-market / value",
+    adjacency: "direct",
+  },
+];
+
+const getRetailerAttributeSignals = (
+  retailerName: string,
+  structuredContext: ClientStructuredContext,
+  scopeInputs: RetailerScopeInputs,
+  additionalClientContext: string
+) => {
+  const combinedContext = `${retailerName} ${structuredContext.retailerFormat} ${scopeInputs.retailerFormat} ${structuredContext.pricingModel} ${additionalClientContext}`.toLowerCase();
+  const sectorSignals: string[] = [];
+  const formatSignals: string[] = [];
+
+  if (/(grocery|supermarket|food|fresh|natural|kroger|albertsons|publix|sprouts|aldi|meijer)/.test(combinedContext)) {
+    sectorSignals.push("food", "grocery");
+    formatSignals.push("grocery", "supermarket");
+  }
+  if (/(mass|general merchandise|supercenter|target|walmart)/.test(combinedContext)) {
+    sectorSignals.push("mass", "household");
+    formatSignals.push("mass", "general merchandise");
+  }
+  if (/(club|membership|warehouse|costco|sam)/.test(combinedContext)) {
+    sectorSignals.push("club", "household");
+    formatSignals.push("club", "membership");
+  }
+  if (/(apparel|fashion|department|macy|nordstrom|kohl)/.test(combinedContext)) {
+    sectorSignals.push("apparel", "department store", "fashion");
+    formatSignals.push("department store", "apparel");
+  }
+  if (/(electronics|best buy|technology)/.test(combinedContext)) {
+    sectorSignals.push("electronics", "specialty");
+    formatSignals.push("electronics", "specialty");
+  }
+  if (/(home improvement|hardlines|home depot|lowe)/.test(combinedContext)) {
+    sectorSignals.push("home", "hardlines", "specialty");
+    formatSignals.push("home improvement", "specialty");
+  }
+  if (/(specialty|premium)/.test(combinedContext)) {
+    sectorSignals.push("specialty");
+    formatSignals.push("specialty");
+  }
+
+  const pricingSignals = [
+    structuredContext.pricingModel,
+    /edlp|everyday low/.test(combinedContext) ? "edlp" : "",
+    /high-low|promo|promotional/.test(combinedContext) ? "high-low" : "",
+    /hybrid/.test(combinedContext) ? "hybrid" : "",
+    /value|discount/.test(combinedContext) ? "value" : "",
+    /premium/.test(combinedContext) ? "premium" : "",
+  ]
+    .map((signal) => signal.toLowerCase())
+    .filter(Boolean);
+
+  return {
+    sectors: Array.from(new Set(sectorSignals.length > 0 ? sectorSignals : ["mass"])),
+    formats: Array.from(new Set(formatSignals)),
+    pricingSignals: Array.from(new Set(pricingSignals)),
+    geography: /midwest|southeast|west|northeast|regional/.test(combinedContext)
+      ? combinedContext
+      : "US",
+  };
 };
 
 const inferCompetitorTemplateKey = (
@@ -525,10 +727,6 @@ const generateCompetitorSuggestions = ({
 }) => {
   const formatSignal =
     scopeInputs.retailerFormat || structuredContext.retailerFormat || "Other";
-  const templateKey = inferCompetitorTemplateKey(
-    formatSignal,
-    additionalClientContext
-  );
   const pricingModel = structuredContext.pricingModel || "current pricing model";
   const scopeSignal = structuredContext.scopeSignal || "diagnostic scope";
   const contextSignal =
@@ -538,20 +736,62 @@ const generateCompetitorSuggestions = ({
         ? "client context notes"
         : "format-based placeholders";
   const retailerNameNormalized = retailerName.trim().toLowerCase();
-
-  return (competitorTemplates[templateKey] || competitorTemplates.other)
+  const signals = getRetailerAttributeSignals(
+    retailerName,
+    structuredContext,
+    scopeInputs,
+    additionalClientContext
+  );
+  const scoredCandidates = competitorCandidatePool
     .filter(
-      (competitor) =>
-        competitor.name.trim().toLowerCase() !== retailerNameNormalized
+      (candidate) => candidate.name.trim().toLowerCase() !== retailerNameNormalized
     )
-    .slice(0, 6)
-    .map((competitor) => ({
-      ...competitor,
-      id: `${competitor.id}-${pricingModel}-${scopeSignal}`
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-"),
-      reason: `Selected from ${formatSignal} format, ${pricingModel} pricing, ${scopeSignal.toLowerCase()} scope, and ${contextSignal}.`,
-    }));
+    .map((candidate) => {
+      const sectorScore = candidate.sectors.filter((sector) =>
+        signals.sectors.includes(sector)
+      ).length;
+      const formatScore = candidate.formats.filter((format) =>
+        signals.formats.includes(format)
+      ).length;
+      const pricingScore = candidate.pricingSignals.filter((pricingSignal) =>
+        signals.pricingSignals.includes(pricingSignal)
+      ).length;
+      const geographyScore = signals.geography.includes(
+        candidate.geography.toLowerCase()
+      )
+        ? 1
+        : 0;
+      const nationalScaleScore = candidate.scale === "National" ? 1 : 0;
+      const adjacentScore = candidate.adjacency === "adjacent" ? 0.5 : 1;
+
+      return {
+        candidate,
+        score:
+          sectorScore * 4 +
+          formatScore * 3 +
+          pricingScore * 2 +
+          geographyScore +
+          nationalScaleScore +
+          adjacentScore,
+      };
+    })
+    .filter(({ score }) => score > 0)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 5);
+
+  return scoredCandidates.map(({ candidate, score }) =>
+    createCompetitor(
+      candidate.name,
+      candidate.formats[0] || formatSignal,
+      candidate.scale,
+      candidate.adjacency === "direct"
+        ? "Direct competitor"
+        : "Adjacent competitor",
+      candidate.pricePosition,
+      `Selected by attribute scoring from ${formatSignal} format, ${pricingModel} pricing, ${signals.sectors.join(", ")} sector signals, ${scopeSignal.toLowerCase()} scope, and ${contextSignal}. Score: ${score.toFixed(1)}.`,
+      "AI suggested"
+    )
+  );
 };
 
 const newsCategoryStyles: Record<HeadlineCategory, string> = {
@@ -909,6 +1149,82 @@ const buildExternalFinancialSeries = (
   source: values.length > 0 ? "external" : null,
 });
 
+const getLatestRevenueDollars = (profile: RetailerProfile) => {
+  const revenueSeries = profile.financials.find(
+    (series) => series.label === "Revenue"
+  );
+  const latestRevenuePoint =
+    revenueSeries?.values[revenueSeries.values.length - 1];
+
+  return typeof latestRevenuePoint?.value === "number"
+    ? latestRevenuePoint.value * 1000000000
+    : null;
+};
+
+const getEffectiveAnnualRevenueInput = (
+  scopeInputs: RetailerScopeInputs,
+  sourcedRevenueDollars: number | null
+) => {
+  if (scopeInputs.annualRevenue.trim()) return scopeInputs.annualRevenue;
+  if (sourcedRevenueDollars) return String(Math.round(sourcedRevenueDollars));
+  return "";
+};
+
+const calculateMedian = (values: number[]) => {
+  if (values.length === 0) return null;
+  const sortedValues = [...values].sort((left, right) => left - right);
+  const midpoint = Math.floor(sortedValues.length / 2);
+
+  return sortedValues.length % 2 === 0
+    ? ((sortedValues[midpoint - 1] || 0) + (sortedValues[midpoint] || 0)) / 2
+    : sortedValues[midpoint] || null;
+};
+
+const getMarketMetricValue = (profile: RetailerProfile | null, label: string) =>
+  profile?.marketPosition.find((metric) => metric.label === label)?.company ??
+  null;
+
+const buildPeerBenchmark = ({
+  metric,
+  competitors,
+  peerProfiles,
+  isLoading,
+}: {
+  metric: SourcedPeerComparisonMetric;
+  competitors: RetailerCompetitor[];
+  peerProfiles: Record<string, RetailerProfile | null>;
+  isLoading: boolean;
+}): PeerBenchmark => {
+  if (competitors.length === 0) {
+    return {
+      benchmarkValue: metric.peerMedian,
+      details: [],
+      availableCount: metric.peerMedian === null ? 0 : 1,
+      totalCount: 0,
+      isSelectedSet: false,
+      isLoading: false,
+    };
+  }
+
+  const details = competitors.map((competitor) => ({
+    name: competitor.name,
+    value: getMarketMetricValue(peerProfiles[competitor.name] || null, metric.label),
+  }));
+  const availableValues = details.flatMap((detail) =>
+    detail.value === null ? [] : [detail.value]
+  );
+
+  return {
+    benchmarkValue:
+      availableValues.length > 0 ? calculateMedian(availableValues) : metric.peerMedian,
+    details,
+    availableCount: availableValues.length,
+    totalCount: competitors.length,
+    isSelectedSet: true,
+    isLoading,
+  };
+};
+
 const mapApiResponseToRetailerProfile = (
   response: RetailerProfileApiResponse,
   fallbackRetailerName: string
@@ -1252,6 +1568,14 @@ const mockInputs = {
 };
 
 const opportunity = estimateOpportunity(mockInputs);
+const sourcedRetailerRevenue = getLatestRevenueDollars(retailerProfile);
+const effectiveRetailerScopeInputs: RetailerScopeInputs = {
+  ...retailerScopeInputs,
+  annualRevenue: getEffectiveAnnualRevenueInput(
+    retailerScopeInputs,
+    sourcedRetailerRevenue
+  ),
+};
 
   const activeWorkflowStep =
     activeTab !== "overview"
@@ -1442,6 +1766,7 @@ const opportunity = estimateOpportunity(mockInputs);
                         clientContext={clientContext}
                         scopeInputs={retailerScopeInputs}
                         setScopeInputs={setRetailerScopeInputs}
+                        sourcedRetailerRevenue={sourcedRetailerRevenue}
                         setCategoryListManuallyEdited={
                           setCategoryListManuallyEdited
                         }
@@ -1468,7 +1793,7 @@ const opportunity = estimateOpportunity(mockInputs);
                       <OpportunitySection
                         opportunity={opportunity}
                         analysisMode={analysisMode}
-                        scopeInputs={retailerScopeInputs}
+                        scopeInputs={effectiveRetailerScopeInputs}
                         clientContext={clientContext}
                       />
                     )}
@@ -2058,6 +2383,7 @@ function ScopeOfDiagnosticSection({
   clientContext,
   scopeInputs,
   setScopeInputs,
+  sourcedRetailerRevenue,
   setCategoryListManuallyEdited,
   competitors,
   setCompetitors,
@@ -2068,6 +2394,7 @@ function ScopeOfDiagnosticSection({
   clientContext: ClientContext;
   scopeInputs: RetailerScopeInputs;
   setScopeInputs: (value: RetailerScopeInputs) => void;
+  sourcedRetailerRevenue: number | null;
   setCategoryListManuallyEdited: (value: boolean) => void;
   competitors: RetailerCompetitor[];
   setCompetitors: (value: RetailerCompetitor[]) => void;
@@ -2089,7 +2416,9 @@ function ScopeOfDiagnosticSection({
     setScopeInputs({ ...scopeInputs, ...updates });
   };
 
-  const totalRevenue = parseCurrencyInput(annualRevenue, defaultRetailerRevenue);
+  const revenueFallback = sourcedRetailerRevenue || defaultRetailerRevenue;
+  const totalRevenue = parseCurrencyInput(annualRevenue, revenueFallback);
+  const hasRevenueOverride = annualRevenue.trim().length > 0;
   const scopedRevenuePct = parsePercentageInput(
     addressableRevenuePct,
     defaultAddressableRevenuePct
@@ -2294,6 +2623,40 @@ function ScopeOfDiagnosticSection({
 
           <label className="w-full rounded-xl border border-blue-100 bg-white px-3 py-2 shadow-sm sm:w-auto">
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+              Total revenue
+            </span>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <input
+                value={annualRevenue}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  updateScopeInputs({ annualRevenue: e.target.value })
+                }
+                placeholder={
+                  sourcedRetailerRevenue
+                    ? formatCurrencyShort(sourcedRetailerRevenue)
+                    : "Enter revenue"
+                }
+                className="w-36 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+                aria-label="Total retailer revenue"
+              />
+              {hasRevenueOverride && (
+                <button
+                  type="button"
+                  onClick={() => updateScopeInputs({ annualRevenue: "" })}
+                  className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 text-xs font-semibold text-gray-600 transition hover:border-[var(--ui-blue)]"
+                >
+                  Use sourced
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] font-semibold text-gray-500">
+              {hasRevenueOverride
+                ? "Manual override used downstream"
+                : sourcedRetailerRevenue
+                  ? "Using sourced Retailer Overview revenue"
+                  : "No sourced revenue available"}
+            </p>
+            <span className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
               % of total revenue
             </span>
             <div className="mt-1 flex items-center gap-2">
@@ -2310,7 +2673,7 @@ function ScopeOfDiagnosticSection({
               <span className="text-sm font-semibold text-gray-500">%</span>
             </div>
             <p className="mt-1 text-[11px] font-semibold text-gray-500">
-              Total revenue: {formatCurrencyShort(totalRevenue)}
+              Effective total: {formatCurrencyShort(totalRevenue)}
             </p>
           </label>
         </div>
@@ -2672,8 +3035,48 @@ function RetailerOverviewSection({
   const workingCapitalMetric = retailerProfile.profitability.find(
     (metric) => metric.label === "Working capital / revenue"
   );
-  const selectedPeerLabel =
-    competitors.length > 0 ? "Selected peer set" : "Peer median";
+  const [peerProfiles, setPeerProfiles] = useState<
+    Record<string, RetailerProfile | null>
+  >({});
+  const [peerProfilesLoading, setPeerProfilesLoading] = useState(false);
+  const peerNames = competitors.map((competitor) => competitor.name.trim()).filter(Boolean);
+  const peerNamesKey = peerNames.join("|");
+
+  useEffect(() => {
+    let isActive = true;
+    const uniquePeerNames = Array.from(
+      new Set(peerNamesKey.split("|").filter(Boolean))
+    );
+
+    if (uniquePeerNames.length === 0) {
+      setPeerProfiles({});
+      setPeerProfilesLoading(false);
+      return;
+    }
+
+    setPeerProfilesLoading(true);
+    Promise.all(
+      uniquePeerNames.map(async (peerName) => {
+        try {
+          return [peerName, await fetchRetailerData(peerName)] as const;
+        } catch {
+          return [peerName, null] as const;
+        }
+      })
+    ).then((entries) => {
+      if (!isActive) return;
+
+      setPeerProfiles(Object.fromEntries(entries));
+      setPeerProfilesLoading(false);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [peerNamesKey]);
+  const marketMetrics = retailerProfile.marketPosition.filter(
+    (metric) => metric.label !== "TSR"
+  );
 
   return (
     <div className="space-y-4">
@@ -2760,23 +3163,33 @@ function RetailerOverviewSection({
             Market Position vs Peers
           </p>
           <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-            Company performance against peer median
+            Company performance against selected peers
           </h3>
           <p className="mt-2 text-sm leading-6 text-gray-600">
             Peer view anchored on{" "}
             {competitors.length > 0
               ? competitors.map((competitor) => competitor.name).join(", ")
-              : "the selected competitor set"}
+              : "the available peer benchmark"}
             .
           </p>
         </div>
 
         <div className="space-y-3">
-          {retailerProfile.marketPosition.map((metric) => (
+          {peerProfilesLoading && competitors.length > 0 && (
+            <p className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-[var(--ui-blue)]">
+              Fetching selected peer profiles...
+            </p>
+          )}
+          {marketMetrics.map((metric) => (
             <div key={metric.label}>
               {renderPeerComparisonBar(
                 metric,
-                metric.label === "Margin" ? selectedPeerLabel : "Peer median"
+                buildPeerBenchmark({
+                  metric,
+                  competitors,
+                  peerProfiles,
+                  isLoading: peerProfilesLoading,
+                })
               )}
             </div>
           ))}
@@ -3026,19 +3439,30 @@ function renderWorkingCapitalCard(
 
 function renderPeerComparisonBar(
   metric: SourcedPeerComparisonMetric,
-  peerBenchmarkLabel = "Peer median"
+  peerBenchmark: PeerBenchmark
 ) {
   const hasCompanyValue = metric.company !== null;
-  const hasPeerValue = metric.peerMedian !== null;
-  const maxValue = Math.max(metric.company || 0, metric.peerMedian || 0, 1);
+  const hasPeerValue = peerBenchmark.benchmarkValue !== null;
+  const maxValue = Math.max(
+    metric.company || 0,
+    peerBenchmark.benchmarkValue || 0,
+    1
+  );
   const companyWidth = hasCompanyValue
     ? `${Math.max(((metric.company || 0) / maxValue) * 100, 4)}%`
     : "0%";
   const peerWidth = hasPeerValue
-    ? `${Math.max(((metric.peerMedian || 0) / maxValue) * 100, 4)}%`
+    ? `${Math.max(((peerBenchmark.benchmarkValue || 0) / maxValue) * 100, 4)}%`
     : "0%";
   const formatValue = (value: number) =>
     metric.unit === "percent" ? `${value.toFixed(1)}%` : value.toFixed(1);
+  const peerBenchmarkLabel = peerBenchmark.isSelectedSet
+    ? "Selected peer median"
+    : "Peer median";
+  const usingFallbackBenchmark =
+    peerBenchmark.isSelectedSet &&
+    peerBenchmark.availableCount === 0 &&
+    hasPeerValue;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
@@ -3076,10 +3500,37 @@ function renderPeerComparisonBar(
             />
           </div>
           <span className="text-right font-semibold text-[var(--ui-text)]">
-            {hasPeerValue ? formatValue(metric.peerMedian || 0) : "N/A"}
+            {hasPeerValue ? formatValue(peerBenchmark.benchmarkValue || 0) : "N/A"}
           </span>
         </div>
       </div>
+
+      {peerBenchmark.isSelectedSet && (
+        <div className="mt-3 space-y-2 border-t border-gray-200 pt-3">
+          <p className="text-xs font-medium text-gray-500">
+            Benchmark from selected competitive set:{" "}
+            {peerBenchmark.availableCount > 0
+              ? `${peerBenchmark.availableCount}/${peerBenchmark.totalCount} peers with ${metric.label.toLowerCase()} data`
+              : peerBenchmark.isLoading
+                ? "loading peer values"
+                : usingFallbackBenchmark
+                  ? "no selected peers returned usable data; showing fallback benchmark"
+                  : "no selected peers returned usable data"}
+            .
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {peerBenchmark.details.map((peer) => (
+              <span
+                key={`${metric.label}-${peer.name}`}
+                className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-600"
+              >
+                {peer.name}:{" "}
+                {peer.value === null ? "Not available" : formatValue(peer.value)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
