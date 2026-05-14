@@ -60,6 +60,11 @@ type FmpNewsItem = {
   publishedDate?: string;
   site?: string;
 };
+type FmpFetchResult<T> = {
+  data: T | null;
+  error: string | null;
+  status: number | null;
+};
 
 const emptyProfile = (
   retailerName: string,
@@ -98,23 +103,67 @@ const toPercent = (value: number | undefined) => {
   return Math.abs(value) <= 1 ? value * 100 : value;
 };
 
-const fmpFetch = async <T>(path: string, apiKey: string): Promise<T | null> => {
+const fmpFetch = async <T>(
+  path: string,
+  apiKey: string
+): Promise<FmpFetchResult<T>> => {
   const apiUrlWithoutKey = `https://financialmodelingprep.com/api/v3${path}`;
   const apiUrl = `${apiUrlWithoutKey}${
     path.includes("?") ? "&" : "?"
   }apikey=${encodeURIComponent(apiKey)}`;
+  const sanitizedApiUrl = `${apiUrlWithoutKey}${
+    path.includes("?") ? "&" : "?"
+  }apikey=<redacted>`;
 
-  console.log("[retailer-profile] FMP API URL:", apiUrlWithoutKey);
+  console.log("[retailer-profile] FMP request URL:", sanitizedApiUrl);
 
-  const response = await fetch(apiUrl, { next: { revalidate: 3600 } });
+  let response: Response;
+  try {
+    response = await fetch(apiUrl, { next: { revalidate: 3600 } });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Network error while calling FMP";
+    const fetchError = `FMP request failed for ${sanitizedApiUrl}: ${message}`;
 
-  if (!response.ok) {
-    throw new Error(
-      `FMP request failed for ${apiUrlWithoutKey} with status ${response.status}`
-    );
+    console.error("[retailer-profile] FMP fetch error:", fetchError);
+    return { data: null, error: fetchError, status: null };
   }
 
-  return (await response.json()) as T;
+  if (!response.ok) {
+    const responseBody = await response.text().catch(() => "");
+    const error = `FMP request failed for ${sanitizedApiUrl} with status ${response.status}`;
+
+    console.error(
+      "[retailer-profile] FMP failed response:",
+      JSON.stringify(
+        {
+          url: sanitizedApiUrl,
+          status: response.status,
+          statusText: response.statusText,
+          body: responseBody,
+        },
+        null,
+        2
+      )
+    );
+
+    return { data: null, error, status: response.status };
+  }
+
+  try {
+    return { data: (await response.json()) as T, error: null, status: response.status };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to parse FMP response JSON";
+    const parseError = `FMP response parse failed for ${sanitizedApiUrl}: ${message}`;
+
+    console.error("[retailer-profile] FMP parse error:", parseError);
+    return { data: null, error: parseError, status: response.status };
+  }
 };
 
 const fetchHeadlines = async (ticker: string, fmpApiKey: string) => {
@@ -123,7 +172,7 @@ const fetchHeadlines = async (ticker: string, fmpApiKey: string) => {
     fmpApiKey
   );
 
-  return (newsItems || [])
+  return (newsItems.data || [])
     .filter((article) => article.title)
     .slice(0, 5)
     .map((article) => ({
@@ -165,13 +214,36 @@ export async function GET(request: Request) {
     );
   }
 
-  let incomeStatements: FmpIncomeStatement[] | null;
-  let ratios: FmpRatio[] | null;
-  let growthMetrics: FmpGrowthMetric[] | null;
-  let headlines: RetailerProfileResponse["headlines"];
+  const [profileCheck, quoteCheck] = await Promise.all([
+    fmpFetch<unknown[]>(`/profile/${encodeURIComponent(ticker)}`, fmpApiKey),
+    fmpFetch<unknown[]>(`/quote/${encodeURIComponent(ticker)}`, fmpApiKey),
+  ]);
+  console.log(
+    "[retailer-profile] FMP simple endpoint test:",
+    JSON.stringify({
+      ticker,
+      profileStatus: profileCheck.status,
+      profileOk: Boolean(profileCheck.data),
+      quoteStatus: quoteCheck.status,
+      quoteOk: Boolean(quoteCheck.data),
+    })
+  );
 
-  try {
-    [incomeStatements, ratios, growthMetrics, headlines] = await Promise.all([
+  const keyAppearsValid = Boolean(profileCheck.data || quoteCheck.data);
+  if (!keyAppearsValid) {
+    const error =
+      profileCheck.error ||
+      quoteCheck.error ||
+      "FMP profile and quote checks failed for this ticker";
+
+    return NextResponse.json(
+      emptyProfile(resolvedRetailerName, ticker, ownership, error),
+      { status: 502 }
+    );
+  }
+
+  const [incomeStatementResult, ratioResult, growthResult, headlines] =
+    await Promise.all([
       fmpFetch<FmpIncomeStatement[]>(
         `/income-statement/${encodeURIComponent(ticker)}?limit=5`,
         fmpApiKey
@@ -183,20 +255,21 @@ export async function GET(request: Request) {
       ),
       fetchHeadlines(ticker, fmpApiKey),
     ]);
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to fetch retailer profile from FMP";
-    console.error("[retailer-profile]", message);
+  const endpointErrors = [
+    incomeStatementResult.error,
+    ratioResult.error,
+    growthResult.error,
+  ].filter((error): error is string => Boolean(error));
+  const planLimitedIncomeStatement =
+    incomeStatementResult.status === 403 && keyAppearsValid;
 
-    return NextResponse.json(
-      emptyProfile(resolvedRetailerName, ticker, ownership, message),
-      { status: 502 }
+  if (planLimitedIncomeStatement) {
+    console.warn(
+      "[retailer-profile] Income statement endpoint returned 403 while profile/quote succeeded. Treating as endpoint or plan-level restriction and returning available FMP data."
     );
   }
 
-  const financials = (incomeStatements || []).slice(0, 5).reverse();
+  const financials = (incomeStatementResult.data || []).slice(0, 5).reverse();
   const revenue = financials.flatMap((item) => {
     const value = toBillions(item.revenue);
     return value === null ? [] : [{ year: getYear(item), value }];
@@ -209,8 +282,8 @@ export async function GET(request: Request) {
     const value = toPercent(item.ebitdaratio);
     return value === null ? [] : [{ year: getYear(item), value }];
   });
-  const latestRatio = ratios?.[0];
-  const latestGrowthMetric = growthMetrics?.[0];
+  const latestRatio = ratioResult.data?.[0];
+  const latestGrowthMetric = growthResult.data?.[0];
   const latestMargin =
     margin.length > 0 ? margin[margin.length - 1]?.value ?? null : null;
 
@@ -218,7 +291,10 @@ export async function GET(request: Request) {
     retailerName: resolvedRetailerName,
     ticker,
     ownership,
-    error: null,
+    error:
+      endpointErrors.length > 0
+        ? `Partial FMP data returned. ${endpointErrors.join(" ")}`
+        : null,
     financials: {
       revenue,
       ebitda,
