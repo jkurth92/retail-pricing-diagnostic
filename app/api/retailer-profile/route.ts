@@ -5,12 +5,25 @@ type FinancialPoint = {
   year: string;
   value: number;
 };
+type EndpointStatus = {
+  status: "not_requested" | "succeeded" | "unavailable" | "blocked" | "failed";
+  statusCode: number | null;
+  error: string | null;
+};
 
 type RetailerProfileResponse = {
   retailerName: string;
   ticker: string | null;
   ownership: "public" | "private" | "unknown";
   error: string | null;
+  endpointStatus: {
+    profile: EndpointStatus;
+    quote: EndpointStatus;
+    incomeStatement: EndpointStatus;
+    ratios: EndpointStatus;
+    growth: EndpointStatus;
+    news: EndpointStatus;
+  };
   financials: {
     revenue: FinancialPoint[];
     ebitda: FinancialPoint[];
@@ -65,6 +78,25 @@ type FmpFetchResult<T> = {
   error: string | null;
   status: number | null;
 };
+type FmpHeadlineResult = {
+  headlines: RetailerProfileResponse["headlines"];
+  endpointStatus: EndpointStatus;
+};
+
+const notRequestedStatus: EndpointStatus = {
+  status: "not_requested",
+  statusCode: null,
+  error: null,
+};
+
+const createEmptyEndpointStatus = (): RetailerProfileResponse["endpointStatus"] => ({
+  profile: notRequestedStatus,
+  quote: notRequestedStatus,
+  incomeStatement: notRequestedStatus,
+  ratios: notRequestedStatus,
+  growth: notRequestedStatus,
+  news: notRequestedStatus,
+});
 
 const emptyProfile = (
   retailerName: string,
@@ -76,6 +108,7 @@ const emptyProfile = (
   ticker,
   ownership,
   error,
+  endpointStatus: createEmptyEndpointStatus(),
   financials: {
     revenue: [],
     ebitda: [],
@@ -101,6 +134,27 @@ const toBillions = (value: number | undefined) =>
 const toPercent = (value: number | undefined) => {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   return Math.abs(value) <= 1 ? value * 100 : value;
+};
+
+const hasUsableData = <T,>(data: T | null) =>
+  Array.isArray(data) ? data.length > 0 : data !== null;
+
+const endpointStatusFromResult = <T,>(
+  result: FmpFetchResult<T>
+): EndpointStatus => {
+  if (hasUsableData(result.data)) {
+    return { status: "succeeded", statusCode: result.status, error: null };
+  }
+
+  if (result.status === 403) {
+    return { status: "blocked", statusCode: result.status, error: result.error };
+  }
+
+  if (result.error) {
+    return { status: "failed", statusCode: result.status, error: result.error };
+  }
+
+  return { status: "unavailable", statusCode: result.status, error: null };
 };
 
 const fmpFetch = async <T>(
@@ -166,20 +220,26 @@ const fmpFetch = async <T>(
   }
 };
 
-const fetchHeadlines = async (ticker: string, fmpApiKey: string) => {
+const fetchHeadlines = async (
+  ticker: string,
+  fmpApiKey: string
+): Promise<FmpHeadlineResult> => {
   const newsItems = await fmpFetch<FmpNewsItem[]>(
     `/stock_news?tickers=${encodeURIComponent(ticker)}&limit=5`,
     fmpApiKey
   );
 
-  return (newsItems.data || [])
-    .filter((article) => article.title)
-    .slice(0, 5)
-    .map((article) => ({
-      title: article.title || "",
-      date: article.publishedDate || null,
-      source: article.site || null,
-    }));
+  return {
+    headlines: (newsItems.data || [])
+      .filter((article) => article.title)
+      .slice(0, 5)
+      .map((article) => ({
+        title: article.title || "",
+        date: article.publishedDate || null,
+        source: article.site || null,
+      })),
+    endpointStatus: endpointStatusFromResult(newsItems),
+  };
 };
 
 export async function GET(request: Request) {
@@ -229,20 +289,7 @@ export async function GET(request: Request) {
     })
   );
 
-  const keyAppearsValid = Boolean(profileCheck.data || quoteCheck.data);
-  if (!keyAppearsValid) {
-    const error =
-      profileCheck.error ||
-      quoteCheck.error ||
-      "FMP profile and quote checks failed for this ticker";
-
-    return NextResponse.json(
-      emptyProfile(resolvedRetailerName, ticker, ownership, error),
-      { status: 502 }
-    );
-  }
-
-  const [incomeStatementResult, ratioResult, growthResult, headlines] =
+  const [incomeStatementResult, ratioResult, growthResult, newsResult] =
     await Promise.all([
       fmpFetch<FmpIncomeStatement[]>(
         `/income-statement/${encodeURIComponent(ticker)}?limit=5`,
@@ -255,17 +302,42 @@ export async function GET(request: Request) {
       ),
       fetchHeadlines(ticker, fmpApiKey),
     ]);
-  const endpointErrors = [
-    incomeStatementResult.error,
-    ratioResult.error,
-    growthResult.error,
-  ].filter((error): error is string => Boolean(error));
+  const endpointStatus: RetailerProfileResponse["endpointStatus"] = {
+    profile: endpointStatusFromResult(profileCheck),
+    quote: endpointStatusFromResult(quoteCheck),
+    incomeStatement: endpointStatusFromResult(incomeStatementResult),
+    ratios: endpointStatusFromResult(ratioResult),
+    growth: endpointStatusFromResult(growthResult),
+    news: newsResult.endpointStatus,
+  };
+  const usableSources = [
+    profileCheck,
+    quoteCheck,
+    incomeStatementResult,
+    ratioResult,
+    growthResult,
+  ].filter((result) => hasUsableData(result.data)).length + (newsResult.headlines.length > 0 ? 1 : 0);
+  const profileOrQuoteSucceeded =
+    endpointStatus.profile.status === "succeeded" ||
+    endpointStatus.quote.status === "succeeded";
   const planLimitedIncomeStatement =
-    incomeStatementResult.status === 403 && keyAppearsValid;
+    endpointStatus.incomeStatement.status === "blocked" && profileOrQuoteSucceeded;
 
   if (planLimitedIncomeStatement) {
     console.warn(
       "[retailer-profile] Income statement endpoint returned 403 while profile/quote succeeded. Treating as endpoint or plan-level restriction and returning available FMP data."
+    );
+  }
+
+  if (usableSources === 0) {
+    const error = "All usable FMP public data sources failed or returned no data.";
+
+    return NextResponse.json(
+      {
+        ...emptyProfile(resolvedRetailerName, ticker, ownership, error),
+        endpointStatus,
+      },
+      { status: 502 }
     );
   }
 
@@ -291,10 +363,8 @@ export async function GET(request: Request) {
     retailerName: resolvedRetailerName,
     ticker,
     ownership,
-    error:
-      endpointErrors.length > 0
-        ? `Partial FMP data returned. ${endpointErrors.join(" ")}`
-        : null,
+    error: null,
+    endpointStatus,
     financials: {
       revenue,
       ebitda,
@@ -317,7 +387,7 @@ export async function GET(request: Request) {
         toPercent(latestRatio?.ebitdaMargin) ??
         toPercent(latestRatio?.operatingProfitMargin),
     },
-    headlines,
+    headlines: newsResult.headlines,
   };
 
   return NextResponse.json(profile);
