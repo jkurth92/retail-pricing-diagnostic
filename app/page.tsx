@@ -2669,6 +2669,11 @@ function RetailerOverviewSection({
   retailerProfileError: string | null;
 }) {
   const retailerName = retailerProfile.retailerName.trim() || "Retailer";
+  const workingCapitalMetric = retailerProfile.profitability.find(
+    (metric) => metric.label === "Working capital / revenue"
+  );
+  const selectedPeerLabel =
+    competitors.length > 0 ? "Selected peer set" : "Peer median";
 
   return (
     <div className="space-y-4">
@@ -2741,47 +2746,11 @@ function RetailerOverviewSection({
           </p>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           {retailerProfile.financials.map((series) => (
             <div key={series.label}>{renderMiniLineChart(series)}</div>
           ))}
-        </div>
-      </section>
-
-      <section className={`${sectionCard} space-y-4`}>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-            Profitability & Efficiency
-          </p>
-          <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
-            Returns, capital intensity, and cost structure
-          </h3>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {retailerProfile.profitability.map((metric) => (
-            <div key={metric.label} className={subCard}>
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-                  {metric.label}
-                </p>
-                {renderSourceBadge(metric.source)}
-              </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
-                {metric.value || "Not available"}
-              </p>
-              {metric.benchmark && (
-                <p className="mt-1 text-xs font-medium text-gray-600">
-                  {metric.benchmark}
-                </p>
-              )}
-              {metric.note && (
-                <p className="mt-2 text-xs leading-5 text-gray-500">
-                  {metric.note}
-                </p>
-              )}
-            </div>
-          ))}
+          {renderWorkingCapitalCard(workingCapitalMetric)}
         </div>
       </section>
 
@@ -2804,7 +2773,12 @@ function RetailerOverviewSection({
 
         <div className="space-y-3">
           {retailerProfile.marketPosition.map((metric) => (
-            <div key={metric.label}>{renderPeerComparisonBar(metric)}</div>
+            <div key={metric.label}>
+              {renderPeerComparisonBar(
+                metric,
+                metric.label === "Margin" ? selectedPeerLabel : "Peer median"
+              )}
+            </div>
           ))}
         </div>
       </section>
@@ -3024,7 +2998,36 @@ function renderMiniLineChart(series: SourcedFinancialSeries) {
   );
 }
 
-function renderPeerComparisonBar(metric: SourcedPeerComparisonMetric) {
+function renderWorkingCapitalCard(
+  metric: SourcedProfitabilityMetric | undefined
+) {
+  return (
+    <div className={subCard}>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+          Working Capital / Revenue
+        </p>
+        {renderSourceBadge(metric?.source || null)}
+      </div>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+        {metric?.value || "Not available"}
+      </p>
+      {metric?.benchmark && (
+        <p className="mt-1 text-xs font-medium text-gray-600">
+          {metric.benchmark}
+        </p>
+      )}
+      {metric?.note && (
+        <p className="mt-2 text-xs leading-5 text-gray-500">{metric.note}</p>
+      )}
+    </div>
+  );
+}
+
+function renderPeerComparisonBar(
+  metric: SourcedPeerComparisonMetric,
+  peerBenchmarkLabel = "Peer median"
+) {
   const hasCompanyValue = metric.company !== null;
   const hasPeerValue = metric.peerMedian !== null;
   const maxValue = Math.max(metric.company || 0, metric.peerMedian || 0, 1);
@@ -3063,7 +3066,9 @@ function renderPeerComparisonBar(metric: SourcedPeerComparisonMetric) {
         </div>
 
         <div className="grid grid-cols-[92px_1fr_48px] items-center gap-2 text-xs">
-          <span className="font-semibold text-gray-500">Peer median</span>
+          <span className="font-semibold text-gray-500">
+            {peerBenchmarkLabel}
+          </span>
           <div className="h-2 rounded-full bg-gray-200">
             <div
               className="h-full rounded-full bg-gray-400"
