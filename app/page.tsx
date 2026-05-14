@@ -319,59 +319,6 @@ const opportunity = estimateOpportunity(mockInputs);
     </section>
   ) : (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr] lg:items-start">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Executive readout
-            </p>
-            <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-3">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Final opportunity</p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-[var(--ui-blue)]">
-                  {analysisMode === "hybrid"
-                    ? "+135 bps"
-                    : opportunity.totalMarginUpliftBps}
-                </p>
-              </div>
-              <div className="h-10 w-px bg-gray-200" />
-              <div>
-                <p className="text-xs font-medium text-gray-500">Confidence</p>
-                <p className="mt-1 text-lg font-semibold text-[var(--ui-navy)]">
-                  {analysisMode === "hybrid" ? "Medium-High" : "Medium"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Primary drivers
-            </p>
-            <div className="mt-3 grid gap-2 text-sm leading-6 text-gray-600">
-              <p>
-                Pricing misalignment vs competitors{" "}
-                <span className="font-semibold text-[var(--ui-blue)]">
-                  ({opportunity.pricing.marginUpliftBps})
-                </span>
-              </p>
-              <p>
-                High promo intensity and depth{" "}
-                <span className="font-semibold text-[var(--ui-blue)]">
-                  ({opportunity.promotions.marginUpliftBps})
-                </span>
-              </p>
-              <p>
-                Elevated markdown activity vs peers{" "}
-                <span className="font-semibold text-[var(--ui-blue)]">
-                  ({opportunity.markdown.marginUpliftBps})
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <div className="rounded-2xl border border-gray-200 bg-white px-4 pt-3 shadow-sm">
         <div className="flex flex-wrap gap-5 border-b border-gray-200">
         {[
@@ -764,7 +711,7 @@ function PromptsSection({
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
               Retailer input
@@ -805,10 +752,6 @@ function PromptsSection({
                   : "Upload client data to run"}
               </button>
             </div>
-          </div>
-
-          <div className="text-xs font-medium uppercase tracking-[0.14em] text-gray-400">
-            Looking across all categories
           </div>
         </div>
       </section>
