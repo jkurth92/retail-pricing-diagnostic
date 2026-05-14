@@ -46,6 +46,24 @@ type LeverData = {
   value: string;
   width: string;
 };
+type CategoryScopeStatus = "included" | "excluded";
+type CategoryScopeSelections = Partial<Record<string, CategoryScopeStatus>>;
+type ScopeLever = {
+  id: string;
+  label: string;
+};
+type ScopeLeverGroup = {
+  group: string;
+  levers: ScopeLever[];
+};
+type RetailerScopeInputs = {
+  annualRevenue: string;
+  storeCount: string;
+  retailerFormat: string;
+  addressableRevenuePct: string;
+  categorySelections: CategoryScopeSelections;
+  selectedLeverIds: string[];
+};
 
 const sectionCard =
   "brand-card rounded-2xl border border-gray-200 bg-white p-5 shadow-sm";
@@ -53,6 +71,73 @@ const subCard =
   "brand-subcard rounded-xl border border-gray-200 bg-white p-3 shadow-sm";
 const metricCard =
   "rounded-2xl border border-gray-200 bg-white p-4 shadow-sm";
+
+const defaultRetailerRevenue = 10000000000;
+const defaultAddressableRevenuePct = 60;
+const scopeCategories = [
+  "Grocery",
+  "Household",
+  "Health & Beauty",
+  "Apparel",
+  "Electronics",
+  "Seasonal",
+];
+const scopeLeverGroups: ScopeLeverGroup[] = [
+  {
+    group: "Pricing",
+    levers: [
+      { id: "price-architecture", label: "Price architecture" },
+      { id: "kvis", label: "KVIs" },
+      { id: "price-zoning", label: "Price zoning" },
+    ],
+  },
+  {
+    group: "Promotions",
+    levers: [
+      { id: "promo-density", label: "Promo density" },
+      { id: "promo-effectiveness", label: "Promo effectiveness" },
+    ],
+  },
+  {
+    group: "Markdown",
+    levers: [
+      { id: "markdown-timing", label: "Markdown timing" },
+      { id: "markdown-depth", label: "Markdown depth" },
+    ],
+  },
+];
+const initialRetailerScopeInputs: RetailerScopeInputs = {
+  annualRevenue: "",
+  storeCount: "",
+  retailerFormat: "",
+  addressableRevenuePct: String(defaultAddressableRevenuePct),
+  categorySelections: {
+    Grocery: "included",
+    Household: "included",
+    "Health & Beauty": "included",
+    Electronics: "excluded",
+  },
+  selectedLeverIds: scopeLeverGroups.flatMap((group) =>
+    group.levers.map((lever) => lever.id)
+  ),
+};
+
+const parseCurrencyInput = (value: string, fallback: number) => {
+  const parsedValue = Number(value.replace(/[^0-9.]/g, ""));
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;
+};
+
+const parsePercentageInput = (value: string, fallback: number) => {
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) return fallback;
+  return Math.min(Math.max(parsedValue, 0), 100);
+};
+
+const formatCurrencyShort = (value: number) => {
+  if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+  return `$${value.toLocaleString()}`;
+};
 
 const eprQuestions: { id: EprDimension; label: string }[] = [
   { id: "strategicPricePositioning", label: "Strategic Price Positioning" },
@@ -139,6 +224,8 @@ export default function Home() {
   const [uploadedClientData, setUploadedClientData] = useState<
     UploadedClientDataMetadata[]
   >([]);
+  const [retailerScopeInputs, setRetailerScopeInputs] =
+    useState<RetailerScopeInputs>(initialRetailerScopeInputs);
 
   const eprAverageScore =
     eprQuestions.reduce((total, question) => total + eprScores[question.id], 0) /
@@ -365,6 +452,8 @@ const opportunity = estimateOpportunity(mockInputs);
         <RetailerOverviewSection
           selectedRetailer={selectedRetailer}
           analysisMode={analysisMode}
+          scopeInputs={retailerScopeInputs}
+          setScopeInputs={setRetailerScopeInputs}
         />
       )}
 
@@ -963,10 +1052,64 @@ function PromptsSection({
 function RetailerOverviewSection({
   selectedRetailer,
   analysisMode,
+  scopeInputs,
+  setScopeInputs,
 }: {
   selectedRetailer: string;
   analysisMode: AnalysisMode;
+  scopeInputs: RetailerScopeInputs;
+  setScopeInputs: (value: RetailerScopeInputs) => void;
 }) {
+  const {
+    annualRevenue,
+    storeCount,
+    retailerFormat,
+    addressableRevenuePct,
+    categorySelections,
+    selectedLeverIds,
+  } = scopeInputs;
+
+  const updateScopeInputs = (updates: Partial<RetailerScopeInputs>) => {
+    setScopeInputs({ ...scopeInputs, ...updates });
+  };
+
+  const totalRevenue = parseCurrencyInput(annualRevenue, defaultRetailerRevenue);
+  const scopedRevenuePct = parsePercentageInput(
+    addressableRevenuePct,
+    defaultAddressableRevenuePct
+  );
+  const addressableRevenue = totalRevenue * (scopedRevenuePct / 100);
+  const includedCategories = scopeCategories.filter(
+    (category) => categorySelections[category] === "included"
+  );
+  const excludedCategories = scopeCategories.filter(
+    (category) => categorySelections[category] === "excluded"
+  );
+  const selectedLeverLabels = scopeLeverGroups
+    .flatMap((group) => group.levers)
+    .filter((lever) => selectedLeverIds.includes(lever.id))
+    .map((lever) => lever.label);
+
+  const setCategoryScope = (
+    category: string,
+    status: CategoryScopeStatus
+  ) => {
+    updateScopeInputs({
+      categorySelections: {
+        ...categorySelections,
+        [category]: categorySelections[category] === status ? undefined : status,
+      },
+    });
+  };
+
+  const toggleLever = (leverId: string) => {
+    updateScopeInputs({
+      selectedLeverIds: selectedLeverIds.includes(leverId)
+        ? selectedLeverIds.filter((selectedLeverId) => selectedLeverId !== leverId)
+        : [...selectedLeverIds, leverId],
+    });
+  };
+
   return (
     <section className={`${sectionCard} space-y-6`}>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -982,7 +1125,13 @@ function RetailerOverviewSection({
         <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 sm:grid-cols-3 md:min-w-[420px]">
           {[
             { label: "Retailer", value: selectedRetailer },
-            { label: "Scope", value: "All categories" },
+            {
+              label: "Scope",
+              value:
+                includedCategories.length > 0
+                  ? `${includedCategories.length} categories`
+                  : "Define categories",
+            },
             {
               label: "Mode",
               value:
@@ -1005,69 +1154,267 @@ function RetailerOverviewSection({
 
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-          Company profile
+          Retailer Snapshot
         </p>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[
-            { label: "Annual revenue", value: "—" },
-            { label: "EBITDA margin", value: "—" },
-            { label: "Store count", value: "—" },
-            { label: "Format", value: "—" },
-          ].map((item) => (
-            <div key={item.label} className={subCard}>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-                {item.label}
-              </p>
-              <p className="mt-1 text-lg font-semibold text-[var(--ui-text)]">
-                {item.value}
-              </p>
+        <div className="grid gap-3 lg:grid-cols-3">
+          <label className={subCard}>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+              Annual revenue
+            </span>
+            <input
+              value={annualRevenue}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                updateScopeInputs({ annualRevenue: e.target.value })
+              }
+              placeholder="$10,000,000,000"
+              inputMode="decimal"
+              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+            />
+          </label>
+
+          <label className={subCard}>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+              Store count
+            </span>
+            <input
+              value={storeCount}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                updateScopeInputs({ storeCount: e.target.value })
+              }
+              placeholder="1,250"
+              inputMode="numeric"
+              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+            />
+          </label>
+
+          <label className={subCard}>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+              Format
+            </span>
+            <input
+              value={retailerFormat}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                updateScopeInputs({ retailerFormat: e.target.value })
+              }
+              placeholder="Grocery / Mass / Specialty"
+              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+            />
+          </label>
+        </div>
+        <p className="text-xs text-gray-500">
+          Manual inputs are placeholders for scoping and can be replaced by uploaded client data.
+        </p>
+      </div>
+
+      <div className="space-y-5 rounded-2xl border border-blue-200 bg-blue-50/60 p-5 shadow-sm">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ui-blue)]">
+            Scope Definition
+          </p>
+          <h3 className="mt-1 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+            Define the business in scope
+          </h3>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            Set the revenue base, category coverage, and commercial levers for the next sizing step.
+          </p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+          <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-[var(--ui-navy)]">
+                  Addressable revenue
+                </p>
+                <p className="mt-1 text-xs leading-5 text-gray-500">
+                  Enter the percentage of total business included in this diagnostic.
+                </p>
+              </div>
+              <div className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--ui-blue)]">
+                {scopedRevenuePct}% in scope
+              </div>
             </div>
-          ))}
+
+            <label className="mt-4 block">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                % of total revenue
+              </span>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={addressableRevenuePct}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    updateScopeInputs({ addressableRevenuePct: e.target.value })
+                  }
+                  className="w-28 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+                />
+                <span className="text-sm font-semibold text-gray-500">%</span>
+              </div>
+            </label>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                  Total revenue
+                </p>
+                <p className="mt-1 text-xl font-bold text-[var(--ui-navy)]">
+                  {formatCurrencyShort(totalRevenue)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+                  Addressable revenue
+                </p>
+                <p className="mt-1 text-xl font-bold text-[var(--ui-blue)]">
+                  {formatCurrencyShort(addressableRevenue)} ({scopedRevenuePct}%)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+            <p className="text-sm font-semibold text-[var(--ui-navy)]">
+              Category selection / exclusion
+            </p>
+            <p className="mt-1 text-xs leading-5 text-gray-500">
+              Mark categories as included or excluded to shape the scope summary.
+            </p>
+
+            <div className="mt-4 space-y-2">
+              {scopeCategories.map((category) => (
+                <div
+                  key={category}
+                  className="grid gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 sm:grid-cols-[1fr_auto] sm:items-center"
+                >
+                  <p className="text-sm font-semibold text-[var(--ui-text)]">
+                    {category}
+                  </p>
+                  <div className="flex gap-1.5">
+                    {(["included", "excluded"] as CategoryScopeStatus[]).map(
+                      (status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => setCategoryScope(category, status)}
+                          className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold capitalize transition ${
+                            categorySelections[category] === status
+                              ? status === "included"
+                                ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                                : "border-gray-500 bg-gray-100 text-gray-700"
+                              : "border-gray-200 bg-white text-gray-500 hover:border-[var(--ui-blue)]"
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 grid gap-2 text-xs leading-5 text-gray-600 sm:grid-cols-2">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <p className="font-semibold text-[var(--ui-text)]">
+                  Selected categories
+                </p>
+                <p className="mt-1">
+                  {includedCategories.length > 0
+                    ? includedCategories.join(", ")
+                    : "None selected"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <p className="font-semibold text-[var(--ui-text)]">
+                  Excluded categories
+                </p>
+                <p className="mt-1">
+                  {excludedCategories.length > 0
+                    ? excludedCategories.join(", ")
+                    : "None excluded"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-[var(--ui-navy)]">
+            Lever selection
+          </p>
+          <p className="mt-1 text-xs leading-5 text-gray-500">
+            Toggle the pricing, promotions, and markdown levers that should be carried forward.
+          </p>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {scopeLeverGroups.map((group) => (
+              <div key={group.group} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                  {group.group}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {group.levers.map((lever) => {
+                    const isSelected = selectedLeverIds.includes(lever.id);
+
+                    return (
+                      <button
+                        key={lever.id}
+                        type="button"
+                        onClick={() => toggleLever(lever.id)}
+                        className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                          isSelected
+                            ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                            : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
+                        }`}
+                      >
+                        {lever.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-3 text-xs text-gray-500">
+            Selected levers:{" "}
+            <span className="font-semibold text-[var(--ui-text)]">
+              {selectedLeverLabels.length > 0
+                ? selectedLeverLabels.join(", ")
+                : "None selected"}
+            </span>
+          </p>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-            Commercial context
-          </p>
-          <p className="text-xs text-gray-500">
-            Commercial context derived from external-only signals unless client inputs are added.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          {[
-            { label: "Pricing posture", value: "Benchmark-led" },
-            { label: "Promo intensity", value: "Moderate" },
-            { label: "Markdown tendency", value: "Seasonal" },
-            { label: "KVI concentration", value: "Focused" },
-            {
-              label: "Confidence",
-              value: analysisMode === "hybrid" ? "Medium-high" : "Medium",
-            },
-          ].map((item) => (
-            <div key={item.label} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-                {item.label}
-              </p>
-              <p className="mt-0.5 text-sm font-semibold text-[var(--ui-text)]">
-                {item.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {analysisMode === "hybrid" && (
-          <p className="text-xs text-[var(--ui-blue)]">
-            Hybrid mode: client inputs can refine the external signal read.
+      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+          Scope Summary
+        </p>
+        <p className="mt-2 text-lg font-semibold leading-7 text-[var(--ui-navy)]">
+          You are analyzing ~{formatCurrencyShort(addressableRevenue)} in revenue,
+          representing {scopedRevenuePct}% of total business, across{" "}
+          {includedCategories.length > 0
+            ? includedCategories.join(", ")
+            : "selected categories"}{" "}
+          and{" "}
+          {selectedLeverLabels.length > 0
+            ? selectedLeverLabels.join(", ")
+            : "selected levers"}
+          .
+        </p>
+        {excludedCategories.length > 0 && (
+          <p className="mt-2 text-sm text-gray-600">
+            Excluded from scope: {excludedCategories.join(", ")}.
           </p>
         )}
       </div>
 
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-          Recent signals
+          Recent Signals
         </p>
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -1092,6 +1439,9 @@ function RetailerOverviewSection({
             </div>
           </div>
         </div>
+        <p className="text-xs text-gray-500">
+          Recent signals are informational only and do not affect scoping logic.
+        </p>
       </div>
     </section>
   );
