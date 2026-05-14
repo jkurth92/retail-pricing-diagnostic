@@ -40,8 +40,6 @@ type ClientContext = {
   structuredContext: ClientStructuredContext;
   uploadedClientData: UploadedClientDataMetadata[];
 };
-type FeedbackRating = "too_low" | "about_right" | "too_high" | "";
-type FeedbackLever = "pricing" | "promotions" | "markdown" | "";
 type Opportunity = ReturnType<typeof estimateOpportunity>;
 type LeverData = {
   name: string;
@@ -133,11 +131,6 @@ export default function Home() {
   const [retailerInput, setRetailerInput] = useState("");
   const [selectedRetailer, setSelectedRetailer] = useState("Retailer");
   const [isLoading, setIsLoading] = useState(false);
-  const [feedbackRating, setFeedbackRating] = useState<FeedbackRating>("");
-
-const [feedbackLever, setFeedbackLever] = useState<FeedbackLever>("");
-
-const [feedbackNotes, setFeedbackNotes] = useState("");
   const [eprScores, setEprScores] = useState<EprScores>(initialEprScores);
   const [additionalClientContext, setAdditionalClientContext] = useState("");
   const [structuredClientContext, setStructuredClientContext] =
@@ -213,9 +206,7 @@ const opportunity = estimateOpportunity(mockInputs);
         ? "Context"
         : activeOverviewTab === "opportunity"
           ? "Opportunity"
-          : feedbackRating || feedbackLever || feedbackNotes
-            ? "Feedback"
-            : "Setup";
+          : "Setup";
 
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-6 text-[var(--ui-text)]">
@@ -226,7 +217,7 @@ const opportunity = estimateOpportunity(mockInputs);
               Diagnostic Flow
             </p>
             <div className="mt-4 space-y-1">
-              {["Setup", "Context", "Analysis", "Opportunity", "Feedback"].map(
+              {["Setup", "Context", "Analysis", "Opportunity"].map(
                 (step) => (
                   <div
                     key={step}
@@ -420,12 +411,6 @@ const opportunity = estimateOpportunity(mockInputs);
           uploadedClientData={uploadedClientData}
           handleFileUpload={handleFileUpload}
           clearFiles={clearFiles}
-          feedbackRating={feedbackRating}
-          setFeedbackRating={setFeedbackRating}
-          feedbackLever={feedbackLever}
-          setFeedbackLever={setFeedbackLever}
-          feedbackNotes={feedbackNotes}
-          setFeedbackNotes={setFeedbackNotes}
         />
       )}
 
@@ -758,12 +743,6 @@ function PromptsSection({
   uploadedClientData,
   handleFileUpload,
   clearFiles,
-  feedbackRating,
-  setFeedbackRating,
-  feedbackLever,
-  setFeedbackLever,
-  feedbackNotes,
-  setFeedbackNotes,
 }: {
   retailerInput: string;
   setRetailerInput: (value: string) => void;
@@ -779,17 +758,8 @@ function PromptsSection({
   uploadedClientData: UploadedClientDataMetadata[];
   handleFileUpload: (files: FileList | null) => void;
   clearFiles: () => void;
-  feedbackRating: FeedbackRating;
-  setFeedbackRating: (value: FeedbackRating) => void;
-  feedbackLever: FeedbackLever;
-  setFeedbackLever: (value: FeedbackLever) => void;
-  feedbackNotes: string;
-  setFeedbackNotes: (value: string) => void;
 }) {
   const hasRequiredClientUpload = uploadedClientData.length > 0;
-  const [activeClientContextTab, setActiveClientContextTab] = useState<
-    "context" | "upload"
-  >("context");
 
   return (
     <div className="space-y-4">
@@ -910,287 +880,139 @@ function PromptsSection({
         </div>
 
         <div className={`${sectionCard} space-y-4`}>
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                Client Context Inputs
-              </p>
-              <p className="mt-1.5 text-sm leading-6 text-gray-600">
-                Capture client-specific nuance or upload supporting data for the next diagnostic step.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1">
-              {[
-                ["context", "Context Inputs"],
-                ["upload", "Data Upload"],
-              ].map(([tabId, label]) => (
-                <button
-                  key={tabId}
-                  type="button"
-                  onClick={() =>
-                    setActiveClientContextTab(tabId as "context" | "upload")
-                  }
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                    activeClientContextTab === tabId
-                      ? "bg-[var(--ui-blue)] text-white"
-                      : "text-gray-600"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Client Context Inputs
+            </p>
+            <p className="mt-1.5 text-sm leading-6 text-gray-600">
+              Capture client-specific nuance and upload supporting data for the next diagnostic step.
+            </p>
           </div>
 
-          {activeClientContextTab === "context" && (
-            <div className="space-y-4">
-              <textarea
-                value={additionalClientContext}
-                onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                  setAdditionalClientContext(e.target.value)
+          <textarea
+            value={additionalClientContext}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              setAdditionalClientContext(e.target.value)
+            }
+            placeholder="Pricing posture (EDLP, high-low, hybrid), promo posture, category mix or scope notes, channel mix, known constraints, recent changes, and any retailer-specific nuances that should affect the diagnostic."
+            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
+            rows={4}
+          />
+
+          <div className="space-y-4 border-y border-gray-200 py-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                  Client data upload
+                </p>
+                <p className="mt-1.5 text-sm leading-6 text-gray-600">
+                  Required. Upload files that contain retailer, pricing, promo, markdown, category, or other client inputs.
+                </p>
+              </div>
+
+              <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
+                {uploadedClientData.length > 0
+                  ? "Upload complete"
+                  : "Required upload"}
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-6 text-center transition hover:border-[var(--ui-blue)] hover:bg-white">
+              <input
+                type="file"
+                multiple
+                accept=".csv,.xlsx,.xls,.pdf,.ppt,.pptx,.doc,.docx,.txt,.json"
+                className="hidden"
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  handleFileUpload(e.target.files)
                 }
-                placeholder="Pricing posture (EDLP, high-low, hybrid), promo posture, category mix or scope notes, channel mix, known constraints, recent changes, and any retailer-specific nuances that should affect the diagnostic."
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-                rows={4}
               />
-
-              <div className="space-y-4">
-                {contextFieldOptions.map((field) => (
-                  <div key={field.id} className="space-y-2">
-                    <p className="text-sm font-semibold text-[var(--ui-text)]">
-                      {field.label}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      {field.options.map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() =>
-                            setStructuredClientContext({
-                              ...structuredClientContext,
-                              [field.id]: option,
-                            })
-                          }
-                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                            structuredClientContext[field.id] === option
-                              ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
-                              : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeClientContextTab === "upload" && (
-            <div className="space-y-4">
-              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                    Client data upload
-                  </p>
-                  <p className="mt-1.5 text-sm leading-6 text-gray-600">
-                    Required. Upload files that contain retailer, pricing, promo, markdown, category, or other client inputs.
-                  </p>
-                </div>
-
-                <div className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
-                  {uploadedClientData.length > 0
-                    ? "Upload complete"
-                    : "Required upload"}
-                </div>
-              </div>
-
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-6 text-center transition hover:border-[var(--ui-blue)] hover:bg-white">
-                <input
-                  type="file"
-                  multiple
-                  accept=".csv,.xlsx,.xls,.pdf,.ppt,.pptx,.doc,.docx,.txt,.json"
-                  className="hidden"
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    handleFileUpload(e.target.files)
-                  }
-                />
-                <p className="font-medium text-[var(--ui-text)]">
-                  Drop files here or browse
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  CSV, Excel, PDF, PowerPoint, or other client source files
-                </p>
-              </label>
-
-              {uploadedClientData.length > 0 && (
-                <div className="space-y-3">
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                    <span className="font-semibold text-[var(--ui-text)]">
-                      Uploaded {uploadedClientData.length} file
-                      {uploadedClientData.length === 1 ? "" : "s"}
-                    </span>
-                    {" "}for client context capture.
-                  </div>
-
-                  <div className="space-y-2">
-                    {uploadedClientData.map((file) => (
-                      <div
-                        key={file.name}
-                        className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm"
-                      >
-                        <div>
-                          <p className="font-medium text-[var(--ui-text)]">
-                            {file.name}
-                          </p>
-                          <p className="text-xs text-gray-500">{file.status}</p>
-                        </div>
-                        <div className="text-right text-xs text-gray-500">
-                          <p>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
-                          <p>{file.type}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={clearFiles}
-                    className="text-sm font-medium text-[var(--ui-blue)]"
-                  >
-                    Clear files
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className={`${sectionCard} space-y-4`}>
-        <h2 className="mb-4 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">Feedback on estimate</h2>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div>
-            <p className="mb-2 text-sm font-semibold text-[var(--ui-text)]">
-              Does this opportunity size feel right?
-            </p>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setFeedbackRating("too_low")}
-                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-                  feedbackRating === "too_low"
-                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-                    : "border-[var(--ui-border)] bg-white text-gray-600"
-                }`}
-              >
-                Too low
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFeedbackRating("about_right")}
-                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-                  feedbackRating === "about_right"
-                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-                    : "border-[var(--ui-border)] bg-white text-gray-600"
-                }`}
-              >
-                About right
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFeedbackRating("too_high")}
-                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-                  feedbackRating === "too_high"
-                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-                    : "border-[var(--ui-border)] bg-white text-gray-600"
-                }`}
-              >
-                Too high
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-sm font-semibold text-[var(--ui-text)]">
-              Which lever feels most uncertain?
-            </p>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setFeedbackLever("pricing")}
-                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-                  feedbackLever === "pricing"
-                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-                    : "border-[var(--ui-border)] bg-white text-gray-600"
-                }`}
-              >
-                Pricing
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFeedbackLever("promotions")}
-                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-                  feedbackLever === "promotions"
-                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-                    : "border-[var(--ui-border)] bg-white text-gray-600"
-                }`}
-              >
-                Promotions
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFeedbackLever("markdown")}
-                className={`rounded-full px-4 py-2 text-sm font-medium border transition ${
-                  feedbackLever === "markdown"
-                    ? "border-[var(--ui-blue)] bg-[rgba(34,81,255,0.08)] text-[var(--ui-blue)]"
-                    : "border-[var(--ui-border)] bg-white text-gray-600"
-                }`}
-              >
-                Markdown
-              </button>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2">
-            <label className="text-sm font-semibold text-[var(--ui-text)]">
-              Notes
+              <p className="font-medium text-[var(--ui-text)]">
+                Drop files here or browse
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                CSV, Excel, PDF, PowerPoint, or other client source files
+              </p>
             </label>
-            <textarea
-              value={feedbackNotes}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                setFeedbackNotes(e.target.value)
-              }
-              placeholder="Add any comments on what feels high, low, or missing."
-              className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[var(--ui-blue)] focus:ring-2 focus:ring-blue-100"
-              rows={2}
-            />
+
+            {uploadedClientData.length > 0 && (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                  <span className="font-semibold text-[var(--ui-text)]">
+                    Uploaded {uploadedClientData.length} file
+                    {uploadedClientData.length === 1 ? "" : "s"}
+                  </span>
+                  {" "}for client context capture.
+                </div>
+
+                <div className="space-y-2">
+                  {uploadedClientData.map((file) => (
+                    <div
+                      key={file.name}
+                      className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm"
+                    >
+                      <div>
+                        <p className="font-medium text-[var(--ui-text)]">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-gray-500">{file.status}</p>
+                      </div>
+                      <div className="text-right text-xs text-gray-500">
+                        <p>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                        <p>{file.type}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={clearFiles}
+                  className="text-sm font-medium text-[var(--ui-blue)]"
+                >
+                  Clear files
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center justify-between lg:col-span-2">
-            <p className="text-xs text-gray-500">
-              This feedback will be used to refine the opportunity estimate.
-            </p>
+          <div className="space-y-2">
+            {contextFieldOptions.map((field) => (
+              <div
+                key={field.id}
+                className="grid gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 md:grid-cols-[1fr_auto] md:items-center"
+              >
+                <p className="text-sm font-semibold text-[var(--ui-text)]">
+                  {field.label}
+                </p>
 
-            <button
-              type="button"
-              className="rounded-xl bg-[var(--ui-blue)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
-            >
-              Save feedback
-            </button>
+                <div className="flex flex-wrap gap-1.5">
+                  {field.options.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() =>
+                        setStructuredClientContext({
+                          ...structuredClientContext,
+                          [field.id]: option,
+                        })
+                      }
+                      className={`rounded-lg border px-2.5 py-1.5 text-sm font-semibold transition ${
+                        structuredClientContext[field.id] === option
+                          ? "border-[var(--ui-blue)] bg-blue-50 text-[var(--ui-blue)]"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-[var(--ui-blue)]"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
+
     </div>
   );
 }
