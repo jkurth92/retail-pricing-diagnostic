@@ -148,6 +148,8 @@ type SourcedPeerComparisonMetric = {
 };
 type SourcedRetailerHeadline = RetailerHeadline & {
   source: RetailerProfileSource;
+  date?: string | null;
+  publisher?: string | null;
 };
 type RetailerProfile = {
   retailerName: string;
@@ -161,6 +163,28 @@ type RetailerProfile = {
 type SupplementalPdfStatus = {
   fileName: string;
   status: "Parsed" | "No fields found" | "Unable to parse";
+};
+type RetailerProfileApiResponse = {
+  retailerName: string;
+  ticker: string | null;
+  financials: {
+    revenue: FinancialDataPoint[];
+    ebitda: FinancialDataPoint[];
+    margin: FinancialDataPoint[];
+  };
+  profitability: {
+    roic: number | null;
+    workingCapital: number | null;
+  };
+  market: {
+    revenueGrowth: number | null;
+    margin: number | null;
+  };
+  headlines: {
+    title: string;
+    date: string | null;
+    source: string | null;
+  }[];
 };
 
 const sectionCard =
@@ -849,32 +873,163 @@ const categorizeHeadline = (headline: string): HeadlineCategory => {
   return "Pricing";
 };
 
+const formatPercentMetric = (value: number | null) =>
+  value === null ? null : `${value.toFixed(1)}%`;
+
+const buildExternalFinancialSeries = (
+  label: string,
+  unit: "currency" | "percent",
+  values: FinancialDataPoint[]
+): SourcedFinancialSeries => ({
+  label,
+  unit,
+  values,
+  source: values.length > 0 ? "external" : null,
+});
+
+const mapApiResponseToRetailerProfile = (
+  response: RetailerProfileApiResponse,
+  fallbackRetailerName: string
+): RetailerProfile => {
+  const retailerName = response.retailerName || fallbackRetailerName;
+  const tickerNote = response.ticker ? `Ticker: ${response.ticker}` : null;
+  const latestRevenue =
+    response.financials.revenue[response.financials.revenue.length - 1];
+  const latestEbitda =
+    response.financials.ebitda[response.financials.ebitda.length - 1];
+  const latestMargin =
+    response.financials.margin[response.financials.margin.length - 1];
+  const insights = [
+    tickerNote,
+    latestRevenue
+      ? `Latest revenue: $${latestRevenue.value.toFixed(1)}B (${latestRevenue.year})`
+      : null,
+    latestEbitda
+      ? `Latest EBITDA: $${latestEbitda.value.toFixed(1)}B (${latestEbitda.year})`
+      : null,
+    latestMargin
+      ? `Latest EBITDA margin: ${latestMargin.value.toFixed(1)}% (${latestMargin.year})`
+      : null,
+  ].filter((insight): insight is string => Boolean(insight));
+
+  return {
+    retailerName,
+    financials: [
+      buildExternalFinancialSeries(
+        "Revenue",
+        "currency",
+        response.financials.revenue || []
+      ),
+      buildExternalFinancialSeries(
+        "EBITDA",
+        "currency",
+        response.financials.ebitda || []
+      ),
+      buildExternalFinancialSeries(
+        "Margin",
+        "percent",
+        response.financials.margin || []
+      ),
+    ],
+    profitability: [
+      {
+        label: "ROIC",
+        value: formatPercentMetric(response.profitability.roic),
+        benchmark: null,
+        note: response.profitability.roic === null ? null : "From FMP ratios.",
+        source: response.profitability.roic === null ? null : "external",
+      },
+      {
+        label: "Working capital / revenue",
+        value: formatPercentMetric(response.profitability.workingCapital),
+        benchmark: null,
+        note:
+          response.profitability.workingCapital === null
+            ? null
+            : "From FMP working capital ratio data.",
+        source:
+          response.profitability.workingCapital === null ? null : "external",
+      },
+      {
+        label: "Cost structure",
+        value: null,
+        benchmark: null,
+        note: null,
+        source: null,
+      },
+    ],
+    marketPosition: [
+      {
+        label: "Revenue growth",
+        company: response.market.revenueGrowth,
+        peerMedian: null,
+        unit: "percent",
+        source: response.market.revenueGrowth === null ? null : "external",
+      },
+      {
+        label: "Margin",
+        company: response.market.margin,
+        peerMedian: null,
+        unit: "percent",
+        source: response.market.margin === null ? null : "external",
+      },
+      {
+        label: "TSR",
+        company: null,
+        peerMedian: null,
+        unit: "percent",
+        source: null,
+      },
+    ],
+    insights,
+    headlines: (response.headlines || []).map((headline) => ({
+      title: headline.title,
+      date: headline.date,
+      publisher: headline.source,
+      category: categorizeHeadline(headline.title),
+      source: "external",
+    })),
+    sources: {
+      ...(response.financials.revenue.length > 0
+        ? { "financials.Revenue": "external" as const }
+        : {}),
+      ...(response.financials.ebitda.length > 0
+        ? { "financials.EBITDA": "external" as const }
+        : {}),
+      ...(response.financials.margin.length > 0
+        ? { "financials.Margin": "external" as const }
+        : {}),
+      ...(response.profitability.roic === null
+        ? {}
+        : { "profitability.ROIC": "external" as const }),
+      ...(response.profitability.workingCapital === null
+        ? {}
+        : { "profitability.Working capital / revenue": "external" as const }),
+      ...(response.market.revenueGrowth === null
+        ? {}
+        : { "marketPosition.Revenue growth": "external" as const }),
+      ...(response.market.margin === null
+        ? {}
+        : { "marketPosition.Margin": "external" as const }),
+      ...(response.headlines.length > 0 ? { headlines: "external" as const } : {}),
+    },
+  };
+};
+
 const fetchRetailerData = async (retailerName: string): Promise<RetailerProfile> => {
-  const profile = createEmptyRetailerProfile(retailerName);
-  const endpoint = process.env.NEXT_PUBLIC_RETAILER_DATA_ENDPOINT;
-  if (!endpoint) return profile;
+  const response = await fetch(
+    `/api/retailer-profile?retailerName=${encodeURIComponent(retailerName)}`
+  );
 
-  try {
-    const response = await fetch(
-      `${endpoint}?retailerName=${encodeURIComponent(retailerName)}`
-    );
-    if (!response.ok) return profile;
-    const externalProfile = (await response.json()) as Partial<RetailerProfile>;
-
-    return {
-      ...profile,
-      ...externalProfile,
-      retailerName: externalProfile.retailerName || retailerName,
-      financials: externalProfile.financials || profile.financials,
-      profitability: externalProfile.profitability || profile.profitability,
-      marketPosition: externalProfile.marketPosition || profile.marketPosition,
-      insights: externalProfile.insights || profile.insights,
-      headlines: externalProfile.headlines || profile.headlines,
-      sources: externalProfile.sources || profile.sources,
-    };
-  } catch {
-    return profile;
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new Error(payload?.error || "Unable to fetch retailer profile");
   }
+
+  const externalProfile = (await response.json()) as RetailerProfileApiResponse;
+  return mapApiResponseToRetailerProfile(externalProfile, retailerName);
 };
 
 const getEprMaturityLabel = (score: number) => {
@@ -891,6 +1046,9 @@ export default function Home() {
   const [selectedRetailer, setSelectedRetailer] = useState("Retailer");
   const [retailerProfile, setRetailerProfile] = useState<RetailerProfile>(() =>
     createEmptyRetailerProfile("Retailer")
+  );
+  const [retailerProfileError, setRetailerProfileError] = useState<string | null>(
+    null
   );
   const [supplementalPdfStatus, setSupplementalPdfStatus] =
     useState<SupplementalPdfStatus | null>(null);
@@ -1010,11 +1168,22 @@ export default function Home() {
     if (!retailerName) return;
 
     setSelectedRetailer(retailerName);
+    setRetailerProfileError(null);
     setIsLoading(true);
-    const externalProfile = await fetchRetailerData(retailerName);
-    setRetailerProfile(externalProfile);
-    setSupplementalPdfStatus(null);
-    setIsLoading(false);
+    try {
+      const externalProfile = await fetchRetailerData(retailerName);
+      setRetailerProfile(externalProfile);
+      setSupplementalPdfStatus(null);
+    } catch (error) {
+      setRetailerProfile(createEmptyRetailerProfile(retailerName));
+      setRetailerProfileError(
+        error instanceof Error
+          ? error.message
+          : "Unable to fetch retailer profile"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSupplementalPdfUpload = async (files: FileList | null) => {
@@ -1098,7 +1267,12 @@ const opportunity = estimateOpportunity(mockInputs);
                 History
               </p>
               <p className="mt-2 text-sm leading-6 text-gray-500">
-                Latest run: {isLoading ? "In progress" : "Ready"}
+                Latest run:{" "}
+                {retailerProfileError
+                  ? "Error"
+                  : isLoading
+                    ? "In progress"
+                    : "Ready"}
               </p>
             </div>
           </aside>
@@ -1123,7 +1297,14 @@ const opportunity = estimateOpportunity(mockInputs);
                       label: "Mode",
                       value: analysisMode === "hybrid" ? "With client data" : "External",
                     },
-                    { label: "Status", value: isLoading ? "Running" : "Ready" },
+                    {
+                      label: "Status",
+                      value: retailerProfileError
+                        ? "Error"
+                        : isLoading
+                          ? "Running"
+                          : "Ready",
+                    },
                   ].map((item) => (
                     <div
                       key={item.label}
@@ -1166,17 +1347,20 @@ const opportunity = estimateOpportunity(mockInputs);
               <>
                 {isLoading ? (
                   <section className="brand-card space-y-6 rounded-2xl border border-gray-200 bg-white p-10 shadow-sm">
-                    <h2 className="text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
-                      Analyzing {selectedRetailer}...
-                    </h2>
+                    <div className="flex items-center gap-3">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--ui-blue)]" />
+                      <h2 className="text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+                        Fetching external data for {selectedRetailer}...
+                      </h2>
+                    </div>
 
                     <div className="space-y-3 text-sm text-gray-600">
-                      <p>✓ Scraping pricing data</p>
-                      <p>✓ Building price ladder</p>
-                      <p>✓ Analyzing promo intensity</p>
-                      <p>✓ Evaluating markdown patterns</p>
+                      <p>✓ Resolving retailer ticker</p>
+                      <p>✓ Fetching FMP income statement</p>
+                      <p>✓ Fetching FMP ratios and growth metrics</p>
+                      <p>✓ Fetching recent headlines</p>
                       <p className="font-semibold text-[var(--ui-blue)]">
-                        → Synthesizing results
+                        → Normalizing retailer profile
                       </p>
                     </div>
                   </section>
@@ -1250,6 +1434,7 @@ const opportunity = estimateOpportunity(mockInputs);
                         competitors={retailerCompetitors}
                         handleSupplementalPdfUpload={handleSupplementalPdfUpload}
                         supplementalPdfStatus={supplementalPdfStatus}
+                        retailerProfileError={retailerProfileError}
                       />
                     )}
 
@@ -2449,11 +2634,13 @@ function RetailerOverviewSection({
   competitors,
   handleSupplementalPdfUpload,
   supplementalPdfStatus,
+  retailerProfileError,
 }: {
   retailerProfile: RetailerProfile;
   competitors: RetailerCompetitor[];
   handleSupplementalPdfUpload: (files: FileList | null) => void;
   supplementalPdfStatus: SupplementalPdfStatus | null;
+  retailerProfileError: string | null;
 }) {
   const retailerName = retailerProfile.retailerName.trim() || "Retailer";
 
@@ -2507,6 +2694,13 @@ function RetailerOverviewSection({
           </p>
         </label>
       </section>
+
+      {retailerProfileError && (
+        <section className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800 shadow-sm">
+          <p className="font-semibold">External data fetch failed</p>
+          <p className="mt-1">{retailerProfileError}</p>
+        </section>
+      )}
 
       <section className={`${sectionCard} space-y-4`}>
         <div>
@@ -2636,6 +2830,18 @@ function RetailerOverviewSection({
                   {headline.category}
                 </span>
                 <span className="leading-5">• {headline.title}</span>
+                {(headline.date || headline.publisher) && (
+                  <span className="text-xs text-gray-500">
+                    {[
+                      headline.publisher,
+                      headline.date
+                        ? new Date(headline.date).toLocaleDateString()
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                )}
                 {renderSourceBadge(headline.source)}
               </li>
             ))
