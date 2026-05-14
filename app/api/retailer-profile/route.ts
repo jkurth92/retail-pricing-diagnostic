@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveRetailer } from "./retailerDirectory";
 
 type FinancialPoint = {
   year: string;
@@ -8,6 +9,8 @@ type FinancialPoint = {
 type RetailerProfileResponse = {
   retailerName: string;
   ticker: string | null;
+  ownership: "public" | "private" | "unknown";
+  error: string | null;
   financials: {
     revenue: FinancialPoint[];
     ebitda: FinancialPoint[];
@@ -52,48 +55,22 @@ type FmpGrowthMetric = {
   grossProfitGrowth?: number;
 };
 
-type FmpSymbolSearchResult = {
-  symbol?: string;
-  name?: string;
-  exchangeShortName?: string;
-};
-
-type NewsApiArticle = {
+type FmpNewsItem = {
   title?: string;
-  publishedAt?: string;
-  source?: {
-    name?: string;
-  };
-};
-
-const retailerTickerMap: Record<string, string> = {
-  target: "TGT",
-  walmart: "WMT",
-  "wal-mart": "WMT",
-  costco: "COST",
-  kroger: "KR",
-  "home depot": "HD",
-  lowes: "LOW",
-  "lowe's": "LOW",
-  bestbuy: "BBY",
-  "best buy": "BBY",
-  amazon: "AMZN",
-  albertsons: "ACI",
-  macys: "M",
-  "macy's": "M",
-  nordstrom: "JWN",
-  "dollar general": "DG",
-  "dollar tree": "DLTR",
-  walgreens: "WBA",
-  cvs: "CVS",
+  publishedDate?: string;
+  site?: string;
 };
 
 const emptyProfile = (
   retailerName: string,
-  ticker: string | null
+  ticker: string | null,
+  ownership: RetailerProfileResponse["ownership"],
+  error: string | null = null
 ): RetailerProfileResponse => ({
   retailerName,
   ticker,
+  ownership,
+  error,
   financials: {
     revenue: [],
     ebitda: [],
@@ -109,9 +86,6 @@ const emptyProfile = (
   },
   headlines: [],
 });
-
-const normalizeRetailerName = (retailerName: string) =>
-  retailerName.trim().toLowerCase().replace(/\s+/g, " ");
 
 const getYear = (item: { calendarYear?: string; date?: string }) =>
   item.calendarYear || item.date?.slice(0, 4) || "Unknown";
@@ -134,62 +108,34 @@ const fmpFetch = async <T>(path: string, apiKey: string): Promise<T | null> => {
 
   const response = await fetch(apiUrl, { next: { revalidate: 3600 } });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    throw new Error(
+      `FMP request failed for ${apiUrlWithoutKey} with status ${response.status}`
+    );
+  }
+
   return (await response.json()) as T;
 };
 
-const findTicker = async (retailerName: string, fmpApiKey: string) => {
-  const normalizedName = normalizeRetailerName(retailerName);
-  const mappedTicker = retailerTickerMap[normalizedName];
-  if (mappedTicker) return mappedTicker;
-
-  const searchResults = await fmpFetch<FmpSymbolSearchResult[]>(
-    `/search-name?query=${encodeURIComponent(retailerName)}&limit=10`,
+const fetchHeadlines = async (ticker: string, fmpApiKey: string) => {
+  const newsItems = await fmpFetch<FmpNewsItem[]>(
+    `/stock_news?tickers=${encodeURIComponent(ticker)}&limit=5`,
     fmpApiKey
   );
 
-  return (
-    searchResults?.find(
-      (result) =>
-        result.symbol &&
-        (result.exchangeShortName === "NASDAQ" ||
-          result.exchangeShortName === "NYSE")
-    )?.symbol || null
-  );
-};
-
-const fetchHeadlines = async (retailerName: string) => {
-  const newsApiKey = process.env.NEWS_API_KEY;
-  if (!newsApiKey) return [];
-
-  const response = await fetch(
-    `https://newsapi.org/v2/everything?q=${encodeURIComponent(
-      `"${retailerName}" retail`
-    )}&language=en&sortBy=publishedAt&pageSize=5&apiKey=${encodeURIComponent(
-      newsApiKey
-    )}`,
-    { next: { revalidate: 1800 } }
-  );
-
-  if (!response.ok) return [];
-  const payload = (await response.json()) as { articles?: NewsApiArticle[] };
-
-  return (payload.articles || [])
+  return (newsItems || [])
     .filter((article) => article.title)
     .slice(0, 5)
     .map((article) => ({
       title: article.title || "",
-      date: article.publishedAt || null,
-      source: article.source?.name || null,
+      date: article.publishedDate || null,
+      source: article.site || null,
     }));
 };
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const retailerName = searchParams.get("retailerName")?.trim();
-  const fmpApiKey = process.env.FMP_API_KEY;
-
-  console.log("[retailer-profile] FMP_API_KEY defined:", Boolean(fmpApiKey));
 
   if (!retailerName) {
     return NextResponse.json(
@@ -198,34 +144,57 @@ export async function GET(request: Request) {
     );
   }
 
+  const directoryEntry = resolveRetailer(retailerName);
+  const resolvedRetailerName = directoryEntry?.name || retailerName;
+  const ownership = directoryEntry?.ownership || "unknown";
+  const ticker = directoryEntry?.ticker || null;
+
+  if (ownership !== "public" || !ticker) {
+    return NextResponse.json(emptyProfile(resolvedRetailerName, ticker, ownership));
+  }
+
+  const fmpApiKey = process.env.FMP_API_KEY;
   if (!fmpApiKey) {
-    console.warn(
-      "[retailer-profile] FMP_API_KEY is undefined in the API route runtime. Confirm it is set in .env.local or the deployment environment and restart the Next.js server."
-    );
+    const error =
+      "FMP_API_KEY is not configured. Set it in .env.local or the deployment environment and restart the Next.js server.";
+    console.warn("[retailer-profile]", error);
 
     return NextResponse.json(
-      { error: "FMP_API_KEY is not configured" },
+      emptyProfile(resolvedRetailerName, ticker, ownership, error),
       { status: 500 }
     );
   }
 
-  const ticker = await findTicker(retailerName, fmpApiKey);
-  if (!ticker) {
-    return NextResponse.json(emptyProfile(retailerName, null));
-  }
+  let incomeStatements: FmpIncomeStatement[] | null;
+  let ratios: FmpRatio[] | null;
+  let growthMetrics: FmpGrowthMetric[] | null;
+  let headlines: RetailerProfileResponse["headlines"];
 
-  const [incomeStatements, ratios, growthMetrics, headlines] = await Promise.all([
-    fmpFetch<FmpIncomeStatement[]>(
-      `/income-statement/${encodeURIComponent(ticker)}?limit=5`,
-      fmpApiKey
-    ),
-    fmpFetch<FmpRatio[]>(`/ratios/${encodeURIComponent(ticker)}?limit=5`, fmpApiKey),
-    fmpFetch<FmpGrowthMetric[]>(
-      `/financial-growth/${encodeURIComponent(ticker)}?limit=5`,
-      fmpApiKey
-    ),
-    fetchHeadlines(retailerName),
-  ]);
+  try {
+    [incomeStatements, ratios, growthMetrics, headlines] = await Promise.all([
+      fmpFetch<FmpIncomeStatement[]>(
+        `/income-statement/${encodeURIComponent(ticker)}?limit=5`,
+        fmpApiKey
+      ),
+      fmpFetch<FmpRatio[]>(`/ratios/${encodeURIComponent(ticker)}?limit=5`, fmpApiKey),
+      fmpFetch<FmpGrowthMetric[]>(
+        `/financial-growth/${encodeURIComponent(ticker)}?limit=5`,
+        fmpApiKey
+      ),
+      fetchHeadlines(ticker, fmpApiKey),
+    ]);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to fetch retailer profile from FMP";
+    console.error("[retailer-profile]", message);
+
+    return NextResponse.json(
+      emptyProfile(resolvedRetailerName, ticker, ownership, message),
+      { status: 502 }
+    );
+  }
 
   const financials = (incomeStatements || []).slice(0, 5).reverse();
   const revenue = financials.flatMap((item) => {
@@ -246,8 +215,10 @@ export async function GET(request: Request) {
     margin.length > 0 ? margin[margin.length - 1]?.value ?? null : null;
 
   const profile: RetailerProfileResponse = {
-    retailerName,
+    retailerName: resolvedRetailerName,
     ticker,
+    ownership,
+    error: null,
     financials: {
       revenue,
       ebitda,
