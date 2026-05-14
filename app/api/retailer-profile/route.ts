@@ -125,12 +125,14 @@ const toPercent = (value: number | undefined) => {
 };
 
 const fmpFetch = async <T>(path: string, apiKey: string): Promise<T | null> => {
-  const response = await fetch(
-    `https://financialmodelingprep.com/api/v3${path}${
-      path.includes("?") ? "&" : "?"
-    }apikey=${encodeURIComponent(apiKey)}`,
-    { next: { revalidate: 3600 } }
-  );
+  const apiUrlWithoutKey = `https://financialmodelingprep.com/api/v3${path}`;
+  const apiUrl = `${apiUrlWithoutKey}${
+    path.includes("?") ? "&" : "?"
+  }apikey=${encodeURIComponent(apiKey)}`;
+
+  console.log("[retailer-profile] FMP API URL:", apiUrlWithoutKey);
+
+  const response = await fetch(apiUrl, { next: { revalidate: 3600 } });
 
   if (!response.ok) return null;
   return (await response.json()) as T;
@@ -187,6 +189,8 @@ export async function GET(request: Request) {
   const retailerName = searchParams.get("retailerName")?.trim();
   const fmpApiKey = process.env.FMP_API_KEY;
 
+  console.log("[retailer-profile] FMP_API_KEY defined:", Boolean(fmpApiKey));
+
   if (!retailerName) {
     return NextResponse.json(
       { error: "retailerName is required" },
@@ -195,6 +199,10 @@ export async function GET(request: Request) {
   }
 
   if (!fmpApiKey) {
+    console.warn(
+      "[retailer-profile] FMP_API_KEY is undefined in the API route runtime. Confirm it is set in .env.local or the deployment environment and restart the Next.js server."
+    );
+
     return NextResponse.json(
       { error: "FMP_API_KEY is not configured" },
       { status: 500 }
