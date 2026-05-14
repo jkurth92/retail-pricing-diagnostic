@@ -10,6 +10,12 @@ type EndpointStatus = {
   statusCode: number | null;
   error: string | null;
 };
+type SourceStatus = {
+  status: "not_requested" | "success" | "failed" | "empty";
+  statusCode: number | null;
+  error: string | null;
+  keys: string[];
+};
 
 type RetailerProfileResponse = {
   retailerName: string;
@@ -23,6 +29,12 @@ type RetailerProfileResponse = {
     ratios: EndpointStatus;
     growth: EndpointStatus;
     news: EndpointStatus;
+  };
+  sourceStatus: {
+    profile: SourceStatus;
+    quote: SourceStatus;
+    secFinancials: SourceStatus;
+    headlines: SourceStatus;
   };
   financials: {
     revenue: FinancialPoint[];
@@ -73,14 +85,42 @@ type FmpNewsItem = {
   publishedDate?: string;
   site?: string;
 };
+type FmpProfileItem = Record<string, unknown>;
+type FmpQuoteItem = Record<string, unknown>;
+type SecCompanyFactUnit = {
+  fy?: number;
+  fp?: string;
+  form?: string;
+  filed?: string;
+  val?: number;
+};
+type SecCompanyFacts = {
+  facts?: Record<
+    string,
+    Record<
+      string,
+      {
+        units?: Record<string, SecCompanyFactUnit[]>;
+      }
+    >
+  >;
+};
 type FmpFetchResult<T> = {
   data: T | null;
   error: string | null;
   status: number | null;
+  keys: string[];
 };
 type FmpHeadlineResult = {
   headlines: RetailerProfileResponse["headlines"];
   endpointStatus: EndpointStatus;
+  sourceStatus: SourceStatus;
+};
+type SecFinancialResult = {
+  revenue: FinancialPoint[];
+  ebitda: FinancialPoint[];
+  margin: FinancialPoint[];
+  sourceStatus: SourceStatus;
 };
 
 const notRequestedStatus: EndpointStatus = {
@@ -98,6 +138,20 @@ const createEmptyEndpointStatus = (): RetailerProfileResponse["endpointStatus"] 
   news: notRequestedStatus,
 });
 
+const notRequestedSourceStatus: SourceStatus = {
+  status: "not_requested",
+  statusCode: null,
+  error: null,
+  keys: [],
+};
+
+const createEmptySourceStatus = (): RetailerProfileResponse["sourceStatus"] => ({
+  profile: notRequestedSourceStatus,
+  quote: notRequestedSourceStatus,
+  secFinancials: notRequestedSourceStatus,
+  headlines: notRequestedSourceStatus,
+});
+
 const emptyProfile = (
   retailerName: string,
   ticker: string | null,
@@ -109,6 +163,7 @@ const emptyProfile = (
   ownership,
   error,
   endpointStatus: createEmptyEndpointStatus(),
+  sourceStatus: createEmptySourceStatus(),
   financials: {
     revenue: [],
     ebitda: [],
@@ -139,6 +194,22 @@ const toPercent = (value: number | undefined) => {
 const hasUsableData = <T,>(data: T | null) =>
   Array.isArray(data) ? data.length > 0 : data !== null;
 
+const getPayloadKeys = (data: unknown) => {
+  if (Array.isArray(data)) {
+    const firstObject = data.find(
+      (item): item is Record<string, unknown> =>
+        Boolean(item) && typeof item === "object" && !Array.isArray(item)
+    );
+    return firstObject ? Object.keys(firstObject).sort() : [];
+  }
+
+  if (data && typeof data === "object") {
+    return Object.keys(data).sort();
+  }
+
+  return [];
+};
+
 const endpointStatusFromResult = <T,>(
   result: FmpFetchResult<T>
 ): EndpointStatus => {
@@ -155,6 +226,35 @@ const endpointStatusFromResult = <T,>(
   }
 
   return { status: "unavailable", statusCode: result.status, error: null };
+};
+
+const sourceStatusFromResult = <T,>(
+  result: FmpFetchResult<T>
+): SourceStatus => {
+  if (hasUsableData(result.data)) {
+    return {
+      status: "success",
+      statusCode: result.status,
+      error: null,
+      keys: result.keys,
+    };
+  }
+
+  if (result.error) {
+    return {
+      status: "failed",
+      statusCode: result.status,
+      error: result.error,
+      keys: result.keys,
+    };
+  }
+
+  return {
+    status: "empty",
+    statusCode: result.status,
+    error: null,
+    keys: result.keys,
+  };
 };
 
 const fmpFetch = async <T>(
@@ -182,7 +282,7 @@ const fmpFetch = async <T>(
     const fetchError = `FMP request failed for ${sanitizedApiUrl}: ${message}`;
 
     console.error("[retailer-profile] FMP fetch error:", fetchError);
-    return { data: null, error: fetchError, status: null };
+    return { data: null, error: fetchError, status: null, keys: [] };
   }
 
   if (!response.ok) {
@@ -203,11 +303,19 @@ const fmpFetch = async <T>(
       )
     );
 
-    return { data: null, error, status: response.status };
+    return { data: null, error, status: response.status, keys: [] };
   }
 
   try {
-    return { data: (await response.json()) as T, error: null, status: response.status };
+    const data = (await response.json()) as T;
+    const keys = getPayloadKeys(data);
+
+    console.log(
+      "[retailer-profile] FMP payload keys:",
+      JSON.stringify({ url: sanitizedApiUrl, keys })
+    );
+
+    return { data, error: null, status: response.status, keys };
   } catch (error) {
     const message =
       error instanceof Error
@@ -216,7 +324,7 @@ const fmpFetch = async <T>(
     const parseError = `FMP response parse failed for ${sanitizedApiUrl}: ${message}`;
 
     console.error("[retailer-profile] FMP parse error:", parseError);
-    return { data: null, error: parseError, status: response.status };
+    return { data: null, error: parseError, status: response.status, keys: [] };
   }
 };
 
@@ -239,7 +347,260 @@ const fetchHeadlines = async (
         source: article.site || null,
       })),
     endpointStatus: endpointStatusFromResult(newsItems),
+    sourceStatus: sourceStatusFromResult(newsItems),
   };
+};
+
+const fetchPublicRssHeadlines = async (
+  ticker: string
+): Promise<FmpHeadlineResult> => {
+  const url = `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(
+    ticker
+  )}&region=US&lang=en-US`;
+
+  console.log("[retailer-profile] Attempting headline source:", url);
+
+  try {
+    const response = await fetch(url, { next: { revalidate: 1800 } });
+    const xml = await response.text();
+
+    if (!response.ok) {
+      const error = `Headline RSS request failed with status ${response.status}`;
+      console.error("[retailer-profile]", error, xml);
+
+      return {
+        headlines: [],
+        endpointStatus: {
+          status: "failed",
+          statusCode: response.status,
+          error,
+        },
+        sourceStatus: {
+          status: "failed",
+          statusCode: response.status,
+          error,
+          keys: [],
+        },
+      };
+    }
+
+    const headlines = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)]
+      .slice(0, 5)
+      .map((match) => {
+        const itemXml = match[1] || "";
+        const title = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/)?.[1] ||
+          itemXml.match(/<title>(.*?)<\/title>/)?.[1] ||
+          "";
+        const date = itemXml.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || null;
+
+        return {
+          title,
+          date,
+          source: "Yahoo Finance RSS",
+        };
+      })
+      .filter((headline) => headline.title);
+    const status: SourceStatus["status"] =
+      headlines.length > 0 ? "success" : "empty";
+
+    console.log(
+      "[retailer-profile] Headline source result:",
+      JSON.stringify({
+        source: "Yahoo Finance RSS",
+        status,
+        count: headlines.length,
+        keys: headlines.length > 0 ? Object.keys(headlines[0]) : [],
+      })
+    );
+
+    return {
+      headlines,
+      endpointStatus: {
+        status: headlines.length > 0 ? "succeeded" : "unavailable",
+        statusCode: response.status,
+        error: null,
+      },
+      sourceStatus: {
+        status,
+        statusCode: response.status,
+        error: null,
+        keys: headlines.length > 0 ? Object.keys(headlines[0]) : [],
+      },
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unable to fetch headline RSS feed";
+    console.error("[retailer-profile] Headline source failed:", message);
+
+    return {
+      headlines: [],
+      endpointStatus: { status: "failed", statusCode: null, error: message },
+      sourceStatus: { status: "failed", statusCode: null, error: message, keys: [] },
+    };
+  }
+};
+
+const fetchHeadlinesWithFallback = async (
+  ticker: string,
+  fmpApiKey: string | undefined
+): Promise<FmpHeadlineResult> => {
+  if (!fmpApiKey) return fetchPublicRssHeadlines(ticker);
+
+  const fmpNewsResult = await fetchHeadlines(ticker, fmpApiKey);
+  if (fmpNewsResult.headlines.length > 0) return fmpNewsResult;
+
+  console.warn(
+    "[retailer-profile] FMP headlines returned no usable data. Falling back to public RSS headlines."
+  );
+
+  return fetchPublicRssHeadlines(ticker);
+};
+
+const getSecConceptSeries = (
+  companyFacts: SecCompanyFacts,
+  conceptNames: string[]
+): FinancialPoint[] => {
+  for (const conceptName of conceptNames) {
+    const concept = companyFacts.facts?.["us-gaap"]?.[conceptName];
+    const usdFacts = concept?.units?.USD;
+    if (!usdFacts) continue;
+
+    const annualFactsByYear = new Map<number, SecCompanyFactUnit>();
+    usdFacts
+      .filter(
+        (fact) =>
+          typeof fact.val === "number" &&
+          typeof fact.fy === "number" &&
+          fact.fp === "FY" &&
+          (fact.form === "10-K" || fact.form === "10-K/A")
+      )
+      .forEach((fact) => {
+        const existingFact = annualFactsByYear.get(fact.fy as number);
+        if (
+          !existingFact ||
+          String(fact.filed || "") > String(existingFact.filed || "")
+        ) {
+          annualFactsByYear.set(fact.fy as number, fact);
+        }
+      });
+
+    const series = [...annualFactsByYear.entries()]
+      .sort(([leftYear], [rightYear]) => leftYear - rightYear)
+      .slice(-5)
+      .flatMap(([year, fact]) =>
+        typeof fact.val === "number"
+          ? [{ year: `FY${String(year).slice(-2)}`, value: fact.val / 1000000000 }]
+          : []
+      );
+
+    if (series.length > 0) return series;
+  }
+
+  return [];
+};
+
+const fetchSecFinancials = async (
+  cik: string | null
+): Promise<SecFinancialResult> => {
+  if (!cik) {
+    return {
+      revenue: [],
+      ebitda: [],
+      margin: [],
+      sourceStatus: {
+        status: "empty",
+        statusCode: null,
+        error: "No CIK available for SEC company facts lookup.",
+        keys: [],
+      },
+    };
+  }
+
+  const paddedCik = cik.replace(/^0+/, "").padStart(10, "0");
+  const url = `https://data.sec.gov/api/xbrl/companyfacts/CIK${paddedCik}.json`;
+
+  console.log("[retailer-profile] Attempting SEC financial source:", url);
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "retail-pricing-diagnostic contact@example.com",
+      },
+      next: { revalidate: 86400 },
+    });
+    const text = await response.text();
+
+    if (!response.ok) {
+      const error = `SEC company facts request failed with status ${response.status}`;
+      console.error("[retailer-profile]", error, text);
+
+      return {
+        revenue: [],
+        ebitda: [],
+        margin: [],
+        sourceStatus: {
+          status: "failed",
+          statusCode: response.status,
+          error,
+          keys: [],
+        },
+      };
+    }
+
+    const companyFacts = JSON.parse(text) as SecCompanyFacts;
+    const usGaapKeys = Object.keys(companyFacts.facts?.["us-gaap"] || {}).sort();
+    const revenue = getSecConceptSeries(companyFacts, [
+      "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "Revenues",
+      "SalesRevenueNet",
+    ]);
+    const ebitda = getSecConceptSeries(companyFacts, [
+      "EarningsBeforeInterestTaxesDepreciationAmortization",
+      "EarningsBeforeInterestTaxesDepreciationAndAmortization",
+    ]);
+    const margin: FinancialPoint[] = [];
+    const hasFinancialData = revenue.length > 0 || ebitda.length > 0;
+
+    console.log(
+      "[retailer-profile] SEC source result:",
+      JSON.stringify({
+        status: hasFinancialData ? "success" : "empty",
+        revenuePoints: revenue.length,
+        ebitdaPoints: ebitda.length,
+        keys: usGaapKeys.slice(0, 40),
+      })
+    );
+
+    return {
+      revenue,
+      ebitda,
+      margin,
+      sourceStatus: {
+        status: hasFinancialData ? "success" : "empty",
+        statusCode: response.status,
+        error: null,
+        keys: usGaapKeys,
+      },
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to fetch SEC financials";
+    console.error("[retailer-profile] SEC source failed:", message);
+
+    return {
+      revenue: [],
+      ebitda: [],
+      margin: [],
+      sourceStatus: {
+        status: "failed",
+        statusCode: null,
+        error: message,
+        keys: [],
+      },
+    };
+  }
 };
 
 export async function GET(request: Request) {
@@ -263,21 +624,47 @@ export async function GET(request: Request) {
   }
 
   const fmpApiKey = process.env.FMP_API_KEY;
-  if (!fmpApiKey) {
-    const error =
-      "FMP_API_KEY is not configured. Set it in .env.local or the deployment environment and restart the Next.js server.";
-    console.warn("[retailer-profile]", error);
+  const missingFmpKeyError = fmpApiKey
+    ? null
+    : "FMP_API_KEY is not configured. Skipping FMP profile and quote sources.";
 
-    return NextResponse.json(
-      emptyProfile(resolvedRetailerName, ticker, ownership, error),
-      { status: 500 }
-    );
+  if (missingFmpKeyError) {
+    console.warn("[retailer-profile]", missingFmpKeyError);
   }
 
-  const [profileCheck, quoteCheck] = await Promise.all([
-    fmpFetch<unknown[]>(`/profile/${encodeURIComponent(ticker)}`, fmpApiKey),
-    fmpFetch<unknown[]>(`/quote/${encodeURIComponent(ticker)}`, fmpApiKey),
-  ]);
+  console.log(
+    "[retailer-profile] Source attempts:",
+    JSON.stringify({
+      ticker,
+      profile: Boolean(fmpApiKey),
+      quote: Boolean(fmpApiKey),
+      secFinancials: Boolean(directoryEntry?.cik),
+      headlines: true,
+    })
+  );
+
+  const [profileCheck, quoteCheck] = fmpApiKey
+    ? await Promise.all([
+        fmpFetch<FmpProfileItem[]>(
+          `/profile/${encodeURIComponent(ticker)}`,
+          fmpApiKey
+        ),
+        fmpFetch<FmpQuoteItem[]>(`/quote/${encodeURIComponent(ticker)}`, fmpApiKey),
+      ])
+    : [
+        {
+          data: null,
+          error: missingFmpKeyError,
+          status: null,
+          keys: [],
+        } satisfies FmpFetchResult<FmpProfileItem[]>,
+        {
+          data: null,
+          error: missingFmpKeyError,
+          status: null,
+          keys: [],
+        } satisfies FmpFetchResult<FmpQuoteItem[]>,
+      ];
   console.log(
     "[retailer-profile] FMP simple endpoint test:",
     JSON.stringify({
@@ -289,71 +676,76 @@ export async function GET(request: Request) {
     })
   );
 
-  const [incomeStatementResult, ratioResult, growthResult, newsResult] =
-    await Promise.all([
-      fmpFetch<FmpIncomeStatement[]>(
-        `/income-statement/${encodeURIComponent(ticker)}?limit=5`,
-        fmpApiKey
-      ),
-      fmpFetch<FmpRatio[]>(`/ratios/${encodeURIComponent(ticker)}?limit=5`, fmpApiKey),
-      fmpFetch<FmpGrowthMetric[]>(
-        `/financial-growth/${encodeURIComponent(ticker)}?limit=5`,
-        fmpApiKey
-      ),
-      fetchHeadlines(ticker, fmpApiKey),
-    ]);
+  const [secFinancials, newsResult] = await Promise.all([
+    fetchSecFinancials(directoryEntry?.cik || null),
+    fetchHeadlinesWithFallback(ticker, fmpApiKey),
+  ]);
+  const incomeStatementResult: FmpFetchResult<FmpIncomeStatement[]> = {
+    data: null,
+    error: null,
+    status: null,
+    keys: [],
+  };
+  const ratioResult: FmpFetchResult<FmpRatio[]> = {
+    data: null,
+    error: null,
+    status: null,
+    keys: [],
+  };
+  const growthResult: FmpFetchResult<FmpGrowthMetric[]> = {
+    data: null,
+    error: null,
+    status: null,
+    keys: [],
+  };
   const endpointStatus: RetailerProfileResponse["endpointStatus"] = {
     profile: endpointStatusFromResult(profileCheck),
     quote: endpointStatusFromResult(quoteCheck),
-    incomeStatement: endpointStatusFromResult(incomeStatementResult),
-    ratios: endpointStatusFromResult(ratioResult),
-    growth: endpointStatusFromResult(growthResult),
+    incomeStatement: notRequestedStatus,
+    ratios: notRequestedStatus,
+    growth: notRequestedStatus,
     news: newsResult.endpointStatus,
   };
+  const sourceStatus: RetailerProfileResponse["sourceStatus"] = {
+    profile: sourceStatusFromResult(profileCheck),
+    quote: sourceStatusFromResult(quoteCheck),
+    secFinancials: secFinancials.sourceStatus,
+    headlines: newsResult.sourceStatus,
+  };
   const usableSources = [
-    profileCheck,
-    quoteCheck,
-    incomeStatementResult,
-    ratioResult,
-    growthResult,
-  ].filter((result) => hasUsableData(result.data)).length + (newsResult.headlines.length > 0 ? 1 : 0);
-  const profileOrQuoteSucceeded =
-    endpointStatus.profile.status === "succeeded" ||
-    endpointStatus.quote.status === "succeeded";
-  const planLimitedIncomeStatement =
-    endpointStatus.incomeStatement.status === "blocked" && profileOrQuoteSucceeded;
+    sourceStatus.profile,
+    sourceStatus.quote,
+    sourceStatus.secFinancials,
+    sourceStatus.headlines,
+  ].filter((status) => status.status === "success").length;
 
-  if (planLimitedIncomeStatement) {
-    console.warn(
-      "[retailer-profile] Income statement endpoint returned 403 while profile/quote succeeded. Treating as endpoint or plan-level restriction and returning available FMP data."
-    );
-  }
+  console.log(
+    "[retailer-profile] Source results:",
+    JSON.stringify({
+      profile: sourceStatus.profile.status,
+      quote: sourceStatus.quote.status,
+      secFinancials: sourceStatus.secFinancials.status,
+      headlines: sourceStatus.headlines.status,
+      successfulSources: usableSources,
+    })
+  );
 
   if (usableSources === 0) {
-    const error = "All usable FMP public data sources failed or returned no data.";
+    const error = "All external public data sources failed or returned no data.";
 
     return NextResponse.json(
       {
         ...emptyProfile(resolvedRetailerName, ticker, ownership, error),
         endpointStatus,
+        sourceStatus,
       },
       { status: 502 }
     );
   }
 
-  const financials = (incomeStatementResult.data || []).slice(0, 5).reverse();
-  const revenue = financials.flatMap((item) => {
-    const value = toBillions(item.revenue);
-    return value === null ? [] : [{ year: getYear(item), value }];
-  });
-  const ebitda = financials.flatMap((item) => {
-    const value = toBillions(item.ebitda);
-    return value === null ? [] : [{ year: getYear(item), value }];
-  });
-  const margin = financials.flatMap((item) => {
-    const value = toPercent(item.ebitdaratio);
-    return value === null ? [] : [{ year: getYear(item), value }];
-  });
+  const revenue = secFinancials.revenue;
+  const ebitda = secFinancials.ebitda;
+  const margin = secFinancials.margin;
   const latestRatio = ratioResult.data?.[0];
   const latestGrowthMetric = growthResult.data?.[0];
   const latestMargin =
@@ -365,6 +757,7 @@ export async function GET(request: Request) {
     ownership,
     error: null,
     endpointStatus,
+    sourceStatus,
     financials: {
       revenue,
       ebitda,

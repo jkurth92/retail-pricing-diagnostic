@@ -3,6 +3,7 @@ export type RetailerDirectoryEntry = {
   aliases: string[];
   ownership: "public" | "private";
   ticker: string | null;
+  cik: string | null;
 };
 
 export const retailerDirectory: RetailerDirectoryEntry[] = [
@@ -11,54 +12,63 @@ export const retailerDirectory: RetailerDirectoryEntry[] = [
     aliases: ["target", "target corporation"],
     ownership: "public",
     ticker: "TGT",
+    cik: "0000027419",
   },
   {
     name: "Walmart",
     aliases: ["walmart", "wal-mart", "walmart inc"],
     ownership: "public",
     ticker: "WMT",
+    cik: "0000104169",
   },
   {
     name: "Costco",
     aliases: ["costco", "costco wholesale"],
     ownership: "public",
     ticker: "COST",
+    cik: "0000909832",
   },
   {
     name: "Kroger",
     aliases: ["kroger", "the kroger co"],
     ownership: "public",
     ticker: "KR",
+    cik: "0000056873",
   },
   {
     name: "Home Depot",
     aliases: ["home depot", "the home depot"],
     ownership: "public",
     ticker: "HD",
+    cik: "0000354950",
   },
   {
     name: "Best Buy",
     aliases: ["best buy", "bestbuy"],
     ownership: "public",
     ticker: "BBY",
+    cik: "0000764478",
   },
   {
     name: "Aldi",
     aliases: ["aldi"],
     ownership: "private",
     ticker: null,
+    cik: null,
   },
   {
     name: "Publix",
     aliases: ["publix", "publix super markets"],
     ownership: "private",
     ticker: null,
+    cik: null,
   },
   {
     name: "Trader Joe's",
     aliases: ["trader joe's", "trader joes"],
     ownership: "private",
     ticker: null,
+    cik: null,
   },
 ];
 
