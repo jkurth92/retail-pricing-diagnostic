@@ -5,7 +5,6 @@ import PricingLadderModule from "@/components/PricingLadderModule";
 import PriceZoneModule from "@/components/PriceZoneModule";
 import PromoCalendarModule from "@/components/PromoCalendarModule";
 import MarkdownModule from "@/components/MarkdownModule";
-import { estimateOpportunity } from "./utils/opportunityEngine";
 
 type Tab = "overview" | "pricing" | "promotions" | "markdown";
 type OverviewTab = "prompts" | "retailer" | "retailerOverview" | "opportunity";
@@ -40,7 +39,32 @@ type ClientContext = {
   structuredContext: ClientStructuredContext;
   uploadedClientData: UploadedClientDataMetadata[];
 };
-type Opportunity = ReturnType<typeof estimateOpportunity>;
+type PricingOpportunityEstimate = {
+  total_bps: number;
+  total_dollar_impact: number | null;
+  kvis_bps: number | null;
+  architecture_bps: number | null;
+  zoning_bps: number | null;
+  confidence: "high" | "medium" | "low";
+  diagnostics: {
+    matched_skus: number;
+    unmatched_skus: number;
+    match_coverage_pct: number;
+    avg_price_gap_pct: number;
+    pct_above_benchmark: number;
+    kvi_candidates_count: number;
+    architecture_issue_count: number;
+    zoning_issue_count: number;
+  };
+  assumptions: string[];
+  guardrails: string[];
+  povReferences: string[];
+  contextAdjustments: string[];
+};
+type OpportunityEstimateApiResponse = {
+  error?: string;
+  pricing: PricingOpportunityEstimate;
+};
 type Scenario = "Base" | "Conservative" | "Aggressive";
 type EstimateComponents = {
   baseBenchmarkAdjustment: number;
@@ -49,9 +73,9 @@ type EstimateComponents = {
   clientDataAdjustment: number;
 };
 type LeverContributions = {
-  pricing: number;
-  promotions: number;
-  markdown: number;
+  kvis: number;
+  architecture: number;
+  zoning: number;
 };
 type ConfidenceInputs = {
   overall: number;
@@ -299,11 +323,6 @@ const formatCurrencyShort = (value: number) => {
 
 const clampNumber = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
-
-const parseBpsValue = (value: string) => {
-  const parsedValue = Number(value.replace(/[^0-9.-]/g, ""));
-  return Number.isFinite(parsedValue) ? parsedValue : 0;
-};
 
 const formatSignedBps = (value: number) =>
   `${value >= 0 ? "+" : ""}${Math.round(value)} bps`;
@@ -1420,6 +1439,12 @@ export default function Home() {
   );
   const [competitorsManuallyEdited, setCompetitorsManuallyEdited] =
     useState(false);
+  const [pricingOpportunity, setPricingOpportunity] =
+    useState<PricingOpportunityEstimate | null>(null);
+  const [pricingOpportunityError, setPricingOpportunityError] = useState<string | null>(
+    null
+  );
+  const [pricingOpportunityLoading, setPricingOpportunityLoading] = useState(false);
 
   const eprAverageScore =
     eprQuestions.reduce((total, question) => total + eprScores[question.id], 0) /
@@ -1432,6 +1457,60 @@ export default function Home() {
     structuredContext: structuredClientContext,
     uploadedClientData,
   };
+
+  useEffect(() => {
+    let isActive = true;
+
+    setPricingOpportunityLoading(true);
+    fetch("/api/opportunity-estimate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        matchedPricingPairs: [],
+        unmatchedCount: uploadedClientData.length > 0 ? uploadedClientData.length : 0,
+        scopeInputs: retailerScopeInputs,
+        clientContext,
+        competitors: retailerCompetitors,
+      }),
+    })
+      .then(async (response) => {
+        const payload = (await response.json().catch(() => null)) as
+          | OpportunityEstimateApiResponse
+          | null;
+        if (!response.ok || !payload?.pricing) {
+          throw new Error(payload?.error || "Unable to calculate pricing opportunity");
+        }
+        return payload;
+      })
+      .then((payload) => {
+        if (!isActive) return;
+        setPricingOpportunity(payload.pricing);
+        setPricingOpportunityError(payload.error || null);
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        setPricingOpportunity(null);
+        setPricingOpportunityError(
+          error instanceof Error
+            ? error.message
+            : "Unable to calculate pricing opportunity"
+        );
+      })
+      .finally(() => {
+        if (isActive) setPricingOpportunityLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    additionalClientContext,
+    eprAverageScore,
+    retailerCompetitors,
+    retailerScopeInputs,
+    structuredClientContext,
+    uploadedClientData.length,
+  ]);
 
   useEffect(() => {
     if (categoryListManuallyEdited) return;
@@ -1557,17 +1636,6 @@ export default function Home() {
     }
   };
 
-const mockInputs = {
-  revenue: 10000000000,
-  priceVariancePct: 4.5,
-  kviCoveragePct: 32,
-  promoIntensityPct: 38,
-  zoneVariancePct: 1.2,
-  markdownDepthPct: 37,
-  markdownTiming: "late" as const,
-};
-
-const opportunity = estimateOpportunity(mockInputs);
 const sourcedRetailerRevenue = getLatestRevenueDollars(retailerProfile);
 const effectiveRetailerScopeInputs: RetailerScopeInputs = {
   ...retailerScopeInputs,
@@ -1791,7 +1859,9 @@ const effectiveRetailerScopeInputs: RetailerScopeInputs = {
 
                     {activeOverviewTab === "opportunity" && (
                       <OpportunitySection
-                        opportunity={opportunity}
+                        pricingOpportunity={pricingOpportunity}
+                        pricingOpportunityError={pricingOpportunityError}
+                        pricingOpportunityLoading={pricingOpportunityLoading}
                         analysisMode={analysisMode}
                         scopeInputs={effectiveRetailerScopeInputs}
                         clientContext={clientContext}
@@ -3536,20 +3606,25 @@ function renderPeerComparisonBar(
 }
 
 function OpportunitySection({
-  opportunity,
+  pricingOpportunity,
+  pricingOpportunityError,
+  pricingOpportunityLoading,
   analysisMode,
   scopeInputs,
   clientContext,
 }: {
-  opportunity: Opportunity;
+  pricingOpportunity: PricingOpportunityEstimate | null;
+  pricingOpportunityError: string | null;
+  pricingOpportunityLoading: boolean;
   analysisMode: AnalysisMode;
   scopeInputs: RetailerScopeInputs;
   clientContext: ClientContext;
 }) {
+  const pricingEstimate = pricingOpportunity;
   const initialLeverContributions: LeverContributions = {
-    pricing: parseBpsValue(opportunity.pricing.marginUpliftBps),
-    promotions: parseBpsValue(opportunity.promotions.marginUpliftBps),
-    markdown: parseBpsValue(opportunity.markdown.marginUpliftBps),
+    kvis: pricingEstimate?.kvis_bps ?? 0,
+    architecture: pricingEstimate?.architecture_bps ?? 0,
+    zoning: pricingEstimate?.zoning_bps ?? 0,
   };
   const initialScopePct = parsePercentageInput(
     scopeInputs.addressableRevenuePct,
@@ -3593,41 +3668,37 @@ function OpportunitySection({
     },
     {
       id: "promo-frequency",
-      title: "Reduce blanket promotional frequency",
-      lever: "Promotions",
-      impactRange: "+10-25 bps",
+      title: "Tune KVI guardrails against Walmart benchmark gaps",
+      lever: "Pricing",
+      impactRange: "+5-20 bps",
       effort: "Medium",
       included: true,
       highlighted: false,
     },
     {
       id: "promo-kvis",
-      title: "Reallocate promotions away from non-KVIs",
-      lever: "Promotions",
-      impactRange: "+8-18 bps",
+      title: "Validate zone rules where matched rows include geography",
+      lever: "Pricing",
+      impactRange: "+0-15 bps",
       effort: "Low",
       included: true,
       highlighted: false,
     },
-    {
-      id: "markdown-timing",
-      title: "Improve markdown timing discipline",
-      lever: "Markdown",
-      impactRange: "+8-18 bps",
-      effort: "Medium",
-      included: true,
-      highlighted: false,
-    },
-    {
-      id: "pack-rationalization",
-      title: "Rationalize pack assortment",
-      lever: "Markdown",
-      impactRange: "+5-12 bps",
-      effort: "High",
-      included: false,
-      highlighted: false,
-    },
   ]);
+
+  useEffect(() => {
+    const nextLeverContributions: LeverContributions = {
+      kvis: pricingOpportunity?.kvis_bps ?? 0,
+      architecture: pricingOpportunity?.architecture_bps ?? 0,
+      zoning: pricingOpportunity?.zoning_bps ?? 0,
+    };
+
+    setLeverContributions(nextLeverContributions);
+    setEstimateComponents((currentComponents) => ({
+      ...currentComponents,
+      baseBenchmarkAdjustment: 0,
+    }));
+  }, [pricingOpportunity]);
 
   const totalRevenue = parseCurrencyInput(
     scopeInputs.annualRevenue,
@@ -3647,49 +3718,42 @@ function OpportunitySection({
     )
     .map((group) => group.group);
   const leverScopeFactors: LeverContributions = {
-    pricing: selectedLeverFamilies.includes("Pricing") ? 1 : 0,
-    promotions: selectedLeverFamilies.includes("Promotions") ? 1 : 0,
-    markdown: selectedLeverFamilies.includes("Markdown") ? 1 : 0,
+    kvis: scopeInputs.selectedLeverIds.includes("kvis") ? 1 : 0,
+    architecture: scopeInputs.selectedLeverIds.includes("price-architecture") ? 1 : 0,
+    zoning: scopeInputs.selectedLeverIds.includes("price-zoning") ? 1 : 0,
   };
   const scopedLeverContributions: LeverContributions = {
-    pricing: Math.round(leverContributions.pricing * leverScopeFactors.pricing),
-    promotions: Math.round(leverContributions.promotions * leverScopeFactors.promotions),
-    markdown: Math.round(leverContributions.markdown * leverScopeFactors.markdown),
+    kvis: Math.round(leverContributions.kvis * leverScopeFactors.kvis),
+    architecture: Math.round(
+      leverContributions.architecture * leverScopeFactors.architecture
+    ),
+    zoning: Math.round(leverContributions.zoning * leverScopeFactors.zoning),
   };
   const baseBenchmarkBps =
-    scopedLeverContributions.pricing +
-    scopedLeverContributions.promotions +
-    scopedLeverContributions.markdown +
+    scopedLeverContributions.kvis +
+    scopedLeverContributions.architecture +
+    scopedLeverContributions.zoning +
     estimateComponents.baseBenchmarkAdjustment;
-  const rawOpportunityBps =
-    baseBenchmarkBps +
-    estimateComponents.eprAdjustment +
-    estimateComponents.scopeAdjustment +
-    estimateComponents.clientDataAdjustment;
-  const confidenceAverage =
-    (confidenceInputs.overall +
-      confidenceInputs.benchmarkRelevance +
-      confidenceInputs.dataQuality +
-      confidenceInputs.assumptionStrength) /
-    400;
-  const confidenceMultiplier = 0.85 + confidenceAverage * 0.3;
-  const assumptionMultiplier =
-    (assumptions.elasticity +
-      assumptions.promoIncrementality +
-      assumptions.markdownRecovery) /
-    300;
-  const totalOpportunityBps = Math.max(
-    0,
-    Math.round(rawOpportunityBps * confidenceMultiplier * assumptionMultiplier)
-  );
+  const hasMatchedPricingData =
+    (pricingEstimate?.diagnostics.matched_skus ?? 0) > 0;
+  const rawOpportunityBps = hasMatchedPricingData ? baseBenchmarkBps : 0;
+  const totalOpportunityBps = Math.max(0, Math.round(rawOpportunityBps));
   const revenueImpactPct = totalOpportunityBps / 100;
-  const totalOpportunityDollars = addressableRevenue * (totalOpportunityBps / 10000);
+  const totalOpportunityDollars =
+    pricingEstimate?.total_dollar_impact ??
+    addressableRevenue * (totalOpportunityBps / 10000);
   const confidenceLabel =
-    confidenceInputs.overall >= 75
+    pricingEstimate?.confidence === "high"
       ? "High"
-      : confidenceInputs.overall >= 55
+      : pricingEstimate?.confidence === "medium"
         ? "Medium"
-        : "Low";
+        : pricingEstimate?.confidence === "low"
+          ? "Low"
+          : confidenceInputs.overall >= 75
+            ? "High"
+            : confidenceInputs.overall >= 55
+              ? "Medium"
+              : "Low";
 
   const applyScenario = (nextScenario: Scenario) => {
     const scenarioMultiplier =
@@ -3697,9 +3761,11 @@ function OpportunitySection({
 
     setScenario(nextScenario);
     setLeverContributions({
-      pricing: Math.round(initialLeverContributions.pricing * scenarioMultiplier),
-      promotions: Math.round(initialLeverContributions.promotions * scenarioMultiplier),
-      markdown: Math.round(initialLeverContributions.markdown * scenarioMultiplier),
+      kvis: Math.round(initialLeverContributions.kvis * scenarioMultiplier),
+      architecture: Math.round(
+        initialLeverContributions.architecture * scenarioMultiplier
+      ),
+      zoning: Math.round(initialLeverContributions.zoning * scenarioMultiplier),
     });
     setEstimateComponents({
       baseBenchmarkAdjustment:
@@ -3759,19 +3825,28 @@ function OpportunitySection({
     reason: string;
   }[] = [
     {
-      key: "pricing",
-      name: "Pricing",
-      reason: `EPR gap: price architecture and KVI discipline score ${clientContext.eprScores.priceArchitectureKvis}/5, creating room for selective margin capture outside protected value items.`,
+      key: "kvis",
+      name: "KVI",
+      reason:
+        pricingEstimate?.kvis_bps === null
+          ? "Not scored because KVI evidence is missing or weak in the matched pricing data."
+          : `Observed matched-item gaps are interpreted against KVI thresholds and EPR score ${clientContext.eprScores.priceArchitectureKvis}/5.`,
     },
     {
-      key: "promotions",
-      name: "Promotions",
-      reason: `EPR gap: promotions effectiveness scores ${clientContext.eprScores.promotionsStrategyEffectiveness}/5; market signals point to heavier discounting and room to improve incrementality.`,
+      key: "architecture",
+      name: "Price Architecture",
+      reason:
+        pricingEstimate?.architecture_bps === null
+          ? "Not scored because the matched dataset is too sparse for pack or ladder diagnostics."
+          : "Detected pack, tier, or unit-price inconsistencies are capped to a conservative benchmark range.",
     },
     {
-      key: "markdown",
-      name: "Markdown",
-      reason: `Retailer signal: markdown and inventory management scores ${clientContext.eprScores.markdownInventoryManagement}/5, suggesting timing and recovery leakage in seasonal or slow-moving inventory.`,
+      key: "zoning",
+      name: "Price Zoning",
+      reason:
+        pricingEstimate?.zoning_bps === null
+          ? "Not scored because geography is not available in the matched pricing data."
+          : "Regional price-gap spreads are scored only when matched rows include usable geography.",
     },
   ];
   return (
@@ -3800,14 +3875,71 @@ function OpportunitySection({
       </section>
 
       <p className="text-sm leading-6 text-gray-600">
-        AI-generated estimate based on {formatCurrencyShort(addressableRevenue)} in scope (
+        Server-calculated pricing-only estimate based on {formatCurrencyShort(addressableRevenue)} in scope (
         {scopedRevenuePct}% of business), across{" "}
         {includedCategories.length > 0
           ? `${includedCategories.slice(0, 3).join(", ")}${includedCategories.length > 3 ? " and other selected categories" : ""}`
           : "selected categories"}{" "}
-        and {selectedLeverFamilies.length > 0 ? selectedLeverFamilies.join(", ") : "selected levers"}, assuming{" "}
+        and {selectedLeverFamilies.includes("Pricing") ? "pricing levers" : "selected levers"}, assuming{" "}
         {clientContext.eprMaturityLabel.toLowerCase()} pricing maturity.
       </p>
+
+      {(pricingOpportunityLoading || pricingOpportunityError || pricingEstimate) && (
+        <section className={`${sectionCard} space-y-3`}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+                Pricing Calculation Status
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+                {pricingOpportunityLoading
+                  ? "Calculating from pricing route..."
+                  : pricingOpportunityError
+                    ? "Low-confidence partial result"
+                    : "Route output loaded"}
+              </h2>
+            </div>
+            {pricingEstimate && (
+              <p className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ui-blue)]">
+                {pricingEstimate.diagnostics.match_coverage_pct.toFixed(1)}% match coverage
+              </p>
+            )}
+          </div>
+          {pricingOpportunityError && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-800">
+              {pricingOpportunityError}
+            </p>
+          )}
+          {pricingEstimate && (
+            <div className="grid gap-3 md:grid-cols-4">
+              {[
+                {
+                  label: "Matched SKUs",
+                  value: pricingEstimate.diagnostics.matched_skus.toLocaleString(),
+                },
+                {
+                  label: "Avg price gap",
+                  value: `${pricingEstimate.diagnostics.avg_price_gap_pct.toFixed(1)}%`,
+                },
+                {
+                  label: "Above benchmark",
+                  value: `${pricingEstimate.diagnostics.pct_above_benchmark.toFixed(1)}%`,
+                },
+                { label: "Confidence", value: confidenceLabel },
+              ].map((item) => (
+                <div key={item.label} className={subCard}>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-xl font-bold tracking-tight text-[var(--ui-navy)]">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className={`${sectionCard} space-y-4 border-blue-100 bg-blue-50/40`}>
         <div>
@@ -3899,9 +4031,15 @@ function OpportunitySection({
             </p>
           </div>
           <div className={`${subCard} space-y-2 text-sm leading-6 text-gray-600`}>
-            <p>• Benchmark-based estimate calibrated to selected levers and current EPR maturity.</p>
-            <p>• No client elasticity curve is available, so demand response remains an uncertainty.</p>
-            <p>• Promo incrementality and markdown recovery are assumed from diagnostic signals.</p>
+            {(pricingEstimate?.assumptions || [
+              "Benchmark-based estimate calibrated to selected pricing levers and current EPR maturity.",
+              "No client elasticity curve is available, so demand response remains an uncertainty.",
+            ]).map((assumption) => (
+              <p key={assumption}>• {assumption}</p>
+            ))}
+            {(pricingEstimate?.contextAdjustments || []).map((adjustment) => (
+              <p key={adjustment}>• {adjustment}</p>
+            ))}
           </div>
         </div>
       </section>
