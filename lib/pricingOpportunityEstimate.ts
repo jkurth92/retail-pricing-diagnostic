@@ -111,6 +111,7 @@ type ClientContextInput = {
   eprAverageScore?: number | null;
   eprMaturityLabel?: string | null;
   additionalContext?: string | null;
+  uploadedClientData?: unknown[];
   structuredContext?: {
     pricingModel?: string | null;
     retailerFormat?: string | null;
@@ -172,16 +173,40 @@ type MatchBuildResult = {
   unmatchedCount: number;
   diagnostics: {
     clientRowCount: number;
+    normalizedClientRowCount: number;
     benchmarkRowCount: number;
+    normalizedBenchmarkRowCount: number;
     benchmarkDatasetCount: number;
     clientColumnsDetected: Partial<Record<FieldKey, string>>;
     benchmarkColumnsDetected: Partial<Record<FieldKey, string>>;
+    fieldMapping: Record<FieldKey, { client: string | null; benchmark: string | null }>;
+    sampleNormalizedClientRow: SafeNormalizedRecord | null;
+    sampleNormalizedBenchmarkRow: SafeNormalizedRecord | null;
     exactUpcMatches: number;
     exactSkuMatches: number;
     fuzzyMatches: number;
     unmatchedRows: number;
     emptyReason: string | null;
+    zeroCoverageRootCause:
+      | "missing_client_rows"
+      | "missing_benchmark_rows"
+      | "column_mismatch"
+      | "overly_strict_matching"
+      | "unsupported_file_parsing"
+      | null;
   };
+};
+
+type SafeNormalizedRecord = {
+  sku: string | null;
+  upc: string | null;
+  itemName: string;
+  brand: string;
+  category: string;
+  price: number | null;
+  unitPrice: number | null;
+  packSize: number | null;
+  geography: string | null;
 };
 
 type NormalizedMatchedPair = {
@@ -212,8 +237,10 @@ const fieldAliases: Record<FieldKey, string[]> = {
   upc: ["upc", "gtin", "barcode", "ean", "universal product code"],
   sku: [
     "sku",
+    "clientSku",
     "clientsku",
     "client sku",
+    "clientItemId",
     "itemid",
     "item id",
     "product sku",
@@ -223,19 +250,26 @@ const fieldAliases: Record<FieldKey, string[]> = {
   ],
   item: [
     "item",
+    "itemName",
+    "itemname",
     "item name",
     "product",
+    "productName",
     "product name",
     "product_name",
     "description",
     "product_description",
     "title",
   ],
-  category: ["category", "breadcrumb", "department", "class", "subcategory"],
-  brand: ["brand", "product brand", "product_brand", "manufacturer"],
+  category: ["category", "clientCategory", "client category", "breadcrumb", "department", "class", "subcategory"],
+  brand: ["brand", "clientBrand", "client brand", "product brand", "product_brand", "manufacturer"],
   price: [
     "price",
+    "clientPrice",
+    "clientprice",
     "client price",
+    "retailerPrice",
+    "retailerprice",
     "retailer price",
     "regular price",
     "regular_price",
@@ -243,8 +277,10 @@ const fieldAliases: Record<FieldKey, string[]> = {
     "sales_price",
     "current price",
   ],
-  unitPrice: ["unit price", "unit_price", "price per unit", "ppu"],
+  unitPrice: ["unitPrice", "unitprice", "unit price", "unit_price", "price per unit", "ppu"],
   packSize: [
+    "packSize",
+    "packsize",
     "pack size",
     "pack_size",
     "size",
@@ -255,7 +291,7 @@ const fieldAliases: Record<FieldKey, string[]> = {
     "ounces",
     "oz",
   ],
-  kvi: ["kvi", "is kvi", "kvi flag", "known value item", "key value item"],
+  kvi: ["kvi", "kviFlag", "kviflag", "is kvi", "kvi flag", "known value item", "key value item"],
   geography: ["region", "state", "zone", "market", "store region", "store_region"],
 };
 
@@ -385,6 +421,40 @@ const normalizeRecords = (
     };
   });
 
+const safeNormalizedRecord = (
+  row: NormalizedSourceRecord | null | undefined
+): SafeNormalizedRecord | null =>
+  row
+    ? {
+        sku: row.sku,
+        upc: row.upc,
+        itemName: row.itemName,
+        brand: row.brand,
+        category: row.category,
+        price: row.price,
+        unitPrice: row.unitPrice,
+        packSize: row.packSize,
+        geography: row.geography,
+      }
+    : null;
+
+const buildFieldMapping = (
+  clientColumnsDetected: Partial<Record<FieldKey, string>>,
+  benchmarkColumnsDetected: Partial<Record<FieldKey, string>>
+) =>
+  (Object.keys(fieldAliases) as FieldKey[]).reduce<
+    Record<FieldKey, { client: string | null; benchmark: string | null }>
+  >((mapping, field) => {
+    mapping[field] = {
+      client: clientColumnsDetected[field] ?? null,
+      benchmark: benchmarkColumnsDetected[field] ?? null,
+    };
+    return mapping;
+  }, {} as Record<FieldKey, { client: string | null; benchmark: string | null }>);
+
+const hasMinimumMatchFields = (columns: Partial<Record<FieldKey, string>>) =>
+  Boolean(columns.price && (columns.upc || columns.sku || columns.item));
+
 const parseCsvRows = (text: string) => {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -496,13 +566,15 @@ const toMatchedPair = (
 
 const buildMatchesFromSourceRows = (
   clientRows: unknown[],
-  benchmarkDatasetCount: number
+  benchmarkDatasetCount: number,
+  uploadedClientFileCount: number
 ): MatchBuildResult => {
   const clientRecords = clientRows.map(toRecord);
   const benchmarkLoad = loadBenchmarkRecords();
   const benchmarkRecords = benchmarkLoad.records;
   const clientColumnsDetected = detectColumns(clientRecords);
   const benchmarkColumnsDetected = detectColumns(benchmarkRecords.slice(0, 100));
+  const fieldMapping = buildFieldMapping(clientColumnsDetected, benchmarkColumnsDetected);
   const normalizedClientRows = normalizeRecords(clientRows, "client", clientColumnsDetected).filter(
     (row) => row.price !== null && (row.upc || row.sku || row.itemName)
   );
@@ -513,25 +585,64 @@ const buildMatchesFromSourceRows = (
   ).filter((row) => row.price !== null && (row.upc || row.sku || row.itemName));
   const diagnostics: MatchBuildResult["diagnostics"] = {
     clientRowCount: clientRows.length,
+    normalizedClientRowCount: normalizedClientRows.length,
     benchmarkRowCount: benchmarkRecords.length,
+    normalizedBenchmarkRowCount: normalizedBenchmarkRows.length,
     benchmarkDatasetCount,
     clientColumnsDetected,
     benchmarkColumnsDetected,
+    fieldMapping,
+    sampleNormalizedClientRow: safeNormalizedRecord(normalizedClientRows[0]),
+    sampleNormalizedBenchmarkRow: safeNormalizedRecord(normalizedBenchmarkRows[0]),
     exactUpcMatches: 0,
     exactSkuMatches: 0,
     fuzzyMatches: 0,
     unmatchedRows: 0,
     emptyReason: null,
+    zeroCoverageRootCause: null,
   };
 
   if (clientRows.length === 0) {
+    diagnostics.zeroCoverageRootCause =
+      uploadedClientFileCount > 0 ? "unsupported_file_parsing" : "missing_client_rows";
     diagnostics.emptyReason =
-      "Client pricing upload rows are missing. The current request contains no client row payload for the matcher.";
+      uploadedClientFileCount > 0
+        ? "Client upload metadata is present, but parsed client pricing rows are missing. File parsing is not producing row-level pricing data for the matcher."
+        : "Client pricing upload rows are missing. The current request contains no client row payload for the matcher.";
     return { matches: [], unmatchedCount: 0, diagnostics };
   }
   if (benchmarkRecords.length === 0) {
+    diagnostics.zeroCoverageRootCause = "missing_benchmark_rows";
     diagnostics.emptyReason =
       "Walmart benchmark source rows are missing. The internal CSV could not be loaded server-side.";
+    diagnostics.unmatchedRows = clientRows.length;
+    return { matches: [], unmatchedCount: clientRows.length, diagnostics };
+  }
+  if (!hasMinimumMatchFields(clientColumnsDetected)) {
+    diagnostics.zeroCoverageRootCause = "column_mismatch";
+    diagnostics.emptyReason =
+      "Client pricing columns do not map to the minimum required fields: price plus UPC, SKU, or product name.";
+    diagnostics.unmatchedRows = clientRows.length;
+    return { matches: [], unmatchedCount: clientRows.length, diagnostics };
+  }
+  if (!hasMinimumMatchFields(benchmarkColumnsDetected)) {
+    diagnostics.zeroCoverageRootCause = "column_mismatch";
+    diagnostics.emptyReason =
+      "Walmart benchmark columns do not map to the minimum required fields: price plus UPC, SKU, or product name.";
+    diagnostics.unmatchedRows = clientRows.length;
+    return { matches: [], unmatchedCount: clientRows.length, diagnostics };
+  }
+  if (normalizedClientRows.length === 0) {
+    diagnostics.zeroCoverageRootCause = "column_mismatch";
+    diagnostics.emptyReason =
+      "Client rows were present, but none normalized into usable pricing records after field mapping.";
+    diagnostics.unmatchedRows = clientRows.length;
+    return { matches: [], unmatchedCount: clientRows.length, diagnostics };
+  }
+  if (normalizedBenchmarkRows.length === 0) {
+    diagnostics.zeroCoverageRootCause = "column_mismatch";
+    diagnostics.emptyReason =
+      "Walmart benchmark rows were present, but none normalized into usable pricing records after field mapping.";
     diagnostics.unmatchedRows = clientRows.length;
     return { matches: [], unmatchedCount: clientRows.length, diagnostics };
   }
@@ -586,6 +697,12 @@ const buildMatchesFromSourceRows = (
 
     diagnostics.unmatchedRows += 1;
   });
+
+  if (matches.length === 0) {
+    diagnostics.zeroCoverageRootCause = "overly_strict_matching";
+    diagnostics.emptyReason =
+      "Client and benchmark rows normalized successfully, but no UPC, SKU, or fuzzy product matches met the current thresholds.";
+  }
 
   return {
     matches,
@@ -869,6 +986,9 @@ export const calculatePricingOpportunity = (
       request.clientUploadRows ??
       request.pricingRows
   );
+  const uploadedClientFileCount = Array.isArray(request.clientContext?.uploadedClientData)
+    ? request.clientContext.uploadedClientData.length
+    : 0;
   const rawMatches = asArray(
     request.matchedPricingOutput ??
       request.matchedPricingPairs ??
@@ -886,7 +1006,11 @@ export const calculatePricingOpportunity = (
     );
   const builtMatchResult =
     preMatchedPairs.length === 0
-      ? buildMatchesFromSourceRows(clientSourceRows, benchmarkRepository.datasets.length)
+      ? buildMatchesFromSourceRows(
+          clientSourceRows,
+          benchmarkRepository.datasets.length,
+          uploadedClientFileCount
+        )
       : null;
   const matchedPairs = preMatchedPairs.length > 0 ? preMatchedPairs : builtMatchResult?.matches ?? [];
   const unmatchedSkus = Array.isArray(request.unmatchedSkus)
@@ -894,17 +1018,56 @@ export const calculatePricingOpportunity = (
     : toNumber(request.unmatchedCount) ?? builtMatchResult?.unmatchedCount ?? 0;
   const fallbackMatchDiagnostics: MatchBuildResult["diagnostics"] = {
     clientRowCount: clientSourceRows.length || preMatchedPairs.length,
+    normalizedClientRowCount: clientSourceRows.length || preMatchedPairs.length,
     benchmarkRowCount: walmartDataset?.rowCount ?? 0,
+    normalizedBenchmarkRowCount: walmartDataset?.rowCount ?? 0,
     benchmarkDatasetCount: benchmarkRepository.datasets.length,
     clientColumnsDetected: {},
     benchmarkColumnsDetected: {},
+    fieldMapping: buildFieldMapping({}, {}),
+    sampleNormalizedClientRow:
+      preMatchedPairs.length > 0
+        ? {
+            sku: preMatchedPairs[0].clientSku,
+            upc: null,
+            itemName: preMatchedPairs[0].itemName,
+            brand: preMatchedPairs[0].brand,
+            category: preMatchedPairs[0].category,
+            price: preMatchedPairs[0].clientPrice,
+            unitPrice: preMatchedPairs[0].clientUnitPrice,
+            packSize: preMatchedPairs[0].packSize,
+            geography: preMatchedPairs[0].geography,
+          }
+        : null,
+    sampleNormalizedBenchmarkRow:
+      preMatchedPairs.length > 0
+        ? {
+            sku: preMatchedPairs[0].walmartSku,
+            upc: null,
+            itemName: preMatchedPairs[0].itemName,
+            brand: preMatchedPairs[0].brand,
+            category: preMatchedPairs[0].category,
+            price: preMatchedPairs[0].walmartPrice,
+            unitPrice: preMatchedPairs[0].walmartUnitPrice,
+            packSize: preMatchedPairs[0].packSize,
+            geography: null,
+          }
+        : null,
     exactUpcMatches: 0,
     exactSkuMatches: 0,
     fuzzyMatches: preMatchedPairs.length,
     unmatchedRows: unmatchedSkus,
     emptyReason:
       clientSourceRows.length === 0 && preMatchedPairs.length === 0
-        ? "Client pricing upload rows are missing. The route received neither matched pairs nor raw client pricing rows."
+        ? uploadedClientFileCount > 0
+          ? "Client upload metadata is present, but parsed client pricing rows are missing. File parsing is not producing row-level pricing data for the matcher."
+          : "Client pricing upload rows are missing. The route received neither matched pairs nor raw client pricing rows."
+        : null,
+    zeroCoverageRootCause:
+      clientSourceRows.length === 0 && preMatchedPairs.length === 0
+        ? uploadedClientFileCount > 0
+          ? "unsupported_file_parsing"
+          : "missing_client_rows"
         : null,
   };
   const matchDiagnostics = builtMatchResult?.diagnostics ?? fallbackMatchDiagnostics;
@@ -922,25 +1085,44 @@ export const calculatePricingOpportunity = (
   ];
 
   console.info(
-    "[opportunity-estimate] Pricing route inputs:",
+    "[opportunity-estimate] Client input diagnostics:",
     JSON.stringify({
       clientRowCount: matchDiagnostics.clientRowCount,
+      normalizedClientRowCount: matchDiagnostics.normalizedClientRowCount,
+      detectedClientColumns: matchDiagnostics.clientColumnsDetected,
+      sampleNormalizedClientRow: matchDiagnostics.sampleNormalizedClientRow,
+      uploadedClientFileCount,
+      rowsPassedIntoMatcher: clientSourceRows.length > 0,
+    })
+  );
+  console.info(
+    "[opportunity-estimate] Benchmark input diagnostics:",
+    JSON.stringify({
+      benchmarkDatasetCount: matchDiagnostics.benchmarkDatasetCount,
       benchmarkRowCount: matchDiagnostics.benchmarkRowCount,
+      normalizedBenchmarkRowCount: matchDiagnostics.normalizedBenchmarkRowCount,
+      detectedBenchmarkColumns: matchDiagnostics.benchmarkColumnsDetected,
+      sampleNormalizedBenchmarkRow: matchDiagnostics.sampleNormalizedBenchmarkRow,
+      benchmarkAvailable: Boolean(walmartDataset),
+    })
+  );
+  console.info(
+    "[opportunity-estimate] Matching output diagnostics:",
+    JSON.stringify({
+      fieldMapping: matchDiagnostics.fieldMapping,
       rawMatchedRecords: rawMatches.length,
+      clientSourceRowsPassed: clientSourceRows.length,
       usableMatchedRecords: matchedPairs.length,
       unmatchedSkus,
-      benchmarkAvailable: Boolean(walmartDataset),
-      benchmarkDatasetCount: benchmarkRepository.datasets.length,
       elasticityBenchmarkCount: benchmarkRepository.elasticityBenchmarks.length,
       povGuidanceAvailable: povStore.guidanceCount > 0,
       contextModifierAvailable: Boolean(request.clientContext || request.scopeInputs),
-      clientColumnsDetected: matchDiagnostics.clientColumnsDetected,
-      benchmarkColumnsDetected: matchDiagnostics.benchmarkColumnsDetected,
       exactUpcMatches: matchDiagnostics.exactUpcMatches,
       exactSkuMatches: matchDiagnostics.exactSkuMatches,
       fuzzyMatches: matchDiagnostics.fuzzyMatches,
       unmatchedRows: matchDiagnostics.unmatchedRows,
-      emptyReason: matchDiagnostics.emptyReason,
+      zeroCoverageRootCause: matchDiagnostics.zeroCoverageRootCause,
+      zeroCoverageReason: matchDiagnostics.emptyReason,
       missingRequiredInputs: matchedPairs.length === 0 ? ["matchedPricingPairs"] : [],
     })
   );

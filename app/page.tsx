@@ -22,6 +22,11 @@ type UploadedClientDataMetadata = {
   lastModified: number;
   status: "Uploaded";
 };
+type ClientPricingRow = Record<string, string | number | boolean | null>;
+type ClientPricingParseResult = {
+  rawRowCount: number;
+  normalizedRows: ClientPricingRow[];
+};
 type ClientStructuredContext = {
   pricingModel: string;
   promoIntensity: string;
@@ -1460,6 +1465,169 @@ const getEprMaturityLabel = (score: number) => {
   return "Underdeveloped";
 };
 
+const parseClientCsvRows = (text: string) => {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const nextChar = text[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        field += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      row.push(field);
+      field = "";
+      continue;
+    }
+
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && nextChar === "\n") index += 1;
+      row.push(field);
+      if (row.some((value) => value.trim() !== "")) rows.push(row);
+      row = [];
+      field = "";
+      continue;
+    }
+
+    field += char;
+  }
+
+  row.push(field);
+  if (row.some((value) => value.trim() !== "")) rows.push(row);
+  return rows;
+};
+
+const toClientRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const parseClientJsonRows = (text: string): Record<string, unknown>[] => {
+  const parsed = JSON.parse(text) as unknown;
+  if (Array.isArray(parsed)) return parsed.map(toClientRecord);
+  const record = toClientRecord(parsed);
+  for (const key of ["rows", "items", "products", "pricingRows", "clientPricingRows"]) {
+    if (Array.isArray(record[key])) return (record[key] as unknown[]).map(toClientRecord);
+  }
+  return [];
+};
+
+const clientFieldAliases = {
+  upc: ["upc", "gtin", "barcode", "ean"],
+  sku: ["sku", "clientsku", "client sku", "itemid", "item id", "product sku"],
+  itemName: ["itemname", "item name", "productname", "product name", "description", "title"],
+  category: ["category", "client category", "department", "breadcrumb"],
+  brand: ["brand", "client brand", "product brand", "manufacturer"],
+  price: ["price", "clientprice", "client price", "retailerprice", "retailer price", "current price"],
+  unitPrice: ["unitprice", "unit price", "price per unit", "ppu"],
+  packSize: ["packsize", "pack size", "size", "product size", "container size", "ounces", "oz"],
+  kviFlag: ["kvi", "is kvi", "kvi flag", "known value item", "key value item"],
+  geography: ["region", "state", "zone", "market", "store region"],
+} as const;
+
+const normalizeClientColumnName = (value: string) =>
+  value.toLowerCase().replace(/[_-]+/g, " ").replace(/[^a-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
+
+const parseClientNumber = (value: unknown) => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string") return null;
+  const parsed = Number(value.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const parseClientBoolean = (value: unknown) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (["true", "yes", "y", "1", "kvi"].includes(normalized)) return true;
+  if (["false", "no", "n", "0"].includes(normalized)) return false;
+  return null;
+};
+
+const getClientMappedValue = (
+  row: Record<string, unknown>,
+  field: keyof typeof clientFieldAliases
+) => {
+  const normalizedEntries = Object.entries(row).map(([key, value]) => [
+    normalizeClientColumnName(key),
+    value,
+  ] as const);
+  const aliases = clientFieldAliases[field].map(normalizeClientColumnName);
+  return normalizedEntries.find(([key]) => aliases.includes(key))?.[1] ?? null;
+};
+
+const normalizeClientPricingRow = (row: Record<string, unknown>): ClientPricingRow => {
+  const price = parseClientNumber(getClientMappedValue(row, "price"));
+  const packSize = parseClientNumber(getClientMappedValue(row, "packSize"));
+  const unitPrice =
+    parseClientNumber(getClientMappedValue(row, "unitPrice")) ??
+    (price !== null && packSize !== null && packSize > 0 ? price / packSize : null);
+
+  return {
+    sku: String(getClientMappedValue(row, "sku") ?? "").trim() || null,
+    upc: String(getClientMappedValue(row, "upc") ?? "").trim() || null,
+    itemName: String(getClientMappedValue(row, "itemName") ?? "").trim() || null,
+    brand: String(getClientMappedValue(row, "brand") ?? "").trim() || null,
+    category: String(getClientMappedValue(row, "category") ?? "").trim() || null,
+    price,
+    clientPrice: price,
+    unitPrice,
+    packSize,
+    kviFlag: parseClientBoolean(getClientMappedValue(row, "kviFlag")),
+    geography: String(getClientMappedValue(row, "geography") ?? "").trim() || null,
+  };
+};
+
+const parseClientPricingFile = async (
+  file: File
+): Promise<ClientPricingParseResult> => {
+  const extension = file.name.split(".").pop()?.toLowerCase() || "";
+  if (extension !== "csv" && extension !== "txt" && extension !== "json") {
+    console.info(
+      "[client-upload] Unsupported row parser for file:",
+      JSON.stringify({ fileName: file.name, type: file.type || "Unknown" })
+    );
+    return { rawRowCount: 0, normalizedRows: [] };
+  }
+
+  const text = await file.text();
+  const rawRows =
+    extension === "json"
+      ? parseClientJsonRows(text)
+      : (() => {
+          const csvRows = parseClientCsvRows(text);
+          const headers = csvRows[0]?.map((header) => header.trim()) ?? [];
+          return csvRows.slice(1).map((row) =>
+            Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""]))
+          );
+        })();
+  const normalizedRows = rawRows
+    .map(normalizeClientPricingRow)
+    .filter((row) => row.price !== null && (row.sku || row.upc || row.itemName));
+
+  console.info(
+    "[client-upload] Parsed client pricing file:",
+    JSON.stringify({
+      fileName: file.name,
+      rawRowCount: rawRows.length,
+      normalizedRowCount: normalizedRows.length,
+      detectedColumns: Object.keys(rawRows[0] || {}),
+      sampleNormalizedClientRow: normalizedRows[0] || null,
+    })
+  );
+
+  return { rawRowCount: rawRows.length, normalizedRows };
+};
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [activeOverviewTab, setActiveOverviewTab] =
@@ -1483,6 +1651,7 @@ export default function Home() {
   const [uploadedClientData, setUploadedClientData] = useState<
     UploadedClientDataMetadata[]
   >([]);
+  const [clientPricingRows, setClientPricingRows] = useState<ClientPricingRow[]>([]);
   const [retailerScopeInputs, setRetailerScopeInputs] =
     useState<RetailerScopeInputs>(initialRetailerScopeInputs);
   const [categoryListManuallyEdited, setCategoryListManuallyEdited] =
@@ -1528,7 +1697,13 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         matchedPricingPairs: [],
-        unmatchedCount: uploadedClientData.length > 0 ? uploadedClientData.length : 0,
+        clientPricingRows,
+        unmatchedCount:
+          clientPricingRows.length > 0
+            ? 0
+            : uploadedClientData.length > 0
+              ? uploadedClientData.length
+              : 0,
         scopeInputs: retailerScopeInputs,
         clientContext,
         competitors: retailerCompetitors,
@@ -1569,6 +1744,7 @@ export default function Home() {
     eprAverageScore,
     retailerCompetitors,
     retailerScopeInputs,
+    clientPricingRows,
     structuredClientContext,
     uploadedClientData.length,
   ]);
@@ -1628,10 +1804,26 @@ export default function Home() {
     uploadedClientData,
   ]);
 
-  const handleFileUpload = (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | null) => {
     if (!files) return;
+    const uploadedFiles = Array.from(files);
+    const parsedRowsByFile = await Promise.all(
+      uploadedFiles.map((file) =>
+        parseClientPricingFile(file).catch((error) => {
+          console.warn(
+            "[client-upload] Unable to parse client pricing file:",
+            JSON.stringify({
+              fileName: file.name,
+              error: error instanceof Error ? error.message : "Unknown error",
+            })
+          );
+          return { rawRowCount: 0, normalizedRows: [] };
+        })
+      )
+    );
+    const parsedRows = parsedRowsByFile.flatMap((result) => result.normalizedRows);
     setUploadedClientData(
-      Array.from(files).map((file) => ({
+      uploadedFiles.map((file) => ({
         name: file.name,
         size: file.size,
         type: file.type || "Unknown",
@@ -1639,10 +1831,25 @@ export default function Home() {
         status: "Uploaded",
       }))
     );
+    setClientPricingRows(parsedRows);
+    console.info(
+      "[client-upload] Client row pipeline:",
+      JSON.stringify({
+        uploadedFileCount: uploadedFiles.length,
+        parsedClientRowCount: parsedRowsByFile.reduce(
+          (total, result) => total + result.rawRowCount,
+          0
+        ),
+        normalizedClientRowCount: parsedRows.length,
+        sampleNormalizedClientRow: parsedRows[0] || null,
+        rowsPassedIntoMatcher: parsedRows.length > 0,
+      })
+    );
   };
 
   const clearFiles = () => {
     setUploadedClientData([]);
+    setClientPricingRows([]);
   };
 
   const confirmRetailerInput = async (nameInput: string) => {
