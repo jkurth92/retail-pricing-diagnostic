@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import {
   getInternalBenchmarkRepository,
   getPricingPovStore,
@@ -31,6 +33,7 @@ export type PricingOpportunityEstimate = {
     povReferences: string[];
     contextAdjustments: string[];
     drilldown: PricingDiagnosticDrilldown;
+    matchDiagnostics: MatchBuildResult["diagnostics"];
   };
 };
 
@@ -122,6 +125,10 @@ type CompetitorInput = {
 };
 
 export type PricingOpportunityRequest = {
+  clientPricingRows?: unknown;
+  clientRows?: unknown;
+  clientUploadRows?: unknown;
+  pricingRows?: unknown;
   matchedPricingOutput?: unknown;
   matchedPricingPairs?: unknown;
   pricingMatches?: unknown;
@@ -131,6 +138,50 @@ export type PricingOpportunityRequest = {
   scopeInputs?: ScopeInput;
   clientContext?: ClientContextInput;
   competitors?: CompetitorInput[];
+};
+
+type FieldKey =
+  | "upc"
+  | "sku"
+  | "item"
+  | "category"
+  | "brand"
+  | "price"
+  | "unitPrice"
+  | "packSize"
+  | "kvi"
+  | "geography";
+
+type NormalizedSourceRecord = {
+  source: "client" | "benchmark";
+  raw: Record<string, unknown>;
+  upc: string | null;
+  sku: string | null;
+  itemName: string;
+  category: string;
+  brand: string;
+  price: number | null;
+  unitPrice: number | null;
+  packSize: number | null;
+  kviFlag: boolean | null;
+  geography: string | null;
+};
+
+type MatchBuildResult = {
+  matches: NormalizedMatchedPair[];
+  unmatchedCount: number;
+  diagnostics: {
+    clientRowCount: number;
+    benchmarkRowCount: number;
+    benchmarkDatasetCount: number;
+    clientColumnsDetected: Partial<Record<FieldKey, string>>;
+    benchmarkColumnsDetected: Partial<Record<FieldKey, string>>;
+    exactUpcMatches: number;
+    exactSkuMatches: number;
+    fuzzyMatches: number;
+    unmatchedRows: number;
+    emptyReason: string | null;
+  };
 };
 
 type NormalizedMatchedPair = {
@@ -155,6 +206,57 @@ type ContextModifiers = {
   zoningThresholdPct: number;
   recoverabilityMultiplier: number;
   rationale: string[];
+};
+
+const fieldAliases: Record<FieldKey, string[]> = {
+  upc: ["upc", "gtin", "barcode", "ean", "universal product code"],
+  sku: [
+    "sku",
+    "clientsku",
+    "client sku",
+    "itemid",
+    "item id",
+    "product sku",
+    "product_sku",
+    "walmart sku",
+    "walmart item id",
+  ],
+  item: [
+    "item",
+    "item name",
+    "product",
+    "product name",
+    "product_name",
+    "description",
+    "product_description",
+    "title",
+  ],
+  category: ["category", "breadcrumb", "department", "class", "subcategory"],
+  brand: ["brand", "product brand", "product_brand", "manufacturer"],
+  price: [
+    "price",
+    "client price",
+    "retailer price",
+    "regular price",
+    "regular_price",
+    "sales price",
+    "sales_price",
+    "current price",
+  ],
+  unitPrice: ["unit price", "unit_price", "price per unit", "ppu"],
+  packSize: [
+    "pack size",
+    "pack_size",
+    "size",
+    "product size",
+    "product_size",
+    "container size",
+    "container_size",
+    "ounces",
+    "oz",
+  ],
+  kvi: ["kvi", "is kvi", "kvi flag", "known value item", "key value item"],
+  geography: ["region", "state", "zone", "market", "store region", "store_region"],
 };
 
 const toRecord = (value: unknown): Record<string, unknown> =>
@@ -202,6 +304,294 @@ const asArray = (value: unknown): unknown[] => {
   }
 
   return [];
+};
+
+const normalizeColumnName = (value: string) =>
+  value.toLowerCase().replace(/[_-]+/g, " ").replace(/[^a-z0-9 ]+/g, "").replace(/\s+/g, " ").trim();
+
+const detectColumns = (records: Record<string, unknown>[]) => {
+  const detected: Partial<Record<FieldKey, string>> = {};
+  const columns = Array.from(new Set(records.flatMap((record) => Object.keys(record))));
+  const normalizedColumns = columns.map((column) => ({
+    raw: column,
+    normalized: normalizeColumnName(column),
+  }));
+
+  (Object.keys(fieldAliases) as FieldKey[]).forEach((field) => {
+    const match = normalizedColumns.find((column) =>
+      fieldAliases[field].some((alias) => column.normalized === normalizeColumnName(alias))
+    );
+    if (match) detected[field] = match.raw;
+  });
+
+  return detected;
+};
+
+const getMappedValue = (
+  record: Record<string, unknown>,
+  detectedColumns: Partial<Record<FieldKey, string>>,
+  field: FieldKey
+) => {
+  const detectedColumn = detectedColumns[field];
+  if (detectedColumn && record[detectedColumn] !== undefined) return record[detectedColumn];
+
+  const normalizedEntries = Object.entries(record).map(([key, value]) => [
+    normalizeColumnName(key),
+    value,
+  ] as const);
+  const aliases = fieldAliases[field].map(normalizeColumnName);
+  return normalizedEntries.find(([key]) => aliases.includes(key))?.[1] ?? null;
+};
+
+const normalizeIdentifier = (value: unknown) => {
+  if (value === null || value === undefined) return null;
+  const rawValue = String(value).trim();
+  if (!rawValue) return null;
+  const numericValue = Number(rawValue);
+  const normalized =
+    /e\+/i.test(rawValue) && Number.isFinite(numericValue)
+      ? numericValue.toFixed(0)
+      : rawValue;
+  const digits = normalized.replace(/\D/g, "");
+  return digits || normalized.toLowerCase().replace(/[^a-z0-9]+/g, "");
+};
+
+const normalizeRecords = (
+  rows: unknown[],
+  source: NormalizedSourceRecord["source"],
+  detectedColumns: Partial<Record<FieldKey, string>>
+): NormalizedSourceRecord[] =>
+  rows.map((row) => {
+    const record = toRecord(row);
+    const price = toNumber(getMappedValue(record, detectedColumns, "price"));
+    const packSize = toNumber(getMappedValue(record, detectedColumns, "packSize"));
+    const unitPrice =
+      toNumber(getMappedValue(record, detectedColumns, "unitPrice")) ??
+      (price !== null && packSize !== null && packSize > 0 ? price / packSize : null);
+
+    return {
+      source,
+      raw: record,
+      upc: normalizeIdentifier(getMappedValue(record, detectedColumns, "upc")),
+      sku: normalizeIdentifier(getMappedValue(record, detectedColumns, "sku")),
+      itemName: String(getMappedValue(record, detectedColumns, "item") ?? ""),
+      category: String(getMappedValue(record, detectedColumns, "category") ?? ""),
+      brand: String(getMappedValue(record, detectedColumns, "brand") ?? ""),
+      price,
+      unitPrice,
+      packSize,
+      kviFlag: toBooleanFlag(getMappedValue(record, detectedColumns, "kvi")),
+      geography: (getMappedValue(record, detectedColumns, "geography") as string | null) ?? null,
+    };
+  });
+
+const parseCsvRows = (text: string) => {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const nextChar = text[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        field += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      row.push(field);
+      field = "";
+      continue;
+    }
+
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && nextChar === "\n") index += 1;
+      row.push(field);
+      if (row.some((value) => value !== "")) rows.push(row);
+      row = [];
+      field = "";
+      continue;
+    }
+
+    field += char;
+  }
+
+  row.push(field);
+  if (row.some((value) => value !== "")) rows.push(row);
+  return rows;
+};
+
+const csvRowsToRecords = (rows: string[][]) => {
+  const headers = rows[0]?.map((header) => header.trim()) ?? [];
+  return rows.slice(1).map((row) =>
+    Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""]))
+  );
+};
+
+let benchmarkRecordCache: { records: Record<string, unknown>[]; columns: string[] } | null = null;
+
+const loadBenchmarkRecords = () => {
+  if (benchmarkRecordCache) return benchmarkRecordCache;
+
+  const candidatePaths = [
+    path.join(process.cwd(), "Internal Data", "Walmart Scape.csv"),
+    path.join(process.cwd(), "Walmart Scape.csv"),
+  ];
+  const csvPath = candidatePaths.find((candidatePath) => fs.existsSync(candidatePath));
+  if (!csvPath) {
+    benchmarkRecordCache = { records: [], columns: [] };
+    return benchmarkRecordCache;
+  }
+
+  const csvRows = parseCsvRows(fs.readFileSync(csvPath, "utf8"));
+  benchmarkRecordCache = {
+    records: csvRowsToRecords(csvRows),
+    columns: csvRows[0] ?? [],
+  };
+  return benchmarkRecordCache;
+};
+
+const tokenSet = (value: string) =>
+  new Set(
+    normalizeText(value)
+      .split(" ")
+      .filter((token) => token.length >= 3)
+  );
+
+const similarityScore = (left: string, right: string) => {
+  const leftTokens = tokenSet(left);
+  const rightTokens = tokenSet(right);
+  if (leftTokens.size === 0 || rightTokens.size === 0) return 0;
+
+  const overlap = [...leftTokens].filter((token) => rightTokens.has(token)).length;
+  return overlap / Math.max(leftTokens.size, rightTokens.size);
+};
+
+const toMatchedPair = (
+  client: NormalizedSourceRecord,
+  benchmark: NormalizedSourceRecord,
+  matchConfidence: number
+): NormalizedMatchedPair => ({
+  clientSku: client.sku,
+  walmartSku: benchmark.sku,
+  itemName: client.itemName || benchmark.itemName,
+  category: client.category || benchmark.category,
+  brand: client.brand || benchmark.brand,
+  clientPrice: client.price,
+  walmartPrice: benchmark.price,
+  clientUnitPrice: client.unitPrice,
+  walmartUnitPrice: benchmark.unitPrice,
+  packSize: client.packSize ?? benchmark.packSize,
+  kviFlag: client.kviFlag,
+  matchConfidence,
+  geography: client.geography,
+});
+
+const buildMatchesFromSourceRows = (
+  clientRows: unknown[],
+  benchmarkDatasetCount: number
+): MatchBuildResult => {
+  const clientRecords = clientRows.map(toRecord);
+  const benchmarkLoad = loadBenchmarkRecords();
+  const benchmarkRecords = benchmarkLoad.records;
+  const clientColumnsDetected = detectColumns(clientRecords);
+  const benchmarkColumnsDetected = detectColumns(benchmarkRecords.slice(0, 100));
+  const normalizedClientRows = normalizeRecords(clientRows, "client", clientColumnsDetected).filter(
+    (row) => row.price !== null && (row.upc || row.sku || row.itemName)
+  );
+  const normalizedBenchmarkRows = normalizeRecords(
+    benchmarkRecords,
+    "benchmark",
+    benchmarkColumnsDetected
+  ).filter((row) => row.price !== null && (row.upc || row.sku || row.itemName));
+  const diagnostics: MatchBuildResult["diagnostics"] = {
+    clientRowCount: clientRows.length,
+    benchmarkRowCount: benchmarkRecords.length,
+    benchmarkDatasetCount,
+    clientColumnsDetected,
+    benchmarkColumnsDetected,
+    exactUpcMatches: 0,
+    exactSkuMatches: 0,
+    fuzzyMatches: 0,
+    unmatchedRows: 0,
+    emptyReason: null,
+  };
+
+  if (clientRows.length === 0) {
+    diagnostics.emptyReason =
+      "Client pricing upload rows are missing. The current request contains no client row payload for the matcher.";
+    return { matches: [], unmatchedCount: 0, diagnostics };
+  }
+  if (benchmarkRecords.length === 0) {
+    diagnostics.emptyReason =
+      "Walmart benchmark source rows are missing. The internal CSV could not be loaded server-side.";
+    diagnostics.unmatchedRows = clientRows.length;
+    return { matches: [], unmatchedCount: clientRows.length, diagnostics };
+  }
+
+  const upcIndex = new Map<string, NormalizedSourceRecord>();
+  const skuIndex = new Map<string, NormalizedSourceRecord>();
+  const tokenIndex = new Map<string, NormalizedSourceRecord[]>();
+
+  normalizedBenchmarkRows.forEach((row) => {
+    if (row.upc && !upcIndex.has(row.upc)) upcIndex.set(row.upc, row);
+    if (row.sku && !skuIndex.has(row.sku)) skuIndex.set(row.sku, row);
+    const tokens = [...tokenSet(`${row.brand} ${row.itemName}`)].slice(0, 4);
+    tokens.forEach((token) => {
+      tokenIndex.set(token, [...(tokenIndex.get(token) || []), row]);
+    });
+  });
+
+  const matches: NormalizedMatchedPair[] = [];
+  normalizedClientRows.forEach((client) => {
+    if (client.upc && upcIndex.has(client.upc)) {
+      diagnostics.exactUpcMatches += 1;
+      matches.push(toMatchedPair(client, upcIndex.get(client.upc) as NormalizedSourceRecord, 1));
+      return;
+    }
+
+    if (client.sku && skuIndex.has(client.sku)) {
+      diagnostics.exactSkuMatches += 1;
+      matches.push(toMatchedPair(client, skuIndex.get(client.sku) as NormalizedSourceRecord, 0.95));
+      return;
+    }
+
+    const candidateTokens = [...tokenSet(`${client.brand} ${client.itemName}`)].slice(0, 4);
+    const candidates = Array.from(
+      new Set(candidateTokens.flatMap((token) => tokenIndex.get(token) || []))
+    ).slice(0, 250);
+    const bestCandidate = candidates
+      .map((candidate) => ({
+        candidate,
+        score:
+          similarityScore(`${client.brand} ${client.itemName}`, `${candidate.brand} ${candidate.itemName}`) +
+          (client.category && candidate.category
+            ? similarityScore(client.category, candidate.category) * 0.25
+            : 0),
+      }))
+      .sort((left, right) => right.score - left.score)[0];
+
+    if (bestCandidate && bestCandidate.score >= 0.5) {
+      diagnostics.fuzzyMatches += 1;
+      matches.push(toMatchedPair(client, bestCandidate.candidate, clamp(bestCandidate.score, 0.5, 0.9)));
+      return;
+    }
+
+    diagnostics.unmatchedRows += 1;
+  });
+
+  return {
+    matches,
+    unmatchedCount: diagnostics.unmatchedRows,
+    diagnostics,
+  };
 };
 
 const normalizeMatchedPair = (value: unknown): NormalizedMatchedPair => {
@@ -473,13 +863,19 @@ export const calculatePricingOpportunity = (
   const benchmarkRepository = getInternalBenchmarkRepository();
   const povStore = getPricingPovStore();
   const walmartDataset = getWalmartDataset(benchmarkRepository.datasets);
+  const clientSourceRows = asArray(
+    request.clientPricingRows ??
+      request.clientRows ??
+      request.clientUploadRows ??
+      request.pricingRows
+  );
   const rawMatches = asArray(
     request.matchedPricingOutput ??
       request.matchedPricingPairs ??
       request.pricingMatches ??
       request.matches
   );
-  const matchedPairs = rawMatches
+  const preMatchedPairs = rawMatches
     .map(normalizeMatchedPair)
     .filter(
       (pair) =>
@@ -488,9 +884,30 @@ export const calculatePricingOpportunity = (
         pair.walmartPrice !== null &&
         pair.walmartPrice > 0
     );
+  const builtMatchResult =
+    preMatchedPairs.length === 0
+      ? buildMatchesFromSourceRows(clientSourceRows, benchmarkRepository.datasets.length)
+      : null;
+  const matchedPairs = preMatchedPairs.length > 0 ? preMatchedPairs : builtMatchResult?.matches ?? [];
   const unmatchedSkus = Array.isArray(request.unmatchedSkus)
     ? request.unmatchedSkus.length
-    : toNumber(request.unmatchedCount) ?? 0;
+    : toNumber(request.unmatchedCount) ?? builtMatchResult?.unmatchedCount ?? 0;
+  const fallbackMatchDiagnostics: MatchBuildResult["diagnostics"] = {
+    clientRowCount: clientSourceRows.length || preMatchedPairs.length,
+    benchmarkRowCount: walmartDataset?.rowCount ?? 0,
+    benchmarkDatasetCount: benchmarkRepository.datasets.length,
+    clientColumnsDetected: {},
+    benchmarkColumnsDetected: {},
+    exactUpcMatches: 0,
+    exactSkuMatches: 0,
+    fuzzyMatches: preMatchedPairs.length,
+    unmatchedRows: unmatchedSkus,
+    emptyReason:
+      clientSourceRows.length === 0 && preMatchedPairs.length === 0
+        ? "Client pricing upload rows are missing. The route received neither matched pairs nor raw client pricing rows."
+        : null,
+  };
+  const matchDiagnostics = builtMatchResult?.diagnostics ?? fallbackMatchDiagnostics;
   const contextModifiers = calculateContextModifiers(
     request.scopeInputs,
     request.clientContext,
@@ -507,6 +924,8 @@ export const calculatePricingOpportunity = (
   console.info(
     "[opportunity-estimate] Pricing route inputs:",
     JSON.stringify({
+      clientRowCount: matchDiagnostics.clientRowCount,
+      benchmarkRowCount: matchDiagnostics.benchmarkRowCount,
       rawMatchedRecords: rawMatches.length,
       usableMatchedRecords: matchedPairs.length,
       unmatchedSkus,
@@ -515,6 +934,13 @@ export const calculatePricingOpportunity = (
       elasticityBenchmarkCount: benchmarkRepository.elasticityBenchmarks.length,
       povGuidanceAvailable: povStore.guidanceCount > 0,
       contextModifierAvailable: Boolean(request.clientContext || request.scopeInputs),
+      clientColumnsDetected: matchDiagnostics.clientColumnsDetected,
+      benchmarkColumnsDetected: matchDiagnostics.benchmarkColumnsDetected,
+      exactUpcMatches: matchDiagnostics.exactUpcMatches,
+      exactSkuMatches: matchDiagnostics.exactSkuMatches,
+      fuzzyMatches: matchDiagnostics.fuzzyMatches,
+      unmatchedRows: matchDiagnostics.unmatchedRows,
+      emptyReason: matchDiagnostics.emptyReason,
       missingRequiredInputs: matchedPairs.length === 0 ? ["matchedPricingPairs"] : [],
     })
   );
@@ -554,11 +980,13 @@ export const calculatePricingOpportunity = (
         povReferences,
         contextAdjustments: contextModifiers.rationale,
         drilldown: emptyDrilldown(
-          "KVI diagnostics require matched client-to-Walmart pricing rows with observed prices.",
+          matchDiagnostics.emptyReason ||
+            "KVI diagnostics require matched client-to-Walmart pricing rows with observed prices.",
           "low",
           povReferences,
           contextModifiers.rationale
         ),
+        matchDiagnostics,
       },
     };
   }
@@ -953,6 +1381,7 @@ export const calculatePricingOpportunity = (
         ],
         recommended_actions: recommendedActions,
       },
+      matchDiagnostics,
     },
   };
 };

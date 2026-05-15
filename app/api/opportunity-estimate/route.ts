@@ -23,10 +23,13 @@ export async function POST(request: Request) {
   const hasMatches = estimate.pricing.diagnostics.matched_skus > 0;
 
   if (!hasMatches) {
+    const reason =
+      estimate.pricing.matchDiagnostics.emptyReason ||
+      "Matched pricing output is missing or too sparse for a data-backed pricing opportunity estimate.";
+
     return NextResponse.json(
       {
-        error:
-          "Matched pricing output is missing or too sparse for a data-backed pricing opportunity estimate.",
+        error: reason,
         ...estimate,
       },
       { status: 200 }
