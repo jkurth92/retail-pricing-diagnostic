@@ -22,10 +22,15 @@ type UploadedClientDataMetadata = {
   lastModified: number;
   status: "Uploaded";
 };
-type ClientPricingRow = Record<string, string | number | boolean | null>;
+type ClientPricingRow = Record<string, unknown>;
 type ClientPricingParseResult = {
   rawRowCount: number;
-  normalizedRows: ClientPricingRow[];
+  rawRows: Record<string, unknown>[];
+};
+type ClientUploadFilePayload = {
+  name: string;
+  type: string;
+  rows: Record<string, unknown>[];
 };
 type ClientStructuredContext = {
   pricingModel: string;
@@ -1596,7 +1601,7 @@ const parseClientPricingFile = async (
       "[client-upload] Unsupported row parser for file:",
       JSON.stringify({ fileName: file.name, type: file.type || "Unknown" })
     );
-    return { rawRowCount: 0, normalizedRows: [] };
+    return { rawRowCount: 0, rawRows: [] };
   }
 
   const text = await file.text();
@@ -1625,7 +1630,7 @@ const parseClientPricingFile = async (
     })
   );
 
-  return { rawRowCount: rawRows.length, normalizedRows };
+  return { rawRowCount: rawRows.length, rawRows };
 };
 
 export default function Home() {
@@ -1652,6 +1657,7 @@ export default function Home() {
     UploadedClientDataMetadata[]
   >([]);
   const [clientPricingRows, setClientPricingRows] = useState<ClientPricingRow[]>([]);
+  const [clientUploadFiles, setClientUploadFiles] = useState<ClientUploadFilePayload[]>([]);
   const [retailerScopeInputs, setRetailerScopeInputs] =
     useState<RetailerScopeInputs>(initialRetailerScopeInputs);
   const [categoryListManuallyEdited, setCategoryListManuallyEdited] =
@@ -1697,6 +1703,7 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         matchedPricingPairs: [],
+        clientUploadFiles,
         clientPricingRows,
         unmatchedCount:
           clientPricingRows.length > 0
@@ -1744,6 +1751,7 @@ export default function Home() {
     eprAverageScore,
     retailerCompetitors,
     retailerScopeInputs,
+    clientUploadFiles,
     clientPricingRows,
     structuredClientContext,
     uploadedClientData.length,
@@ -1817,11 +1825,11 @@ export default function Home() {
               error: error instanceof Error ? error.message : "Unknown error",
             })
           );
-          return { rawRowCount: 0, normalizedRows: [] };
+          return { rawRowCount: 0, rawRows: [] };
         })
       )
     );
-    const parsedRows = parsedRowsByFile.flatMap((result) => result.normalizedRows);
+    const parsedRows = parsedRowsByFile.flatMap((result) => result.rawRows);
     setUploadedClientData(
       uploadedFiles.map((file) => ({
         name: file.name,
@@ -1832,6 +1840,13 @@ export default function Home() {
       }))
     );
     setClientPricingRows(parsedRows);
+    setClientUploadFiles(
+      uploadedFiles.map((file, index) => ({
+        name: file.name,
+        type: file.type || "Unknown",
+        rows: parsedRowsByFile[index]?.rawRows ?? [],
+      }))
+    );
     console.info(
       "[client-upload] Client row pipeline:",
       JSON.stringify({
@@ -1840,9 +1855,9 @@ export default function Home() {
           (total, result) => total + result.rawRowCount,
           0
         ),
-        normalizedClientRowCount: parsedRows.length,
-        sampleNormalizedClientRow: parsedRows[0] || null,
-        rowsPassedIntoMatcher: parsedRows.length > 0,
+        rawClientRowCount: parsedRows.length,
+        sampleRawClientRow: parsedRows[0] || null,
+        rowsPassedToServerNormalizer: parsedRows.length > 0,
       })
     );
   };
@@ -1850,6 +1865,7 @@ export default function Home() {
   const clearFiles = () => {
     setUploadedClientData([]);
     setClientPricingRows([]);
+    setClientUploadFiles([]);
   };
 
   const confirmRetailerInput = async (nameInput: string) => {

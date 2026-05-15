@@ -7,6 +7,11 @@ import {
   type InternalBenchmarkDataset,
   type PricingPovGuidanceItem,
 } from "./internalDataStores";
+import {
+  normalizeClientUploads,
+  type ClientUploadFilePayload,
+  type ClientUploadNormalizationDiagnostics,
+} from "./clientUploadNormalization";
 
 export type PricingOpportunityConfidence = "high" | "medium" | "low";
 
@@ -126,6 +131,7 @@ type CompetitorInput = {
 };
 
 export type PricingOpportunityRequest = {
+  clientUploadFiles?: ClientUploadFilePayload[];
   clientPricingRows?: unknown;
   clientRows?: unknown;
   clientUploadRows?: unknown;
@@ -187,6 +193,7 @@ type MatchBuildResult = {
     sampleNormalizedBenchmarkRows: SafeNormalizedRecord[];
     matchTrace: MatchTraceRow[];
     zeroCoverageSummary: string | null;
+    clientUploadNormalization: ClientUploadNormalizationDiagnostics | null;
     exactUpcMatches: number;
     exactSkuMatches: number;
     fuzzyMatches: number;
@@ -272,6 +279,10 @@ const fieldAliases: Record<FieldKey, string[]> = {
   upc: ["upc", "gtin", "barcode", "ean", "universal product code"],
   sku: [
     "sku",
+    "normalizedSku",
+    "normalized sku",
+    "normalizedProductId",
+    "normalized product id",
     "clientSku",
     "clientsku",
     "client sku",
@@ -285,6 +296,8 @@ const fieldAliases: Record<FieldKey, string[]> = {
   ],
   item: [
     "item",
+    "normalizedProductName",
+    "normalized product name",
     "itemName",
     "itemname",
     "item name",
@@ -296,10 +309,12 @@ const fieldAliases: Record<FieldKey, string[]> = {
     "product_description",
     "title",
   ],
-  category: ["category", "clientCategory", "client category", "breadcrumb", "department", "class", "subcategory"],
-  brand: ["brand", "clientBrand", "client brand", "product brand", "product_brand", "manufacturer"],
+  category: ["category", "normalizedCategory", "normalized category", "clientCategory", "client category", "breadcrumb", "department", "class", "subcategory"],
+  brand: ["brand", "normalizedBrand", "normalized brand", "clientBrand", "client brand", "product brand", "product_brand", "manufacturer"],
   price: [
     "price",
+    "normalizedPrice",
+    "normalized price",
     "clientPrice",
     "clientprice",
     "client price",
@@ -312,8 +327,10 @@ const fieldAliases: Record<FieldKey, string[]> = {
     "sales_price",
     "current price",
   ],
-  unitPrice: ["unitPrice", "unitprice", "unit price", "unit_price", "price per unit", "ppu"],
+  unitPrice: ["normalizedUnitPrice", "normalized unit price", "unitPrice", "unitprice", "unit price", "unit_price", "price per unit", "ppu"],
   packSize: [
+    "normalizedPackSize",
+    "normalized pack size",
     "packSize",
     "packsize",
     "pack size",
@@ -326,8 +343,8 @@ const fieldAliases: Record<FieldKey, string[]> = {
     "ounces",
     "oz",
   ],
-  kvi: ["kvi", "kviFlag", "kviflag", "is kvi", "kvi flag", "known value item", "key value item"],
-  geography: ["region", "state", "zone", "market", "store region", "store_region"],
+  kvi: ["normalizedKviFlag", "normalized kvi flag", "kvi", "kviFlag", "kviflag", "is kvi", "kvi flag", "known value item", "key value item"],
+  geography: ["normalizedRegion", "normalized region", "normalizedStore", "normalized store", "region", "state", "zone", "market", "store", "store region", "store_region"],
 };
 
 const toRecord = (value: unknown): Record<string, unknown> =>
@@ -468,14 +485,26 @@ const getMappedValue = (
   field: FieldKey
 ) => {
   const detectedColumn = detectedColumns[field];
-  if (detectedColumn && record[detectedColumn] !== undefined) return record[detectedColumn];
+  if (
+    detectedColumn &&
+    record[detectedColumn] !== undefined &&
+    record[detectedColumn] !== null &&
+    record[detectedColumn] !== ""
+  ) {
+    return record[detectedColumn];
+  }
 
   const normalizedEntries = Object.entries(record).map(([key, value]) => [
     normalizeColumnName(key),
     value,
   ] as const);
   const aliases = fieldAliases[field].map(normalizeColumnName);
-  return normalizedEntries.find(([key]) => aliases.includes(key))?.[1] ?? null;
+  return (
+    normalizedEntries.find(
+      ([key, value]) =>
+        aliases.includes(key) && value !== undefined && value !== null && value !== ""
+    )?.[1] ?? null
+  );
 };
 
 const normalizeIdentifier = (value: unknown) => {
@@ -768,7 +797,8 @@ const toMatchedPair = (
 const buildMatchesFromSourceRows = (
   clientRows: unknown[],
   benchmarkDatasetCount: number,
-  uploadedClientFileCount: number
+  uploadedClientFileCount: number,
+  clientUploadNormalization: ClientUploadNormalizationDiagnostics | null = null
 ): MatchBuildResult => {
   const clientRecords = clientRows.map(toRecord);
   const benchmarkLoad = loadBenchmarkRecords();
@@ -802,6 +832,7 @@ const buildMatchesFromSourceRows = (
       .filter(Boolean),
     matchTrace: [],
     zeroCoverageSummary: null,
+    clientUploadNormalization,
     exactUpcMatches: 0,
     exactSkuMatches: 0,
     fuzzyMatches: 0,
@@ -831,11 +862,14 @@ const buildMatchesFromSourceRows = (
     diagnostics.zeroCoverageRootCause =
       uploadedClientFileCount > 0 ? "unsupported_file_parsing" : "missing_client_rows";
     diagnostics.zeroCoverageSummary =
-      uploadedClientFileCount > 0 ? "missing UPC / SKU fields" : "missing client rows";
+      clientUploadNormalization?.validationError || uploadedClientFileCount > 0
+        ? "missing UPC / SKU fields"
+        : "missing client rows";
     diagnostics.emptyReason =
-      uploadedClientFileCount > 0
+      clientUploadNormalization?.validationError ||
+      (uploadedClientFileCount > 0
         ? "Client upload metadata is present, but parsed client pricing rows are missing. File parsing is not producing row-level pricing data for the matcher."
-        : "Client pricing upload rows are missing. The current request contains no client row payload for the matcher.";
+        : "Client pricing upload rows are missing. The current request contains no client row payload for the matcher.");
     logMatcherTraceDiagnostics();
     return { matches: [], unmatchedCount: 0, diagnostics };
   }
@@ -1264,15 +1298,24 @@ export const calculatePricingOpportunity = (
   const benchmarkRepository = getInternalBenchmarkRepository();
   const povStore = getPricingPovStore();
   const walmartDataset = getWalmartDataset(benchmarkRepository.datasets);
-  const clientSourceRows = asArray(
+  const rawClientSourceRows = asArray(
     request.clientPricingRows ??
       request.clientRows ??
       request.clientUploadRows ??
       request.pricingRows
   );
-  const uploadedClientFileCount = Array.isArray(request.clientContext?.uploadedClientData)
-    ? request.clientContext.uploadedClientData.length
-    : 0;
+  const clientUploadNormalization =
+    request.clientUploadFiles || rawClientSourceRows.length > 0
+      ? normalizeClientUploads(request.clientUploadFiles || [], rawClientSourceRows)
+      : null;
+  const clientSourceRows =
+    clientUploadNormalization !== null ? clientUploadNormalization.rows : rawClientSourceRows;
+  const uploadedClientFileCount = Math.max(
+    Array.isArray(request.clientContext?.uploadedClientData)
+      ? request.clientContext.uploadedClientData.length
+      : 0,
+    Array.isArray(request.clientUploadFiles) ? request.clientUploadFiles.length : 0
+  );
   const rawMatches = asArray(
     request.matchedPricingOutput ??
       request.matchedPricingPairs ??
@@ -1293,7 +1336,8 @@ export const calculatePricingOpportunity = (
       ? buildMatchesFromSourceRows(
           clientSourceRows,
           benchmarkRepository.datasets.length,
-          uploadedClientFileCount
+          uploadedClientFileCount,
+          clientUploadNormalization?.diagnostics ?? null
         )
       : null;
   const matchedPairs = preMatchedPairs.length > 0 ? preMatchedPairs : builtMatchResult?.matches ?? [];
@@ -1346,6 +1390,7 @@ export const calculatePricingOpportunity = (
           ? "missing UPC / SKU fields"
           : "missing client rows"
         : null,
+    clientUploadNormalization: clientUploadNormalization?.diagnostics ?? null,
     exactUpcMatches: 0,
     exactSkuMatches: 0,
     fuzzyMatches: preMatchedPairs.length,
@@ -1385,6 +1430,7 @@ export const calculatePricingOpportunity = (
       detectedClientColumns: matchDiagnostics.clientColumnsDetected,
       sampleNormalizedClientRow: matchDiagnostics.sampleNormalizedClientRow,
       uploadedClientFileCount,
+      uploadNormalization: matchDiagnostics.clientUploadNormalization,
       rowsPassedIntoMatcher: clientSourceRows.length > 0,
     })
   );
