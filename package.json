@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "import:internal": "node scripts/importInternalSources.mjs"
   },
   "dependencies": {
     "next": "^15.1.6",

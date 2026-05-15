@@ -1,0 +1,1787 @@
+{
+  "generatedAt": "2026-05-15T02:36:41.869Z",
+  "sourceDirectory": "Pricing docs/",
+  "supportedFileCount": 6,
+  "unsupportedFiles": [
+    "Re EXTWalgreens intro to Mckinsey .msg"
+  ],
+  "categories": [
+    {
+      "key": "kviGuidance",
+      "label": "KVI guidance",
+      "keywords": [
+        "kvi",
+        "known value",
+        "key value",
+        "traffic",
+        "price perception"
+      ],
+      "count": 75
+    },
+    {
+      "key": "pricingThresholds",
+      "label": "Pricing thresholds",
+      "keywords": [
+        "threshold",
+        "corridor",
+        "gap",
+        "variance",
+        "index",
+        "bps",
+        "percent"
+      ],
+      "count": 52
+    },
+    {
+      "key": "architecturePrinciples",
+      "label": "Architecture principles",
+      "keywords": [
+        "architecture",
+        "ladder",
+        "good better best",
+        "pack",
+        "price point"
+      ],
+      "count": 31
+    },
+    {
+      "key": "zoningPrinciples",
+      "label": "Zoning principles",
+      "keywords": [
+        "zone",
+        "zoning",
+        "localized",
+        "local",
+        "market",
+        "geography"
+      ],
+      "count": 75
+    },
+    {
+      "key": "guardrails",
+      "label": "Guardrails",
+      "keywords": [
+        "guardrail",
+        "rule",
+        "exception",
+        "floor",
+        "ceiling",
+        "constraint"
+      ],
+      "count": 22
+    },
+    {
+      "key": "confidenceGuidance",
+      "label": "Confidence guidance",
+      "keywords": [
+        "confidence",
+        "quality",
+        "sample",
+        "coverage",
+        "evidence",
+        "reliability"
+      ],
+      "count": 6
+    },
+    {
+      "key": "recommendationLanguage",
+      "label": "Recommendation language",
+      "keywords": [
+        "recommend",
+        "opportunity",
+        "action",
+        "should",
+        "prioritize",
+        "next step"
+      ],
+      "count": 73
+    }
+  ],
+  "guidanceCount": 334,
+  "guidance": {
+    "kviGuidance": [
+      {
+        "id": "kviGuidance-1",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Brick-and-mortar KVI prices lean high while online KVI prices."
+      },
+      {
+        "id": "kviGuidance-2",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1100\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val=\"000000\"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>Key value category."
+      },
+      {
+        "id": "kviGuidance-3",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "– as a Hi-Lo business, they moved prices up to 5%+ above competitors in all but super KVIs, and actively looked to move prices up 1%+ each year."
+      },
+      {
+        "id": "kviGuidance-4",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "KVI adjustments are calculated only for those items where competitor prices are available – number will get bigger as competitor matching is improving."
+      },
+      {
+        "id": "kviGuidance-5",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "of KVI sales come from KVIs that are."
+      },
+      {
+        "id": "kviGuidance-6",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "of KVI sales come from KVIs that are."
+      },
+      {
+        "id": "kviGuidance-7",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Competitor benchmarks suggest the need for outlier correction on KVIs."
+      },
+      {
+        "id": "kviGuidance-8",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Reading example: In Puerto Rico, competitors are >10% heaper than PetSmart on KVI items accounting for 26% of PetSmart sales.."
+      },
+      {
+        "id": "kviGuidance-9",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Identify KVIs and correct outliers that are currently priced more than 5%."
+      },
+      {
+        "id": "kviGuidance-10",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Fund any improvement in price perception by Price & Promo levers (e.g., drive margin by optimizing prices on background items to invest in lowering prices on KVIs)."
+      },
+      {
+        "id": "kviGuidance-11",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Make use of the foundations that exist (e.g., KVIs, existing tools etc.)."
+      },
+      {
+        "id": "kviGuidance-12",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Category roles and KVIs."
+      },
+      {
+        "id": "kviGuidance-13",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "based on new category roles, consumer price perception, and modeled elasticity."
+      },
+      {
+        "id": "kviGuidance-14",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "reflecting importance to consumer price perception."
+      },
+      {
+        "id": "kviGuidance-15",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "(e.g., common architecture, pricing for KVIs etc.)."
+      },
+      {
+        "id": "kviGuidance-16",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1200\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"0\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Traffic driver."
+      },
+      {
+        "id": "kviGuidance-17",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"0\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\" err=\"1\"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val=\"000000\"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>KVI."
+      },
+      {
+        "id": "kviGuidance-18",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"0\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Own website traffic analysis."
+      },
+      {
+        "id": "kviGuidance-19",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "based on new category roles, consumer price perception, and modeled elasticity."
+      },
+      {
+        "id": "kviGuidance-20",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "reflecting importance to consumer price perception."
+      },
+      {
+        "id": "kviGuidance-21",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "(e.g., common architecture, pricing for KVIs etc.)."
+      },
+      {
+        "id": "kviGuidance-22",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Conduct KVI segmentation by category."
+      },
+      {
+        "id": "kviGuidance-23",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Conduct KVI segmentation by category."
+      },
+      {
+        "id": "kviGuidance-24",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "to drive price perception of the “value for money”,."
+      },
+      {
+        "id": "kviGuidance-25",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "based on item and category roles, investing on the right items that drive price perception."
+      },
+      {
+        "id": "kviGuidance-26",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "based on item and category roles, investing on the right items that drive price perception."
+      },
+      {
+        "id": "kviGuidance-27",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": "non KVI s | 4 1 \\226 2 \\226 3 \\226 1 2 3 4 5 Mc K i ns ey & C om pany H ow do y ou t hi nk about pr i c e per c ept i on and ac t ual pr i c e pos i t i on f or y our banner v s ."
+      },
+      {
+        "id": "kviGuidance-28",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": "non KVI s \\ bas ed on s al es v el oc i t y and c om par abi l i t y I nv es t i n t he c at egor i es w hi c h m os t i m pac t v al ue per c ept i on f or s t or e ov er al l bas ed on c ons um er r es ear c h S egm ent i t em r ol es e."
+      },
+      {
+        "id": "kviGuidance-29",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": "non KVI s \\ bas ed on s al es v el oc i t y and c om par abi l i t y and pr i c e KVI s m eani ngf ul l y di f f er ent l y t han non KVI s e .g ., + / 5% di f f er enc e\\ S el ec t s om e KVI s bas ed on s pec i f i c c us t om er s egm ent s e."
+      },
+      {
+        "id": "kviGuidance-30",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", S uper KVI , K V I t ar get s \\ H av e a r eady l i s t of m ar gi n oppor t uni t i es i dent i f i ed i n adv anc e t hat c an be depl oy ed t o gener at e near t er m m ar gi n i m pac t w i t h m i ni m al c us t om er per c ept i on i m pac t | 7 - 1 \\226 2 \\226 3 \\226 1 2 3 4 5 - - and - - Mc K i ns ey & C om pany Ho w w el l dev el oped i s y our mul t i c hannel pr i c e s t r at egy ?"
+      },
+      {
+        "id": "kviGuidance-31",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", m at c h KVI s ac r os s c hannel s but pr i c e bac k gr ound i t em s di f f er ent l y \\ i nf or m ed by c ons um er r es ear c h, s hoppi ng pat t er ns and s har e gai ns / l os s es by c om pet i t or and ec onom i c s | 10 / 1 \\226 2 \\226 3 \\226 1 2 3 4 5 Mc K i ns ey & C om pany H ow do y ou det er mi ne y our s t r at egi c pr i c i ng v er s us pr omot i ons mi x e."
+      },
+      {
+        "id": "kviGuidance-32",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", s am pl e of KVI s \\ and l i t t l e/ no bac k gr ound i t em s m oni t or e."
+      },
+      {
+        "id": "kviGuidance-33",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", < 100 it e m s \\ A ll per c ept i on dr i v i ng i te m s e .g ., KVI s \\ ar e t r ac k ed S m a ll s am pl e of bac k gr ound i t em s e."
+      },
+      {
+        "id": "kviGuidance-34",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", quar t er l y or l es s \\ pr i c e c hec k s on per c ept i on dr i v i ng i t em s KVI s N o s y s t em at i c c hec k s on bac k gr ound i t em s R egul ar l y c hec k s on per c ept i on dr i v i ng i t em s e .g ., 1 2 w eek s gr oc er y , m ont hl y non f ood\\ I nc ons i s t ent / i nf r equent c hec k s on bac k gr ound i t em s e."
+      },
+      {
+        "id": "kviGuidance-35",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", don\\222 t s el ec t t w o KVI s at openi ng pr i c e poi nt , s el ec t one at O PP and anot her a t m id r ange\\ C ons i s t ent def i ni t i ons and s t andar d m et r i c s e."
+      },
+      {
+        "id": "kviGuidance-36",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", KVI s s el ec t ed bas ed on s al es / bas k et penet r at i on\\ B ot t om s s el ec t i on bal anc ed w i t h t op dow n K V I penet r at i on t ar get s e."
+      },
+      {
+        "id": "kviGuidance-37",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", not m or e t han 30% of s al es w i t h 60% of KVI s c om i ng f r om per c ept i on dr i v i ng c at egor i es \\ t o f or c e t r ade of f s KVI m et r i c s / s el ec t i on bas ed on av er age c us t om er as w el l as s pec i f i c c us t om er s egm ent s | 38 1 \\226 2 \\226 3 \\226 1 2 3 4 5 - KVI - KVI Mc K i ns ey & C om pany H ow do y ou t r ac k / manage per c ept i on dr i v i ng i t ems e."
+      },
+      {
+        "id": "kviGuidance-38",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", KVI s m ai nt ai n pr i c e poi nt w hi l e i nc r eas e on bac k gr ound i t em s w i t hi n ac c ept abl e r ange\\ | 41 1 \\226 2 \\226 3 \\226 1 2 3 4 5 - - Mc K i ns ey & C om pany Ho w do y ou manage f or ec as t i ng t he i mpac t of pr i c e c hanges on i ndex , mar gi n, et c ."
+      },
+      {
+        "id": "kviGuidance-39",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Tesco is reacting to competitor price only on KVIs and Exclusively at Tesco products."
+      },
+      {
+        "id": "kviGuidance-40",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Wholefoods monitors prices of ~100 KVIs monthly and ~500-1000."
+      },
+      {
+        "id": "kviGuidance-41",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "identifying Key Value Categories, those driving price perception."
+      },
+      {
+        "id": "kviGuidance-42",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "identifying Key Value Items, those driving price perception."
+      },
+      {
+        "id": "kviGuidance-43",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Believes that frequent price changes worsen price perception, based on a pilot where 10-15 stores where matching lowest competition prices daily and 10-15 stores “froze” the prices for 2 months (becoming 2-4% more expensive)."
+      },
+      {
+        "id": "kviGuidance-44",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "segmented into Super Sensible (~KVIs) at 15-20% of sales, Sensible (~Foreground) at 20-25% of sales and No Sensible (~Background) covering the rest."
+      },
+      {
+        "id": "kviGuidance-45",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "KVIs: target index of 100 vs lowest of the rest of Big 4 (potentially also Aldi)."
+      },
+      {
+        "id": "kviGuidance-46",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "deciding on pricing strategy for KVIs and Exclusively at Tesco."
+      },
+      {
+        "id": "kviGuidance-47",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "managing prices on whole assortment except KVIs and."
+      },
+      {
+        "id": "kviGuidance-48",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Known Value Item: ~100 staples, high volume items, common brands, 20-30 in each department (Produce, Mat, Bakery, Deli, Center Store)."
+      },
+      {
+        "id": "kviGuidance-49",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "KVIs: pricing at the level of key competitors (Safeway, Trader Joe’s, Target,."
+      },
+      {
+        "id": "kviGuidance-50",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "KVIs: monthly, for 4 key competitors.."
+      },
+      {
+        "id": "kviGuidance-51",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Prices of KVIs mandated by the Pricing team."
+      },
+      {
+        "id": "kviGuidance-52",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Almost all grocers employ a logic of focusing investment in a subset of SKUs that predominately drive price perception."
+      },
+      {
+        "id": "kviGuidance-53",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Typical share of sales from most important items, the „KVIs”, oscillates around 20%."
+      },
+      {
+        "id": "kviGuidance-54",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Apart from KVIs, almost all grocers are applying additional dimensions to their pricing strategies, with the most common being:."
+      },
+      {
+        "id": "kviGuidance-55",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Almost all grocers employ a version of the KVI logic, with most of them additionally differentiating by category and price zones."
+      },
+      {
+        "id": "kviGuidance-56",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "3 groups: KVI / Foreground / Background."
+      },
+      {
+        "id": "kviGuidance-57",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "3 groups: KVI / Strategic / Others."
+      },
+      {
+        "id": "kviGuidance-58",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "4 groups: Critical, KVI, Foreground, Background."
+      },
+      {
+        "id": "kviGuidance-59",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Almost all grocers employ a version of the KVI logic, with most of them additionally differentiating by category and price zones."
+      },
+      {
+        "id": "kviGuidance-60",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "3 groups: KVI / Foreground / Background."
+      },
+      {
+        "id": "kviGuidance-61",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "3 groups: KVI / Foreground / Background."
+      },
+      {
+        "id": "kviGuidance-62",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "4 groups: 3 sets of KVIs / Background."
+      },
+      {
+        "id": "kviGuidance-63",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "4 groups: 3 sets of KVIs /."
+      },
+      {
+        "id": "kviGuidance-64",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "KVIs, Exclusively at Tesco, Rest."
+      },
+      {
+        "id": "kviGuidance-65",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "groups: Known Value Items, Bandwith, Rest."
+      },
+      {
+        "id": "kviGuidance-66",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "(at category level), later translated to SKU level using KVI classification."
+      },
+      {
+        "id": "kviGuidance-67",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "KVI, these items are of both high velocity and are."
+      },
+      {
+        "id": "kviGuidance-68",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Model price gap from optimal for non KVIs."
+      },
+      {
+        "id": "kviGuidance-69",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Model price gap from optimal for KVIs."
+      },
+      {
+        "id": "kviGuidance-70",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Identify top sellers and designate as KVIs."
+      },
+      {
+        "id": "kviGuidance-71",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Identify price gap from optimal for KVIs."
+      },
+      {
+        "id": "kviGuidance-72",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Identify price gap from optimal for KVIs."
+      },
+      {
+        "id": "kviGuidance-73",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Identify price gap from optimal for non KVIs."
+      },
+      {
+        "id": "kviGuidance-74",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Make price recommendations for KVI and non KVI items."
+      },
+      {
+        "id": "kviGuidance-75",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "High-level KVI identification."
+      }
+    ],
+    "pricingThresholds": [
+      {
+        "id": "pricingThresholds-1",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" strike=\"noStrike\" kern=\"1200\" spc=\"0\" normalizeH=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Utilize variance in elasticity to inform where prices can be higher or lower."
+      },
+      {
+        "id": "pricingThresholds-2",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "increases elasticity and drives down price variance."
+      },
+      {
+        "id": "pricingThresholds-3",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "work together to fill some data gaps."
+      },
+      {
+        "id": "pricingThresholds-4",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Analytic driven inputs that allow pricing tools to automate pricing decisions and calculate optimized prices (e.g., guardrails to price architecture, competitive index, margin targets etc.)."
+      },
+      {
+        "id": "pricingThresholds-5",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Assuming $1B of sales in Year 1 (40% growth YoY); $1.3B of sales in year 2 (30% growth YoY); $1.6B of sales in Year 3 (25% growth YoY); applying 100-200BPS of return on sales improvement, hitting run rate in 12 months."
+      },
+      {
+        "id": "pricingThresholds-6",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "80% of our clients reach run-rate impact of 100-200 BPS margin improvement within 9-18 months."
+      },
+      {
+        "id": "pricingThresholds-7",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "made regarding pricing strategy, including competitors to scrape for benchmarking, setting the target price gaps etc.."
+      },
+      {
+        "id": "pricingThresholds-8",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "1.1 – 1.2 index; limited promotions."
+      },
+      {
+        "id": "pricingThresholds-9",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "1.0-1.1 index; limited promotions."
+      },
+      {
+        "id": "pricingThresholds-10",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Index up to 1.1 and promote regularly with shallow discounts."
+      },
+      {
+        "id": "pricingThresholds-11",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "index; limited promotions."
+      },
+      {
+        "id": "pricingThresholds-12",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Index up to 1.2 and promote moderately with discounts of 10-20%."
+      },
+      {
+        "id": "pricingThresholds-13",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Index of 1.2-1.4 and promote frequently/deeply with net discount of 20+%."
+      },
+      {
+        "id": "pricingThresholds-14",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1200\" b=\"0\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Competitor price index by category."
+      },
+      {
+        "id": "pricingThresholds-15",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Gaps in value perception to actual price positioning."
+      },
+      {
+        "id": "pricingThresholds-16",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Gaps in value perception to actual price positioning."
+      },
+      {
+        "id": "pricingThresholds-17",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "We typically see 100-200 BPS in margin improvement, with run-rate achieved within 8-18 months."
+      },
+      {
+        "id": "pricingThresholds-18",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"800\" kern=\"1200\" dirty=\"0\"><a:latin typeface=\"+mn-lt\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Assuming ~$1B of sales in Year 1 (40% growth YoY); $1.3B of sales in year 2 (30% growth YoY); $1.6B of sales in Year 3 (25% growth YoY); applying 100-200BPS of return on sales improvement, hitting run rate in 12 months."
+      },
+      {
+        "id": "pricingThresholds-19",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": "S t r at eg i c p r i ce p o s i ti o n P RI CI NG A ND P RO M O T I O NS S tr a te g y N eed s i m p r o v e m e n t A v er ag e p e r fo r m a n c e A d v an ced p e r fo r m a n c e Li t t l e or no anal y t i c al or c ons um er i ns i ght s dr i v en f ac t bas e t o i nf or m r equi r ed s t r at egi c pr i c e gap v s ."
+      },
+      {
+        "id": "pricingThresholds-20",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": "c om pet i t or s bas ed on di f f er enc es i n v al ue pr opos i t i on/ of f er B as i c s t at ed c ons um er r es ear c h of ex pec t ed pr i c e gaps v s ."
+      },
+      {
+        "id": "pricingThresholds-21",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": "c om pet i t or s gi v en di f f er ent v al ue pr opos i t i ons U nder s t andi ng of r equi r ed pr i c e poi nt gap f or av er age bas k et , and s pec i f i c i t em r ol es e."
+      },
+      {
+        "id": "pricingThresholds-22",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": "ac t ual pr i c e dat a t o i dent i f y gaps R egul ar l y c om par e e."
+      },
+      {
+        "id": "pricingThresholds-23",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", di f f er ent r ef er enc e c om pet i t or s by c hannel and w hat opt i m um pr i c e gap i s t o eac h, how t o c oor di nat e pr i c i ng ac r os s c hannel s \\ M in im a l f ac t bas e i nf or m s t he s t r at egy e."
+      },
+      {
+        "id": "pricingThresholds-24",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", per c ept i on dr i v i ng c at egor y w i t h hi gh penet r at i on\\ t o i nf or m gap t o nat i onal br and pr i c es pr i c e i s f ur t her r ef i ned by c r os s el as t i c i t y dat a bet w een pr i v at e br and and nat i onal br and | 25 1 \\226 2 \\226 3 \\226 1 2 3 4 5 PB PB - PB PB - Mc K i ns ey & C om pany H ow do y ou s et pr i v at e br and v s ."
+      },
+      {
+        "id": "pricingThresholds-25",
+        "sourceFile": "816257_Pricing_and_promo_EPR_full_battery_of_questions_2015 (2).pdf",
+        "guidance": ", per c ept i on dr i v i ng c at egor y w i t h hi gh penet r at i on\\ t o i nf or m gap t o pr om ot ed nat i onal br and pr i c es pr i c e i s f ur t her r ef i ned by c r os s el as t i c i t y dat a bet w een pr i v at e br and and pr om ot ed nat i onal br and | 26 1 \\226 2 \\226 3 \\226 1 2 3 4 5 Mc K i ns ey & C om pany D o y ou v ar y bas e pr i c i ng ac r os s t he s t or e net w or k ?"
+      },
+      {
+        "id": "pricingThresholds-26",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Carrefour running 14 price clusters in France, spanning from index 90 to index 115 vs national average."
+      },
+      {
+        "id": "pricingThresholds-27",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "cost+, index-based, elasticity-based)."
+      },
+      {
+        "id": "pricingThresholds-28",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "14 price clusters across France, from very competitive (target index ~90 vs national market average) to less competitive (~115, e.g."
+      },
+      {
+        "id": "pricingThresholds-29",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Indexing versus national average."
+      },
+      {
+        "id": "pricingThresholds-30",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "a store from Cluster 6 will have an overall target index of 99, translating into index of 96-97 on Super Sensible, 100 on Sensible and 101-102 on No Sensible items."
+      },
+      {
+        "id": "pricingThresholds-31",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "(same as elsewhere) benchmark vs market; for not comparable own brands link with an index to A-brand leader of the category."
+      },
+      {
+        "id": "pricingThresholds-32",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Exclusive at Tesco: target index of 100 vs discounters (in practice 100-105 range)."
+      },
+      {
+        "id": "pricingThresholds-33",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "KVIs: target index of 100 vs lowest of the rest of Big 4 (potentially also Aldi)."
+      },
+      {
+        "id": "pricingThresholds-34",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "on category consistency: line pricing on variants, “Bigger pack, better price”, no central rules for price rounding (at category discretion), no set percentage of discount from Own Brand to A-brand, everything more than 40% above a direct competitor flagged as an insulting price."
+      },
+      {
+        "id": "pricingThresholds-35",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "price index every Monday."
+      },
+      {
+        "id": "pricingThresholds-36",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "; now partially index based)."
+      },
+      {
+        "id": "pricingThresholds-37",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "On the most important items, grocers tend to apply an index of 98-102 versus competition, with most common tactic being to match (index 100)."
+      },
+      {
+        "id": "pricingThresholds-38",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Additional index differentiations."
+      },
+      {
+        "id": "pricingThresholds-39",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Additional index differentiations."
+      },
+      {
+        "id": "pricingThresholds-40",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "14 price zones, at total level differing from index ~90 to index ~115 vs market average."
+      },
+      {
+        "id": "pricingThresholds-41",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "If not facing Walmart, index ~112 but not more expensive than Metro/Sobeys."
+      },
+      {
+        "id": "pricingThresholds-42",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Model price gap from optimal for non KVIs."
+      },
+      {
+        "id": "pricingThresholds-43",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Model price gap from optimal for KVIs."
+      },
+      {
+        "id": "pricingThresholds-44",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Identify price gap from optimal for KVIs."
+      },
+      {
+        "id": "pricingThresholds-45",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Identify price gap from optimal for KVIs."
+      },
+      {
+        "id": "pricingThresholds-46",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Identify price gap from optimal for non KVIs."
+      },
+      {
+        "id": "pricingThresholds-47",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Price index by competitor, Competitor based 0."
+      },
+      {
+        "id": "pricingThresholds-48",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "C2: Regional price gap analysis shows the sensitivity of a client’s regional pricing model vs."
+      },
+      {
+        "id": "pricingThresholds-49",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "This initiative to improve our PLU investments will lead to an exciting improvement in sales by $70-170M annually, a100 bps sales lift."
+      },
+      {
+        "id": "pricingThresholds-50",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "This initiative to improve our PLU investments will lead to an exciting improvement in sales by $70-170M annually, a100 bps sales lift."
+      },
+      {
+        "id": "pricingThresholds-51",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "This initiative to improve our PLU investments will lead to an exciting improvement in sales by $70-170M annually, a100 bps sales lift."
+      },
+      {
+        "id": "pricingThresholds-52",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "This initiative to improve our PLU investments will lead to an exciting improvement in sales by $70-170M annually, a100 bps sales lift."
+      }
+    ],
+    "architecturePrinciples": [
+      {
+        "id": "architecturePrinciples-1",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "price architecture corrections."
+      },
+      {
+        "id": "architecturePrinciples-2",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Analytic driven inputs that allow pricing tools to automate pricing decisions and calculate optimized prices (e.g., guardrails to price architecture, competitive index, margin targets etc.)."
+      },
+      {
+        "id": "architecturePrinciples-3",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Setup data and tech (e.g., data architecture, collect loyalty data, promo tech etc.)."
+      },
+      {
+        "id": "architecturePrinciples-4",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "(e.g., common architecture, pricing for KVIs etc.)."
+      },
+      {
+        "id": "architecturePrinciples-5",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Carries products that cover a wide range of price points."
+      },
+      {
+        "id": "architecturePrinciples-6",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": ", trade-up range, average price point and depth of choice across and within category."
+      },
+      {
+        "id": "architecturePrinciples-7",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Relationships between brands and pack sizes will determine pricing architecture."
+      },
+      {
+        "id": "architecturePrinciples-8",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1600\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Considerations for creating price architecture."
+      },
+      {
+        "id": "architecturePrinciples-9",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>Illustrative example: Price architecture rules."
+      },
+      {
+        "id": "architecturePrinciples-10",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Maintain parity across pack sizes between brands."
+      },
+      {
+        "id": "architecturePrinciples-11",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Specific attributes within same brand/pack size that justify higher prices."
+      },
+      {
+        "id": "architecturePrinciples-12",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "(e.g., common architecture, pricing for KVIs etc.)."
+      },
+      {
+        "id": "architecturePrinciples-13",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Create change management plan and stakeholder communication packs."
+      },
+      {
+        "id": "architecturePrinciples-14",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Pricing rules related to brand and pack size."
+      },
+      {
+        "id": "architecturePrinciples-15",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Create change management plan and stakeholder communication packs."
+      },
+      {
+        "id": "architecturePrinciples-16",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Pricing rules related to brand and pack size."
+      },
+      {
+        "id": "architecturePrinciples-17",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1200\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Price ladder,."
+      },
+      {
+        "id": "architecturePrinciples-18",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Duracell 3V 2032 Lithium Battery - 2 Pack."
+      },
+      {
+        "id": "architecturePrinciples-19",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Duracell Coppertop 12V A23 Alkaline Battery - 2 Pack."
+      },
+      {
+        "id": "architecturePrinciples-20",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "3V 2032 Lithium Coin Cell Battery - 2 Pack."
+      },
+      {
+        "id": "architecturePrinciples-21",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "on category consistency: line pricing on variants, “Bigger pack, better price”, no central rules for price rounding (at category discretion), no set percentage of discount from Own Brand to A-brand, everything more than 40% above a direct competitor flagged as an insulting price."
+      },
+      {
+        "id": "architecturePrinciples-22",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "B1: Price ladder analysis."
+      },
+      {
+        "id": "architecturePrinciples-23",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Competitor D, though could differentiate via pack size or premium."
+      },
+      {
+        "id": "architecturePrinciples-24",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Ability to select products to further pack sizes."
+      },
+      {
+        "id": "architecturePrinciples-25",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Items will maintain architecture rules (e.g.."
+      },
+      {
+        "id": "architecturePrinciples-26",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "to avoid excessive price changes and enforce the price architecture:."
+      },
+      {
+        "id": "architecturePrinciples-27",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "to ensure consumer friendly price points."
+      },
+      {
+        "id": "architecturePrinciples-28",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Ability to select products to further pack sizes."
+      },
+      {
+        "id": "architecturePrinciples-29",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Items will maintain architecture rules (e.g."
+      },
+      {
+        "id": "architecturePrinciples-30",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "to avoid excessive price changes and enforce the price architecture:."
+      },
+      {
+        "id": "architecturePrinciples-31",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "to ensure consumer friendly price points."
+      }
+    ],
+    "zoningPrinciples": [
+      {
+        "id": "zoningPrinciples-1",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "microzoning by category."
+      },
+      {
+        "id": "zoningPrinciples-2",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "increase market share long-term."
+      },
+      {
+        "id": "zoningPrinciples-3",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "12 regional price zones."
+      },
+      {
+        "id": "zoningPrinciples-4",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "to derive zone-individual prices."
+      },
+      {
+        "id": "zoningPrinciples-5",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Excludes AK, HI, and PR zones."
+      },
+      {
+        "id": "zoningPrinciples-6",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Impact inclusive of all zones including Internet."
+      },
+      {
+        "id": "zoningPrinciples-7",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "gain market share in the long run."
+      },
+      {
+        "id": "zoningPrinciples-8",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Implementing price zones results in incremental $10-15M impact by leveraging differentiated elasticities & competitive environment."
+      },
+      {
+        "id": "zoningPrinciples-9",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": ", making this an important zone for price parity."
+      },
+      {
+        "id": "zoningPrinciples-10",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Full impact of quick win levers scaled to 6 months - assuming in market execution beginning of August."
+      },
+      {
+        "id": "zoningPrinciples-11",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"0\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val=\"000000\"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>Introduce Market Visions approach to competitor benchmarking."
+      },
+      {
+        "id": "zoningPrinciples-12",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Decisions made by merchandising and pricing team to achieve business objective through price (e.g., defining category roles, Own brands, price zone / channel strategy)."
+      },
+      {
+        "id": "zoningPrinciples-13",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Evolve strategy based on additional price zones and optimizing promotions mix."
+      },
+      {
+        "id": "zoningPrinciples-14",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Transition to granular level localized pricing (e.g., more price zones)."
+      },
+      {
+        "id": "zoningPrinciples-15",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Form price zones by store clusters."
+      },
+      {
+        "id": "zoningPrinciples-16",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Form category-level price zones."
+      },
+      {
+        "id": "zoningPrinciples-17",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Determine degree of localization."
+      },
+      {
+        "id": "zoningPrinciples-18",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "based on price zones formed by store clusters with meaningfully different elasticity responses."
+      },
+      {
+        "id": "zoningPrinciples-19",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Create price zones leveraging flexible engine that uses price sensitivity and up to 8 additional factors."
+      },
+      {
+        "id": "zoningPrinciples-20",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "to visualize cluster geography."
+      },
+      {
+        "id": "zoningPrinciples-21",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Determine degree of localization."
+      },
+      {
+        "id": "zoningPrinciples-22",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "based on price zones formed by store clusters with meaningfully different elasticity responses."
+      },
+      {
+        "id": "zoningPrinciples-23",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Set prices by price zones to capture additional impact."
+      },
+      {
+        "id": "zoningPrinciples-24",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Create price zones by clustering stores with similar attributes and consumer response."
+      },
+      {
+        "id": "zoningPrinciples-25",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Create price zones by clustering stores with similar attributes and consumer response."
+      },
+      {
+        "id": "zoningPrinciples-26",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1200\" b=\"0\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Price zones defined."
+      },
+      {
+        "id": "zoningPrinciples-27",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Car battery and service prices are localized: car batteries prices."
+      },
+      {
+        "id": "zoningPrinciples-28",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Though prices are localized, they are localized not a store level (e.g., same prices in Chicago and Minneapolis).."
+      },
+      {
+        "id": "zoningPrinciples-29",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Online marketplace (e.g., Amazon, eBay)."
+      },
+      {
+        "id": "zoningPrinciples-30",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Auto part stores (e.g., AutoZone)."
+      },
+      {
+        "id": "zoningPrinciples-31",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Price localization: car battery and service prices are localized, while other product prices are generally flat across locations."
+      },
+      {
+        "id": "zoningPrinciples-32",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "however, they are not localized at a store level, e.g., Chicago and Minneapolis locations have the same price while San Jose is priced higher."
+      },
+      {
+        "id": "zoningPrinciples-33",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "competitors do not engage in localization."
+      },
+      {
+        "id": "zoningPrinciples-34",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Refine price localization strategy / guidelines by localizing at store level and across most assortment."
+      },
+      {
+        "id": "zoningPrinciples-35",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "prices are still predominately set by Buyers, based on their experience and market acumen.."
+      },
+      {
+        "id": "zoningPrinciples-36",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Carrefour is consciously avoiding responses to price moves of particular competitors – they only review position vs market average and only monthly."
+      },
+      {
+        "id": "zoningPrinciples-37",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": ": aiming at setting own strategy, defining own price and checking vs market average (based on monthly Nielsen report), as opposed to vs individual competitors."
+      },
+      {
+        "id": "zoningPrinciples-38",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "14 price clusters across France, from very competitive (target index ~90 vs national market average) to less competitive (~115, e.g."
+      },
+      {
+        "id": "zoningPrinciples-39",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "(same as elsewhere) benchmark vs market; for not comparable own brands link with an index to A-brand leader of the category."
+      },
+      {
+        "id": "zoningPrinciples-40",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "with best value in the market and."
+      },
+      {
+        "id": "zoningPrinciples-41",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "to check market positioning."
+      },
+      {
+        "id": "zoningPrinciples-42",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Northern California has 1 price zone due to small geographic spread and large commuting distances in the US."
+      },
+      {
+        "id": "zoningPrinciples-43",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Rocky Mountains that spread from Canada to Mexico, can have more than 1 price zone."
+      },
+      {
+        "id": "zoningPrinciples-44",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "All in all, across 11 regions around 20 price zones might exist."
+      },
+      {
+        "id": "zoningPrinciples-45",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": ": guideline of 110-115 vs market average."
+      },
+      {
+        "id": "zoningPrinciples-46",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Local products still priced at the regional level."
+      },
+      {
+        "id": "zoningPrinciples-47",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "supermarkets vs discounters."
+      },
+      {
+        "id": "zoningPrinciples-48",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "regions or classes of local competitiveness."
+      },
+      {
+        "id": "zoningPrinciples-49",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Almost all grocers employ a version of the KVI logic, with most of them additionally differentiating by category and price zones."
+      },
+      {
+        "id": "zoningPrinciples-50",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Nordic supermarket (banner A)."
+      },
+      {
+        "id": "zoningPrinciples-51",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Nordic supermarket (banner B)."
+      },
+      {
+        "id": "zoningPrinciples-52",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Balkan supermarket (banner A)."
+      },
+      {
+        "id": "zoningPrinciples-53",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Balkan supermarket (banner B)."
+      },
+      {
+        "id": "zoningPrinciples-54",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Almost all grocers employ a version of the KVI logic, with most of them additionally differentiating by category and price zones."
+      },
+      {
+        "id": "zoningPrinciples-55",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "10 regional price zones."
+      },
+      {
+        "id": "zoningPrinciples-56",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Several regional price zones."
+      },
+      {
+        "id": "zoningPrinciples-57",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "3 price zones depending on local competitor."
+      },
+      {
+        "id": "zoningPrinciples-58",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "3+ price zones per banner."
+      },
+      {
+        "id": "zoningPrinciples-59",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Around 20 price zones across the US."
+      },
+      {
+        "id": "zoningPrinciples-60",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Supermarket player, mid-."
+      },
+      {
+        "id": "zoningPrinciples-61",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Supermarket + discounters."
+      },
+      {
+        "id": "zoningPrinciples-62",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Supermarket player, mid-market+."
+      },
+      {
+        "id": "zoningPrinciples-63",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "5-10 price zones, depending on."
+      },
+      {
+        "id": "zoningPrinciples-64",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Supermarket player, midmarket+; pricing strategy for Branded goods only."
+      },
+      {
+        "id": "zoningPrinciples-65",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Nordic supermarket (banner A)."
+      },
+      {
+        "id": "zoningPrinciples-66",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "5b: Nordic supermarket (banner B)."
+      },
+      {
+        "id": "zoningPrinciples-67",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Supermarket player, midmarket+."
+      },
+      {
+        "id": "zoningPrinciples-68",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Balkan supermarket (banner A)."
+      },
+      {
+        "id": "zoningPrinciples-69",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Balkan supermarket (banner B)."
+      },
+      {
+        "id": "zoningPrinciples-70",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Supermarket player, midmarket."
+      },
+      {
+        "id": "zoningPrinciples-71",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "average of three selected competitive supermarket stores."
+      },
+      {
+        "id": "zoningPrinciples-72",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Supermarket player, midmarket+."
+      },
+      {
+        "id": "zoningPrinciples-73",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "13 price zones + 1 seasonal summer zone."
+      },
+      {
+        "id": "zoningPrinciples-74",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Median of Supermarket competitors."
+      },
+      {
+        "id": "zoningPrinciples-75",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Minimum of Discount and Supermarket competitors."
+      }
+    ],
+    "guardrails": [
+      {
+        "id": "guardrails-1",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "with category rules and guidelines."
+      },
+      {
+        "id": "guardrails-2",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Analytic driven inputs that allow pricing tools to automate pricing decisions and calculate optimized prices (e.g., guardrails to price architecture, competitive index, margin targets etc.)."
+      },
+      {
+        "id": "guardrails-3",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Other internal business rules to be deployed in pricing tool."
+      },
+      {
+        "id": "guardrails-4",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "(e.g., margin target, price ceiling/floor, Own brand vs."
+      },
+      {
+        "id": "guardrails-5",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>Illustrative example: Price architecture rules."
+      },
+      {
+        "id": "guardrails-6",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": ": Margin goals and floors and net cost changes influence pricing."
+      },
+      {
+        "id": "guardrails-7",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Other internal business rules to be deployed in pricing tool."
+      },
+      {
+        "id": "guardrails-8",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "(e.g., margin target, price ceiling/floor, Own brand vs."
+      },
+      {
+        "id": "guardrails-9",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Pricing rules related to brand and pack size."
+      },
+      {
+        "id": "guardrails-10",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Incorporate key business guidelines and guardrails (e.g."
+      },
+      {
+        "id": "guardrails-11",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Pricing rules related to brand and pack size."
+      },
+      {
+        "id": "guardrails-12",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "margin and sales constraints and targets."
+      },
+      {
+        "id": "guardrails-13",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "automated tooling recommending prices that takes into account selected tactic as well as guardrails and rounding rules."
+      },
+      {
+        "id": "guardrails-14",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "on category consistency: line pricing on variants, “Bigger pack, better price”, no central rules for price rounding (at category discretion), no set percentage of discount from Own Brand to A-brand, everything more than 40% above a direct competitor flagged as an insulting price."
+      },
+      {
+        "id": "guardrails-15",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "with only safety guardrails vs competition."
+      },
+      {
+        "id": "guardrails-16",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Simulation can include min/max constraints, and timing requirements between downstream markdowns."
+      },
+      {
+        "id": "guardrails-17",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Simulation can include min/max constraints, and timing requirements between downstream markdowns."
+      },
+      {
+        "id": "guardrails-18",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Items will maintain architecture rules (e.g.."
+      },
+      {
+        "id": "guardrails-19",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Imposed price constraints of 14% maximum change per product and 6% per category."
+      },
+      {
+        "id": "guardrails-20",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1600\" b=\"0\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>Constraints."
+      },
+      {
+        "id": "guardrails-21",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Items will maintain architecture rules (e.g."
+      },
+      {
+        "id": "guardrails-22",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "optimization subject to rules."
+      }
+    ],
+    "confidenceGuidance": [
+      {
+        "id": "confidenceGuidance-1",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "coverage at 95%+ accuracy."
+      },
+      {
+        "id": "confidenceGuidance-2",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"800\" strike=\"noStrike\" kern=\"1200\" spc=\"0\" normalizeH=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Source: PetSmart sample data, modelling results."
+      },
+      {
+        "id": "confidenceGuidance-3",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Accelerate loyalty data collection with high coverage of current customer base."
+      },
+      {
+        "id": "confidenceGuidance-4",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Has excellent quality that I am willing to pay a premium for."
+      },
+      {
+        "id": "confidenceGuidance-5",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "Ensured category coverage."
+      },
+      {
+        "id": "confidenceGuidance-6",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Elasticity library coverage."
+      }
+    ],
+    "recommendationLanguage": [
+      {
+        "id": "recommendationLanguage-1",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "We made several assumptions to measure the impact opportunity for both the long-term as well as quick wins."
+      },
+      {
+        "id": "recommendationLanguage-2",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "have an opportunity to be increased."
+      },
+      {
+        "id": "recommendationLanguage-3",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "to act as COE and develop recommendations to Merchant teams."
+      },
+      {
+        "id": "recommendationLanguage-4",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": ", we estimate that a multi-year ambition should exceed 1.5%+ ROS with multiple solutions rolled out."
+      },
+      {
+        "id": "recommendationLanguage-5",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "For PetSmart, we believe that there is an opportunity of ~1.5%."
+      },
+      {
+        "id": "recommendationLanguage-6",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "There is an opportunity to improve through optimized tactics and discounts, or through less promotions."
+      },
+      {
+        "id": "recommendationLanguage-7",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "than the cheapest competitor; this is an opportunity to."
+      },
+      {
+        "id": "recommendationLanguage-8",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Recommended actions by quadrant."
+      },
+      {
+        "id": "recommendationLanguage-9",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "; we would recommend potentially."
+      },
+      {
+        "id": "recommendationLanguage-10",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "than toy promotions in other quadrants; we would recommend."
+      },
+      {
+        "id": "recommendationLanguage-11",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "use markdown price elasticities to recommend depth and frequency of discounting by category."
+      },
+      {
+        "id": "recommendationLanguage-12",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": "Now, we would prioritize the “Actions in August” plan."
+      },
+      {
+        "id": "recommendationLanguage-13",
+        "sourceFile": "0131 PetSmart ROI deck_vpresent.pptx",
+        "guidance": ", there is ample insights (and opportunity) to be gained."
+      },
+      {
+        "id": "recommendationLanguage-14",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Having a clear future-state vision of tools and capabilities will help you prioritize strategic decisions (e.g., develop the critical inputs to unlock powerful pricing tools)."
+      },
+      {
+        "id": "recommendationLanguage-15",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "Year 1 actions will result in clear strategy and inputs to pricing tools."
+      },
+      {
+        "id": "recommendationLanguage-16",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": ", I am going to override the recommendations and do things my old way."
+      },
+      {
+        "id": "recommendationLanguage-17",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1600\" b=\"0\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Monitor competitor reactions to own price changes."
+      },
+      {
+        "id": "recommendationLanguage-18",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "indicates that this item should be."
+      },
+      {
+        "id": "recommendationLanguage-19",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "to indicate recommended number of clusters."
+      },
+      {
+        "id": "recommendationLanguage-20",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "A 3-month pricing strategy sprint can jump start Year 1 actions."
+      },
+      {
+        "id": "recommendationLanguage-21",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Design quick win price changes to capture early impact, including recommendations for B2B contracts."
+      },
+      {
+        "id": "recommendationLanguage-22",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" dirty=\"0\"><a:latin typeface=\"Arial\"/></a:rPr><a:t>Design quick win price changes to capture early impact, including recommendations for B2B contracts."
+      },
+      {
+        "id": "recommendationLanguage-23",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1200\" b=\"0\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Quick win price recommendations for price changes."
+      },
+      {
+        "id": "recommendationLanguage-24",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "prioritize when choosing which retailer/store to shop at for the 3 categories?."
+      },
+      {
+        "id": "recommendationLanguage-25",
+        "sourceFile": "20230110 Pricing strategy roadmap discussion_vPost-meeting  -  Read-Only.pptx",
+        "guidance": "professional recommendations."
+      },
+      {
+        "id": "recommendationLanguage-26",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "For other products, they focus on monitoring if the average price position is right – and only action if it is not."
+      },
+      {
+        "id": "recommendationLanguage-27",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "automated tooling recommending prices that takes into account selected tactic as well as guardrails and rounding rules."
+      },
+      {
+        "id": "recommendationLanguage-28",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "estimate of impact based on price recommendation."
+      },
+      {
+        "id": "recommendationLanguage-29",
+        "sourceFile": "888185 Grocery Pricing Strategies - Case Studies and Benchmarks V2.pptx",
+        "guidance": "price recommendation tool."
+      },
+      {
+        "id": "recommendationLanguage-30",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "In preparing these materials and reflecting on the potential courses of action, this document considers."
+      },
+      {
+        "id": "recommendationLanguage-31",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Identify, size, and prioritize recommended actions to optimize and realize value."
+      },
+      {
+        "id": "recommendationLanguage-32",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "that should be met before any work begins."
+      },
+      {
+        "id": "recommendationLanguage-33",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Predetermined next step (e.g."
+      },
+      {
+        "id": "recommendationLanguage-34",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Make price recommendations for KVI and non KVI items."
+      },
+      {
+        "id": "recommendationLanguage-35",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "recommendations for future promotions."
+      },
+      {
+        "id": "recommendationLanguage-36",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Make markdown recommendations."
+      },
+      {
+        "id": "recommendationLanguage-37",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "There is an opportunity for client from price optimization."
+      },
+      {
+        "id": "recommendationLanguage-38",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "IDP is not meant to provide actionable recommendations."
+      },
+      {
+        "id": "recommendationLanguage-39",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Price recommendations can be actioned by client."
+      },
+      {
+        "id": "recommendationLanguage-40",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Successful implementation of recommendations leads to solution adoption."
+      },
+      {
+        "id": "recommendationLanguage-41",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Actionable price change recommendations for select categories."
+      },
+      {
+        "id": "recommendationLanguage-42",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "creating an opportunity to."
+      },
+      {
+        "id": "recommendationLanguage-43",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "All units and $ should be normalized for returns."
+      },
+      {
+        "id": "recommendationLanguage-44",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Select national discounts that likely will override calculated recommendations."
+      },
+      {
+        "id": "recommendationLanguage-45",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Impact is based on federated elasticities from our QSR experience; actual price recommendations will be based on Client-specific short-term (point) and long-term (arc) elasticities measured using transaction history."
+      },
+      {
+        "id": "recommendationLanguage-46",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1200\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>#2 Prioritize Revenue."
+      },
+      {
+        "id": "recommendationLanguage-47",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" sz=\"1200\" b=\"1\" dirty=\"0\"/><a:t>#1 Prioritize Margin."
+      },
+      {
+        "id": "recommendationLanguage-48",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Overrides should be rare as focus should be on editing strategic inputs, not calculated outputs.."
+      },
+      {
+        "id": "recommendationLanguage-49",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Forces produce an initial recommendation."
+      },
+      {
+        "id": "recommendationLanguage-50",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr lang=\"en-US\" b=\"1\" dirty=\"0\"><a:solidFill><a:srgbClr val=\"000000\"/></a:solidFill><a:latin typeface=\"Arial\"/></a:rPr><a:t>C: Identify recommended price changes."
+      },
+      {
+        "id": "recommendationLanguage-51",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "The feed should include all locations with sales over the last 3 years and are present in sales data."
+      },
+      {
+        "id": "recommendationLanguage-52",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val=\"FFFFFF\"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>Transaction data."
+      },
+      {
+        "id": "recommendationLanguage-53",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"0\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val=\"000000\"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>What was the reaction of."
+      },
+      {
+        "id": "recommendationLanguage-54",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "C: Product level assessment will predict multiple price change scenarios with a recommended path forward."
+      },
+      {
+        "id": "recommendationLanguage-55",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "educe base case price increase recommendations by 30% to reduce implementation risk."
+      },
+      {
+        "id": "recommendationLanguage-56",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1100\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val=\"000000\"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Recommended case."
+      },
+      {
+        "id": "recommendationLanguage-57",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "For discussion: These two categories are contributing to ~45% of margin impact - Should we be more conservative in these?."
+      },
+      {
+        "id": "recommendationLanguage-58",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1100\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:effectLst/><a:uLnTx/><a:uFillTx/><a:ea typeface=\"Arial Unicode MS\" pitchFamily=\"34\" charset=\"-128\"/><a:cs typeface=\"Arial\" panose=\"020B0604020202020204\" pitchFamily=\"34\" charset=\"0\"/></a:rPr><a:t>Recommended price increase (%)."
+      },
+      {
+        "id": "recommendationLanguage-59",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Actionable promo change recommendations for select categories: change discount, change tactic, stop promo."
+      },
+      {
+        "id": "recommendationLanguage-60",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": ", presenting an opportunity to decrease promo activity."
+      },
+      {
+        "id": "recommendationLanguage-61",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Select national discounts that likely will override calculated recommendations."
+      },
+      {
+        "id": "recommendationLanguage-62",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "The feed should include all locations with sales over the last 3 years and are present in sales data."
+      },
+      {
+        "id": "recommendationLanguage-63",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val=\"FFFFFF\"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>Transaction data."
+      },
+      {
+        "id": "recommendationLanguage-64",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "All units and $ should be normalized for returns."
+      },
+      {
+        "id": "recommendationLanguage-65",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "this identifies areas of opportunity to get to."
+      },
+      {
+        "id": "recommendationLanguage-66",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "The feed should include all locations with sales over the last 3 years and are present in sales data."
+      },
+      {
+        "id": "recommendationLanguage-67",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "<a:defRPr/></a:pPr><a:r><a:rPr kumimoji=\"0\" lang=\"en-US\" sz=\"1400\" b=\"1\" i=\"0\" u=\"none\" strike=\"noStrike\" kern=\"1200\" cap=\"none\" spc=\"0\" normalizeH=\"0\" baseline=\"0\" noProof=\"0\" dirty=\"0\"><a:ln><a:noFill/></a:ln><a:solidFill><a:srgbClr val=\"FFFFFF\"/></a:solidFill><a:effectLst/><a:uLnTx/><a:uFillTx/><a:latin typeface=\"Arial\"/><a:ea typeface=\"+mn-ea\"/><a:cs typeface=\"+mn-cs\"/></a:rPr><a:t>Transaction data."
+      },
+      {
+        "id": "recommendationLanguage-68",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "3: The total markdown opportunity can be sized based on optimizing timing and depth of first markdown."
+      },
+      {
+        "id": "recommendationLanguage-69",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": ", presenting an opportunity to optimize markdown activity."
+      },
+      {
+        "id": "recommendationLanguage-70",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Optimize archetype provides subcategories with an opportunity to reallocate PLU MD investment with no material change in the overall price."
+      },
+      {
+        "id": "recommendationLanguage-71",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Optimize archetype provides subcategories with an opportunity to reallocate PLU MD investment with no material change in the overall price."
+      },
+      {
+        "id": "recommendationLanguage-72",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Optimize archetype provides subcategories with an opportunity to reallocate PLU MD investment with no material change in the overall price."
+      },
+      {
+        "id": "recommendationLanguage-73",
+        "sourceFile": "Pricing Promo engagement models_V11.pptx",
+        "guidance": "Optimize archetype provides subcategories with an opportunity to reallocate PLU MD investment with no material change in the overall price."
+      }
+    ]
+  }
+}

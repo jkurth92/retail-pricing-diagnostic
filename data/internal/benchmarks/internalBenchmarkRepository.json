@@ -1,0 +1,2947 @@
+{
+  "generatedAt": "2026-05-15T02:36:53.809Z",
+  "sourceDirectory": "Internal Data/",
+  "benchmarkFileCount": 1,
+  "datasets": [
+    {
+      "sourceFile": "Walmart Scape.csv",
+      "benchmarkKind": "walmart_scrape",
+      "retailer": "Walmart",
+      "rowCount": 61701,
+      "aggregate": {
+        "rowCount": 61701,
+        "pricedCount": 61701,
+        "inStockPct": 94.5,
+        "promotedPct": 8.7,
+        "priceStats": {
+          "average": 11.98,
+          "p25": 4.17,
+          "median": 7.56,
+          "p75": 12.97
+        },
+        "unitPriceStats": {
+          "average": 2.11,
+          "median": 0.59
+        },
+        "topStates": [
+          {
+            "name": "CA",
+            "count": 61701
+          }
+        ],
+        "topBrands": [
+          {
+            "name": "Great Value",
+            "count": 4129
+          },
+          {
+            "name": "Equate",
+            "count": 2106
+          },
+          {
+            "name": "L’Oréal Paris",
+            "count": 998
+          },
+          {
+            "name": "Maybelline",
+            "count": 878
+          },
+          {
+            "name": "Vibrant Life",
+            "count": 789
+          },
+          {
+            "name": "Marketside",
+            "count": 768
+          },
+          {
+            "name": "COVERGIRL",
+            "count": 564
+          },
+          {
+            "name": "Revlon",
+            "count": 529
+          }
+        ]
+      },
+      "categories": [
+        {
+          "name": "Beauty > Makeup > Face Makeup",
+          "rowCount": 1218,
+          "pricedCount": 1218,
+          "inStockPct": 98.3,
+          "promotedPct": 7.9,
+          "priceStats": {
+            "average": 13,
+            "p25": 9,
+            "median": 11.97,
+            "p75": 14.97
+          },
+          "unitPriceStats": {
+            "average": 14.27,
+            "median": 12.48
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 1218
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "COVERGIRL",
+              "count": 250
+            },
+            {
+              "name": "L’Oréal Paris",
+              "count": 195
+            },
+            {
+              "name": "Maybelline",
+              "count": 180
+            },
+            {
+              "name": "Revlon",
+              "count": 91
+            },
+            {
+              "name": "e.l.f. Cosmetics",
+              "count": 74
+            },
+            {
+              "name": "Milani",
+              "count": 70
+            },
+            {
+              "name": "Neutrogena",
+              "count": 47
+            },
+            {
+              "name": "Almay",
+              "count": 41
+            }
+          ]
+        },
+        {
+          "name": "Food > Dairy & Eggs > Cheese",
+          "rowCount": 1190,
+          "pricedCount": 1190,
+          "inStockPct": 91.5,
+          "promotedPct": 4.7,
+          "priceStats": {
+            "average": 4.67,
+            "p25": 3.49,
+            "median": 4.17,
+            "p75": 5.64
+          },
+          "unitPriceStats": {
+            "average": 0.61,
+            "median": 0.52
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 1190
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Great Value",
+              "count": 213
+            },
+            {
+              "name": "Kraft",
+              "count": 156
+            },
+            {
+              "name": "Philadelphia",
+              "count": 148
+            },
+            {
+              "name": "Montchevre",
+              "count": 94
+            },
+            {
+              "name": "BelGioioso",
+              "count": 48
+            },
+            {
+              "name": "Sargento",
+              "count": 36
+            },
+            {
+              "name": "Castello",
+              "count": 34
+            },
+            {
+              "name": "Prima Della",
+              "count": 32
+            }
+          ]
+        },
+        {
+          "name": "Food > Candy > Chocolate",
+          "rowCount": 1148,
+          "pricedCount": 1148,
+          "inStockPct": 92,
+          "promotedPct": 20,
+          "priceStats": {
+            "average": 7.75,
+            "p25": 2.97,
+            "median": 5.48,
+            "p75": 9.96
+          },
+          "unitPriceStats": {
+            "average": 1.29,
+            "median": 0.83
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 1148
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Hershey's",
+              "count": 181
+            },
+            {
+              "name": "Reese's",
+              "count": 150
+            },
+            {
+              "name": "M&M'S",
+              "count": 127
+            },
+            {
+              "name": "Lindt",
+              "count": 108
+            },
+            {
+              "name": "Tony's Chocolonely",
+              "count": 88
+            },
+            {
+              "name": "SNICKERS",
+              "count": 57
+            },
+            {
+              "name": "Ghirardelli",
+              "count": 34
+            },
+            {
+              "name": "DOVE Chocolate",
+              "count": 30
+            }
+          ]
+        },
+        {
+          "name": "Food > Pantry > Pantry meal essentials",
+          "rowCount": 1108,
+          "pricedCount": 1108,
+          "inStockPct": 82.2,
+          "promotedPct": 7.2,
+          "priceStats": {
+            "average": 6.31,
+            "p25": 2.97,
+            "median": 4.48,
+            "p75": 6.86
+          },
+          "unitPriceStats": {
+            "average": 0.78,
+            "median": 0.37
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 1108
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Great Value",
+              "count": 104
+            },
+            {
+              "name": "McCormick",
+              "count": 53
+            },
+            {
+              "name": "Flavortown",
+              "count": 32
+            },
+            {
+              "name": "bibigo",
+              "count": 24
+            },
+            {
+              "name": "Lawry's",
+              "count": 23
+            },
+            {
+              "name": "El Guapo",
+              "count": 22
+            },
+            {
+              "name": "Grill Mates",
+              "count": 20
+            },
+            {
+              "name": "Pillsbury",
+              "count": 19
+            }
+          ]
+        },
+        {
+          "name": "Baby > Feeding > Baby Food",
+          "rowCount": 1001,
+          "pricedCount": 1001,
+          "inStockPct": 85.9,
+          "promotedPct": 2.9,
+          "priceStats": {
+            "average": 9.32,
+            "p25": 2.97,
+            "median": 7.08,
+            "p75": 11.88
+          },
+          "unitPriceStats": {
+            "average": 3.18,
+            "median": 1.91
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 1001
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Gerber",
+              "count": 421
+            },
+            {
+              "name": "Beech-Nut",
+              "count": 201
+            },
+            {
+              "name": "Parent's Choice",
+              "count": 103
+            },
+            {
+              "name": "Earth's Best",
+              "count": 45
+            },
+            {
+              "name": "Plum Organics",
+              "count": 39
+            },
+            {
+              "name": "Happy Baby",
+              "count": 36
+            },
+            {
+              "name": "Once Upon a Farm",
+              "count": 32
+            },
+            {
+              "name": "Plum Organics®",
+              "count": 23
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Beauty by Topic > Young Adult Beauty",
+          "rowCount": 756,
+          "pricedCount": 756,
+          "inStockPct": 98.8,
+          "promotedPct": 26.2,
+          "priceStats": {
+            "average": 10.76,
+            "p25": 8.98,
+            "median": 9.97,
+            "p75": 12.97
+          },
+          "unitPriceStats": {
+            "average": 10.11,
+            "median": 9.97
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 756
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "L’Oréal Paris",
+              "count": 295
+            },
+            {
+              "name": "NYX Professional Makeup",
+              "count": 197
+            },
+            {
+              "name": "Maybelline",
+              "count": 188
+            },
+            {
+              "name": "Garnier",
+              "count": 24
+            },
+            {
+              "name": "Tree Hut",
+              "count": 18
+            },
+            {
+              "name": "Revolution Beauty",
+              "count": 13
+            },
+            {
+              "name": "Makeup Revolution",
+              "count": 7
+            },
+            {
+              "name": "SoftSheen-Carson",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "name": "Food > Dairy & Eggs > Yogurt",
+          "rowCount": 731,
+          "pricedCount": 731,
+          "inStockPct": 90.8,
+          "promotedPct": 8.6,
+          "priceStats": {
+            "average": 3.39,
+            "p25": 1.64,
+            "median": 2.68,
+            "p75": 5.22
+          },
+          "unitPriceStats": {
+            "average": 0.6,
+            "median": 0.32
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 731
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Chobani",
+              "count": 176
+            },
+            {
+              "name": "Great Value",
+              "count": 96
+            },
+            {
+              "name": "Yoplait",
+              "count": 89
+            },
+            {
+              "name": "noosa",
+              "count": 52
+            },
+            {
+              "name": "OUI",
+              "count": 46
+            },
+            {
+              "name": "Oikos",
+              "count": 31
+            },
+            {
+              "name": "LALA",
+              "count": 28
+            },
+            {
+              "name": "Activia",
+              "count": 28
+            }
+          ]
+        },
+        {
+          "name": "Food > Meat & Seafood > Bacon, Hot Dogs, & Sausages",
+          "rowCount": 725,
+          "pricedCount": 725,
+          "inStockPct": 87.9,
+          "promotedPct": 16.1,
+          "priceStats": {
+            "average": 5.32,
+            "p25": 3.97,
+            "median": 4.98,
+            "p75": 5.73
+          },
+          "unitPriceStats": {
+            "average": 0.62,
+            "median": 0.33
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 725
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Hillshire Farm",
+              "count": 151
+            },
+            {
+              "name": "Johnsonville",
+              "count": 105
+            },
+            {
+              "name": "Nathan's",
+              "count": 52
+            },
+            {
+              "name": "Oscar Mayer",
+              "count": 45
+            },
+            {
+              "name": "Jimmy Dean",
+              "count": 43
+            },
+            {
+              "name": "Great Value",
+              "count": 40
+            },
+            {
+              "name": "Ball Park",
+              "count": 39
+            },
+            {
+              "name": "Bar-S",
+              "count": 33
+            }
+          ]
+        },
+        {
+          "name": "Pets > Pets Subscription",
+          "rowCount": 663,
+          "pricedCount": 663,
+          "inStockPct": 93.4,
+          "promotedPct": 8,
+          "priceStats": {
+            "average": 14.07,
+            "p25": 5.67,
+            "median": 9.98,
+            "p75": 17.08
+          },
+          "unitPriceStats": {
+            "average": 1.93,
+            "median": 1
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 663
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Blue Buffalo",
+              "count": 63
+            },
+            {
+              "name": "Vibrant Life",
+              "count": 47
+            },
+            {
+              "name": "Purina ONE",
+              "count": 43
+            },
+            {
+              "name": "Ol'Roy",
+              "count": 36
+            },
+            {
+              "name": "Beneful",
+              "count": 31
+            },
+            {
+              "name": "Pure Balance",
+              "count": 28
+            },
+            {
+              "name": "Tetra",
+              "count": 25
+            },
+            {
+              "name": "Pedigree",
+              "count": 24
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Makeup > Eye Makeup",
+          "rowCount": 635,
+          "pricedCount": 635,
+          "inStockPct": 96.5,
+          "promotedPct": 8.8,
+          "priceStats": {
+            "average": 11.08,
+            "p25": 6.97,
+            "median": 9.49,
+            "p75": 12.84
+          },
+          "unitPriceStats": {
+            "average": 10.32,
+            "median": 6.97
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 635
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Maybelline",
+              "count": 90
+            },
+            {
+              "name": "L’Oréal Paris",
+              "count": 76
+            },
+            {
+              "name": "Revlon",
+              "count": 64
+            },
+            {
+              "name": "L.A. COLORS",
+              "count": 53
+            },
+            {
+              "name": "e.l.f. Cosmetics",
+              "count": 51
+            },
+            {
+              "name": "COVERGIRL",
+              "count": 43
+            },
+            {
+              "name": "essence",
+              "count": 37
+            },
+            {
+              "name": "KISS",
+              "count": 31
+            }
+          ]
+        },
+        {
+          "name": "Food > Deli > Deli Meat & Cheese",
+          "rowCount": 595,
+          "pricedCount": 595,
+          "inStockPct": 96.1,
+          "promotedPct": 6.1,
+          "priceStats": {
+            "average": 5.7,
+            "p25": 3.97,
+            "median": 5.97,
+            "p75": 7.22
+          },
+          "unitPriceStats": {
+            "average": 0.76,
+            "median": 0.44
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 595
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Hillshire Farm",
+              "count": 121
+            },
+            {
+              "name": "Great Value",
+              "count": 83
+            },
+            {
+              "name": "Oscar Mayer",
+              "count": 78
+            },
+            {
+              "name": "Prima Della",
+              "count": 52
+            },
+            {
+              "name": "Hormel",
+              "count": 47
+            },
+            {
+              "name": "Buddig",
+              "count": 25
+            },
+            {
+              "name": "Land O'Frost",
+              "count": 21
+            },
+            {
+              "name": "Gallo Salame",
+              "count": 17
+            }
+          ]
+        },
+        {
+          "name": "Household Essentials > Air Fresheners > All Air Fresheners",
+          "rowCount": 594,
+          "pricedCount": 594,
+          "inStockPct": 94.8,
+          "promotedPct": 7.1,
+          "priceStats": {
+            "average": 8.37,
+            "p25": 3.98,
+            "median": 6.44,
+            "p75": 10.18
+          },
+          "unitPriceStats": {
+            "average": 2.45,
+            "median": 0.97
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 594
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Febreze",
+              "count": 77
+            },
+            {
+              "name": "Great Value",
+              "count": 63
+            },
+            {
+              "name": "Better Homes & Gardens",
+              "count": 49
+            },
+            {
+              "name": "Mainstays",
+              "count": 45
+            },
+            {
+              "name": "Little Trees",
+              "count": 42
+            },
+            {
+              "name": "LITTLE TREES",
+              "count": 35
+            },
+            {
+              "name": "Refresh Your Car",
+              "count": 32
+            },
+            {
+              "name": "Chemical Guys",
+              "count": 27
+            }
+          ]
+        },
+        {
+          "name": "Food > Frozen Foods > Frozen Meals",
+          "rowCount": 587,
+          "pricedCount": 587,
+          "inStockPct": 96.8,
+          "promotedPct": 5.3,
+          "priceStats": {
+            "average": 5.26,
+            "p25": 2.97,
+            "median": 4.12,
+            "p75": 6.57
+          },
+          "unitPriceStats": {
+            "average": 0.35,
+            "median": 0.29
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 587
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Marie Callender's",
+              "count": 92
+            },
+            {
+              "name": "Healthy Choice",
+              "count": 60
+            },
+            {
+              "name": "Stouffer's",
+              "count": 59
+            },
+            {
+              "name": "Banquet",
+              "count": 45
+            },
+            {
+              "name": "Lean Cuisine",
+              "count": 45
+            },
+            {
+              "name": "Scott & Jon's",
+              "count": 35
+            },
+            {
+              "name": "Amy's Kitchen",
+              "count": 31
+            },
+            {
+              "name": "Great Value",
+              "count": 29
+            }
+          ]
+        },
+        {
+          "name": "Food > Baking > Baking Ingredients",
+          "rowCount": 586,
+          "pricedCount": 586,
+          "inStockPct": 88.7,
+          "promotedPct": 6.7,
+          "priceStats": {
+            "average": 4.92,
+            "p25": 1.97,
+            "median": 3.72,
+            "p75": 6.48
+          },
+          "unitPriceStats": {
+            "average": 0.96,
+            "median": 0.55
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 586
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Great Value",
+              "count": 253
+            },
+            {
+              "name": "Pillsbury",
+              "count": 49
+            },
+            {
+              "name": "Splenda",
+              "count": 26
+            },
+            {
+              "name": "McCormick",
+              "count": 25
+            },
+            {
+              "name": "Ghirardelli",
+              "count": 24
+            },
+            {
+              "name": "Betty Crocker",
+              "count": 23
+            },
+            {
+              "name": "Duncan Hines",
+              "count": 15
+            },
+            {
+              "name": "Wilton",
+              "count": 11
+            }
+          ]
+        },
+        {
+          "name": "Pets > Cats > Cat Food",
+          "rowCount": 560,
+          "pricedCount": 560,
+          "inStockPct": 90.2,
+          "promotedPct": 5.7,
+          "priceStats": {
+            "average": 15.3,
+            "p25": 1.86,
+            "median": 10.08,
+            "p75": 18.98
+          },
+          "unitPriceStats": {
+            "average": 2.97,
+            "median": 1.82
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 560
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Friskies",
+              "count": 120
+            },
+            {
+              "name": "Fancy Feast",
+              "count": 87
+            },
+            {
+              "name": "Special Kitty",
+              "count": 53
+            },
+            {
+              "name": "Vibrant Life",
+              "count": 36
+            },
+            {
+              "name": "Blue Buffalo",
+              "count": 36
+            },
+            {
+              "name": "Meow Mix",
+              "count": 30
+            },
+            {
+              "name": "SHEBA",
+              "count": 28
+            },
+            {
+              "name": "Purina ONE",
+              "count": 28
+            }
+          ]
+        },
+        {
+          "name": "Food > Pantry > Canned goods",
+          "rowCount": 533,
+          "pricedCount": 533,
+          "inStockPct": 96.2,
+          "promotedPct": 7.7,
+          "priceStats": {
+            "average": 2.73,
+            "p25": 1.42,
+            "median": 2.23,
+            "p75": 3
+          },
+          "unitPriceStats": {
+            "average": 0.31,
+            "median": 0.14
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 533
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Great Value",
+              "count": 163
+            },
+            {
+              "name": "Del Monte",
+              "count": 66
+            },
+            {
+              "name": "Dole",
+              "count": 31
+            },
+            {
+              "name": "BUSH'S",
+              "count": 22
+            },
+            {
+              "name": "Libby's",
+              "count": 22
+            },
+            {
+              "name": "StarKist",
+              "count": 19
+            },
+            {
+              "name": "Glory Foods",
+              "count": 14
+            },
+            {
+              "name": "Mott's",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "name": "Food > Frozen Foods > Ice Cream & Novelties",
+          "rowCount": 529,
+          "pricedCount": 529,
+          "inStockPct": 92.8,
+          "promotedPct": 4.3,
+          "priceStats": {
+            "average": 4.97,
+            "p25": 2.97,
+            "median": 4.44,
+            "p75": 5.23
+          },
+          "unitPriceStats": {
+            "average": 0.54,
+            "median": 0.26
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 529
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Great Value",
+              "count": 167
+            },
+            {
+              "name": "Blue Bunny",
+              "count": 51
+            },
+            {
+              "name": "Baskin Robbins",
+              "count": 27
+            },
+            {
+              "name": "Breyers",
+              "count": 23
+            },
+            {
+              "name": "Outshine",
+              "count": 18
+            },
+            {
+              "name": "Häagen-Dazs",
+              "count": 16
+            },
+            {
+              "name": "SNICKERS",
+              "count": 15
+            },
+            {
+              "name": "Friendly's",
+              "count": 14
+            }
+          ]
+        },
+        {
+          "name": "Personal Care > Bath & Body > Body Wash",
+          "rowCount": 509,
+          "pricedCount": 509,
+          "inStockPct": 96.3,
+          "promotedPct": 5.7,
+          "priceStats": {
+            "average": 10.43,
+            "p25": 6.97,
+            "median": 8.97,
+            "p75": 10.97
+          },
+          "unitPriceStats": {
+            "average": 0.6,
+            "median": 0.44
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 509
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Dove",
+              "count": 68
+            },
+            {
+              "name": "Olay",
+              "count": 46
+            },
+            {
+              "name": "Old Spice",
+              "count": 42
+            },
+            {
+              "name": "Suave",
+              "count": 34
+            },
+            {
+              "name": "Native",
+              "count": 27
+            },
+            {
+              "name": "eos",
+              "count": 19
+            },
+            {
+              "name": "Dove Men+Care",
+              "count": 18
+            },
+            {
+              "name": "method",
+              "count": 17
+            }
+          ]
+        },
+        {
+          "name": "Food > Pantry > Packaged meals & Side dishes",
+          "rowCount": 505,
+          "pricedCount": 505,
+          "inStockPct": 95,
+          "promotedPct": 14.1,
+          "priceStats": {
+            "average": 3.51,
+            "p25": 1.44,
+            "median": 2.84,
+            "p75": 4.88
+          },
+          "unitPriceStats": {
+            "average": 0.61,
+            "median": 0.25
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 505
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Kraft",
+              "count": 133
+            },
+            {
+              "name": "Great Value",
+              "count": 74
+            },
+            {
+              "name": "Velveeta",
+              "count": 40
+            },
+            {
+              "name": "Hormel",
+              "count": 23
+            },
+            {
+              "name": "Cheetos",
+              "count": 23
+            },
+            {
+              "name": "Knorr",
+              "count": 20
+            },
+            {
+              "name": "Hillshire Farm",
+              "count": 19
+            },
+            {
+              "name": "Chef Boyardee",
+              "count": 16
+            }
+          ]
+        },
+        {
+          "name": "Health and Medicine > Cough Cold and Flu medicine > Cold Cough and Flu",
+          "rowCount": 503,
+          "pricedCount": 503,
+          "inStockPct": 88.5,
+          "promotedPct": 9.1,
+          "priceStats": {
+            "average": 11.59,
+            "p25": 6.48,
+            "median": 9.97,
+            "p75": 13.41
+          },
+          "unitPriceStats": {
+            "average": 2.64,
+            "median": 1.64
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 503
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Equate",
+              "count": 103
+            },
+            {
+              "name": "Vicks",
+              "count": 90
+            },
+            {
+              "name": "Mucinex",
+              "count": 47
+            },
+            {
+              "name": "HALLS",
+              "count": 30
+            },
+            {
+              "name": "Alka-Seltzer Plus",
+              "count": 18
+            },
+            {
+              "name": "Ricola",
+              "count": 17
+            },
+            {
+              "name": "Robitussin",
+              "count": 16
+            },
+            {
+              "name": "TYLENOL",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Makeup > Lip Makeup",
+          "rowCount": 495,
+          "pricedCount": 495,
+          "inStockPct": 95.6,
+          "promotedPct": 5.7,
+          "priceStats": {
+            "average": 9.84,
+            "p25": 6.87,
+            "median": 9.48,
+            "p75": 10.97
+          },
+          "unitPriceStats": {
+            "average": 5.84,
+            "median": 6.48
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 495
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Revlon",
+              "count": 192
+            },
+            {
+              "name": "L’Oréal Paris",
+              "count": 90
+            },
+            {
+              "name": "L.A. COLORS",
+              "count": 39
+            },
+            {
+              "name": "Rimmel",
+              "count": 38
+            },
+            {
+              "name": "Maybelline",
+              "count": 25
+            },
+            {
+              "name": "essence",
+              "count": 21
+            },
+            {
+              "name": "e.l.f. Cosmetics",
+              "count": 19
+            },
+            {
+              "name": "Hard Candy",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "name": "Food > Pantry > Salad dressings & toppings",
+          "rowCount": 435,
+          "pricedCount": 435,
+          "inStockPct": 94,
+          "promotedPct": 6,
+          "priceStats": {
+            "average": 4.08,
+            "p25": 2.74,
+            "median": 3.97,
+            "p75": 4.97
+          },
+          "unitPriceStats": {
+            "average": 0.42,
+            "median": 0.25
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 435
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Hidden Valley",
+              "count": 84
+            },
+            {
+              "name": "Great Value",
+              "count": 54
+            },
+            {
+              "name": "Ken's Steak House",
+              "count": 45
+            },
+            {
+              "name": "Wish-Bone",
+              "count": 43
+            },
+            {
+              "name": "Kraft",
+              "count": 25
+            },
+            {
+              "name": "Olive Garden",
+              "count": 23
+            },
+            {
+              "name": "Litehouse",
+              "count": 21
+            },
+            {
+              "name": "Skinnygirl",
+              "count": 20
+            }
+          ]
+        },
+        {
+          "name": "Food > Candy > Gummy & Chewy Candy",
+          "rowCount": 417,
+          "pricedCount": 417,
+          "inStockPct": 95.9,
+          "promotedPct": 3.1,
+          "priceStats": {
+            "average": 4.94,
+            "p25": 1.97,
+            "median": 3.38,
+            "p75": 4.8
+          },
+          "unitPriceStats": {
+            "average": 0.63,
+            "median": 0.47
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 417
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "NERDS",
+              "count": 60
+            },
+            {
+              "name": "Great Value",
+              "count": 47
+            },
+            {
+              "name": "SKITTLES",
+              "count": 36
+            },
+            {
+              "name": "Jolly Rancher",
+              "count": 33
+            },
+            {
+              "name": "Red Vines",
+              "count": 31
+            },
+            {
+              "name": "Shaq",
+              "count": 29
+            },
+            {
+              "name": "AMOS",
+              "count": 27
+            },
+            {
+              "name": "Werther's Original",
+              "count": 17
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Beauty Best Sellers > Makeup Best Sellers",
+          "rowCount": 417,
+          "pricedCount": 417,
+          "inStockPct": 99,
+          "promotedPct": 22.5,
+          "priceStats": {
+            "average": 9.9,
+            "p25": 7.97,
+            "median": 9,
+            "p75": 11
+          },
+          "unitPriceStats": {
+            "average": 10.64,
+            "median": 9.92
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 417
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "L’Oréal Paris",
+              "count": 163
+            },
+            {
+              "name": "Maybelline",
+              "count": 97
+            },
+            {
+              "name": "Revlon",
+              "count": 41
+            },
+            {
+              "name": "NYX Professional Makeup",
+              "count": 32
+            },
+            {
+              "name": "e.l.f. Cosmetics",
+              "count": 28
+            },
+            {
+              "name": "Almay",
+              "count": 18
+            },
+            {
+              "name": "Milani",
+              "count": 12
+            },
+            {
+              "name": "Rimmel",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "name": "Pets > Dogs > Dog Treats",
+          "rowCount": 414,
+          "pricedCount": 414,
+          "inStockPct": 99,
+          "promotedPct": 1.4,
+          "priceStats": {
+            "average": 26.83,
+            "p25": 7.97,
+            "median": 15.58,
+            "p75": 29.96
+          },
+          "unitPriceStats": {
+            "average": 2.49,
+            "median": 1.27
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 414
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Ol'Roy",
+              "count": 83
+            },
+            {
+              "name": "Canine Carry Outs",
+              "count": 40
+            },
+            {
+              "name": "Golden Rewards",
+              "count": 31
+            },
+            {
+              "name": "Milk-Bone",
+              "count": 27
+            },
+            {
+              "name": "Greenies",
+              "count": 19
+            },
+            {
+              "name": "Pedigree",
+              "count": 16
+            },
+            {
+              "name": "DreamBone",
+              "count": 16
+            },
+            {
+              "name": "Full Moon",
+              "count": 14
+            }
+          ]
+        },
+        {
+          "name": "Food > Frozen Foods > Frozen Breakfast Food",
+          "rowCount": 390,
+          "pricedCount": 390,
+          "inStockPct": 95.9,
+          "promotedPct": 4.1,
+          "priceStats": {
+            "average": 6.33,
+            "p25": 4.12,
+            "median": 5.42,
+            "p75": 7.46
+          },
+          "unitPriceStats": {
+            "average": 0.48,
+            "median": 0.45
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 390
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Jimmy Dean",
+              "count": 189
+            },
+            {
+              "name": "Great Value",
+              "count": 57
+            },
+            {
+              "name": "De Wafelbakkers",
+              "count": 25
+            },
+            {
+              "name": "Banquet",
+              "count": 25
+            },
+            {
+              "name": "bettergoods",
+              "count": 17
+            },
+            {
+              "name": "Pillsbury",
+              "count": 16
+            },
+            {
+              "name": "Van's",
+              "count": 12
+            },
+            {
+              "name": "Applegate",
+              "count": 11
+            }
+          ]
+        },
+        {
+          "name": "Pets > Dogs > Dog Food by Life Stage",
+          "rowCount": 390,
+          "pricedCount": 390,
+          "inStockPct": 94.1,
+          "promotedPct": 0.5,
+          "priceStats": {
+            "average": 26.86,
+            "p25": 7.08,
+            "median": 14.16,
+            "p75": 29.84
+          },
+          "unitPriceStats": {
+            "average": 4.39,
+            "median": 1.71
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 390
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Pure Balance",
+              "count": 61
+            },
+            {
+              "name": "Ol'Roy",
+              "count": 60
+            },
+            {
+              "name": "Cesar",
+              "count": 48
+            },
+            {
+              "name": "Blue Buffalo",
+              "count": 47
+            },
+            {
+              "name": "Pedigree",
+              "count": 42
+            },
+            {
+              "name": "Nutrish",
+              "count": 25
+            },
+            {
+              "name": "Beneful",
+              "count": 14
+            },
+            {
+              "name": "Jinx",
+              "count": 10
+            }
+          ]
+        },
+        {
+          "name": "Health and Medicine > Pain management > Pain Relief",
+          "rowCount": 376,
+          "pricedCount": 376,
+          "inStockPct": 95.2,
+          "promotedPct": 5.9,
+          "priceStats": {
+            "average": 12.5,
+            "p25": 6.48,
+            "median": 10.15,
+            "p75": 15.93
+          },
+          "unitPriceStats": {
+            "average": 2.7,
+            "median": 1.92
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 376
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Equate",
+              "count": 108
+            },
+            {
+              "name": "TYLENOL",
+              "count": 43
+            },
+            {
+              "name": "Advil",
+              "count": 28
+            },
+            {
+              "name": "BioFreeze",
+              "count": 17
+            },
+            {
+              "name": "Icy Hot",
+              "count": 16
+            },
+            {
+              "name": "Aspercreme",
+              "count": 16
+            },
+            {
+              "name": "Motrin",
+              "count": 15
+            },
+            {
+              "name": "Vicks",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "name": "Food > Dairy & Eggs > Milk",
+          "rowCount": 358,
+          "pricedCount": 358,
+          "inStockPct": 96.4,
+          "promotedPct": 0,
+          "priceStats": {
+            "average": 4.65,
+            "p25": 3.16,
+            "median": 3.67,
+            "p75": 5.32
+          },
+          "unitPriceStats": {
+            "average": 0.28,
+            "median": 0.07
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 358
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Almond Breeze",
+              "count": 47
+            },
+            {
+              "name": "Great Value",
+              "count": 45
+            },
+            {
+              "name": "Silk",
+              "count": 33
+            },
+            {
+              "name": "Lactaid",
+              "count": 27
+            },
+            {
+              "name": "Nesquik",
+              "count": 21
+            },
+            {
+              "name": "fairlife",
+              "count": 17
+            },
+            {
+              "name": "bettergoods",
+              "count": 16
+            },
+            {
+              "name": "Meyenberg",
+              "count": 14
+            }
+          ]
+        },
+        {
+          "name": "Personal Care > Bath & Body > Deodorants",
+          "rowCount": 357,
+          "pricedCount": 357,
+          "inStockPct": 97.5,
+          "promotedPct": 7.8,
+          "priceStats": {
+            "average": 11.17,
+            "p25": 7.94,
+            "median": 8.97,
+            "p75": 13.97
+          },
+          "unitPriceStats": {
+            "average": 3.52,
+            "median": 2.88
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 357
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Old Spice",
+              "count": 98
+            },
+            {
+              "name": "Dove",
+              "count": 76
+            },
+            {
+              "name": "Degree",
+              "count": 55
+            },
+            {
+              "name": "Native",
+              "count": 34
+            },
+            {
+              "name": "Secret",
+              "count": 20
+            },
+            {
+              "name": "Lume",
+              "count": 19
+            },
+            {
+              "name": "Dove Men+Care",
+              "count": 16
+            },
+            {
+              "name": "Suave",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Skincare > Face Cleansers",
+          "rowCount": 349,
+          "pricedCount": 349,
+          "inStockPct": 94.3,
+          "promotedPct": 10.3,
+          "priceStats": {
+            "average": 11.68,
+            "p25": 6.87,
+            "median": 9.97,
+            "p75": 14.94
+          },
+          "unitPriceStats": {
+            "average": 1.7,
+            "median": 1.27
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 349
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Neutrogena",
+              "count": 67
+            },
+            {
+              "name": "Equate",
+              "count": 54
+            },
+            {
+              "name": "CeraVe",
+              "count": 42
+            },
+            {
+              "name": "Cetaphil",
+              "count": 25
+            },
+            {
+              "name": "Olay",
+              "count": 18
+            },
+            {
+              "name": "Clean & Clear",
+              "count": 18
+            },
+            {
+              "name": "Garnier",
+              "count": 11
+            },
+            {
+              "name": "Bioré",
+              "count": 11
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Beauty Best Sellers > Haircare Best Sellers",
+          "rowCount": 342,
+          "pricedCount": 342,
+          "inStockPct": 98.8,
+          "promotedPct": 13.2,
+          "priceStats": {
+            "average": 10.32,
+            "p25": 6.94,
+            "median": 8.47,
+            "p75": 11.97
+          },
+          "unitPriceStats": {
+            "average": 1.89,
+            "median": 1.11
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 342
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Clairol",
+              "count": 53
+            },
+            {
+              "name": "Revlon",
+              "count": 46
+            },
+            {
+              "name": "L’Oréal Paris",
+              "count": 35
+            },
+            {
+              "name": "Garnier",
+              "count": 32
+            },
+            {
+              "name": "TRESemmé",
+              "count": 21
+            },
+            {
+              "name": "Conair",
+              "count": 15
+            },
+            {
+              "name": "SheaMoisture",
+              "count": 15
+            },
+            {
+              "name": "Nexxus",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "name": "Food > Baking > Easy to Make",
+          "rowCount": 330,
+          "pricedCount": 330,
+          "inStockPct": 92.4,
+          "promotedPct": 16.4,
+          "priceStats": {
+            "average": 3.25,
+            "p25": 1.77,
+            "median": 2.17,
+            "p75": 4.34
+          },
+          "unitPriceStats": {
+            "average": 0.3,
+            "median": 0.19
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 330
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Betty Crocker",
+              "count": 104
+            },
+            {
+              "name": "Great Value",
+              "count": 37
+            },
+            {
+              "name": "Duncan Hines",
+              "count": 36
+            },
+            {
+              "name": "Pillsbury",
+              "count": 32
+            },
+            {
+              "name": "Nestlé Toll House",
+              "count": 25
+            },
+            {
+              "name": "Jell-O",
+              "count": 24
+            },
+            {
+              "name": "Martha White",
+              "count": 19
+            },
+            {
+              "name": "Krusteaz",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Beauty by Topic > Top-Rated Beauty",
+          "rowCount": 329,
+          "pricedCount": 329,
+          "inStockPct": 95.1,
+          "promotedPct": 5.5,
+          "priceStats": {
+            "average": 12.1,
+            "p25": 5.99,
+            "median": 9.88,
+            "p75": 12.98
+          },
+          "unitPriceStats": {
+            "average": 3.84,
+            "median": 1.5
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 329
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "L.A. COLORS",
+              "count": 39
+            },
+            {
+              "name": "Not Your Mother's",
+              "count": 15
+            },
+            {
+              "name": "Revlon",
+              "count": 14
+            },
+            {
+              "name": "Conair",
+              "count": 13
+            },
+            {
+              "name": "Equate",
+              "count": 11
+            },
+            {
+              "name": "essence",
+              "count": 9
+            },
+            {
+              "name": "TRESemmé",
+              "count": 9
+            },
+            {
+              "name": "Rimmel",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "name": "Food > Frozen Foods > Frozen Appetizers & Snacks",
+          "rowCount": 327,
+          "pricedCount": 327,
+          "inStockPct": 89,
+          "promotedPct": 10.4,
+          "priceStats": {
+            "average": 7.44,
+            "p25": 4.97,
+            "median": 6.27,
+            "p75": 9.97
+          },
+          "unitPriceStats": {
+            "average": 0.78,
+            "median": 0.37
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 327
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Hot Pockets",
+              "count": 60
+            },
+            {
+              "name": "Totino's",
+              "count": 56
+            },
+            {
+              "name": "Great Value",
+              "count": 31
+            },
+            {
+              "name": "Uno Pizzeria & Grill",
+              "count": 27
+            },
+            {
+              "name": "El Monterey",
+              "count": 16
+            },
+            {
+              "name": "Smucker's",
+              "count": 15
+            },
+            {
+              "name": "José Olé",
+              "count": 14
+            },
+            {
+              "name": "Delimex",
+              "count": 10
+            }
+          ]
+        },
+        {
+          "name": "Food > Frozen Foods > Frozen Meat, Seafood, & Vegetarian",
+          "rowCount": 320,
+          "pricedCount": 320,
+          "inStockPct": 95.9,
+          "promotedPct": 7.8,
+          "priceStats": {
+            "average": 8.56,
+            "p25": 6.38,
+            "median": 7.98,
+            "p75": 9.62
+          },
+          "unitPriceStats": {
+            "average": 0.94,
+            "median": 0.44
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 320
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Great Value",
+              "count": 91
+            },
+            {
+              "name": "Tyson Foods",
+              "count": 39
+            },
+            {
+              "name": "Gardein",
+              "count": 25
+            },
+            {
+              "name": "Just Bare",
+              "count": 19
+            },
+            {
+              "name": "Beyond Meat",
+              "count": 15
+            },
+            {
+              "name": "Gorton's",
+              "count": 13
+            },
+            {
+              "name": "Veggies Made Great",
+              "count": 13
+            },
+            {
+              "name": "Rosina",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "name": "Food > Deli > Create Your Charcuterie Board",
+          "rowCount": 320,
+          "pricedCount": 320,
+          "inStockPct": 96.6,
+          "promotedPct": 1.9,
+          "priceStats": {
+            "average": 5.96,
+            "p25": 4.73,
+            "median": 5.58,
+            "p75": 7.47
+          },
+          "unitPriceStats": {
+            "average": 0.71,
+            "median": 0.7
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 320
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Marketside",
+              "count": 37
+            },
+            {
+              "name": "Dietz & Watson",
+              "count": 33
+            },
+            {
+              "name": "Alouette",
+              "count": 23
+            },
+            {
+              "name": "Columbus",
+              "count": 21
+            },
+            {
+              "name": "Hillshire Farm",
+              "count": 16
+            },
+            {
+              "name": "Margherita",
+              "count": 16
+            },
+            {
+              "name": "Great Value",
+              "count": 16
+            },
+            {
+              "name": "PLANTERS",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "name": "Food > Pantry > Cooking oils & vinegar",
+          "rowCount": 319,
+          "pricedCount": 319,
+          "inStockPct": 98.4,
+          "promotedPct": 12.5,
+          "priceStats": {
+            "average": 12.15,
+            "p25": 6.87,
+            "median": 10.94,
+            "p75": 15.72
+          },
+          "unitPriceStats": {
+            "average": 0.68,
+            "median": 0.46
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 319
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Pompeian",
+              "count": 59
+            },
+            {
+              "name": "Great Value",
+              "count": 54
+            },
+            {
+              "name": "California Olive Ranch",
+              "count": 37
+            },
+            {
+              "name": "Bertolli",
+              "count": 21
+            },
+            {
+              "name": "Terra Delyssa",
+              "count": 14
+            },
+            {
+              "name": "Crisco",
+              "count": 14
+            },
+            {
+              "name": "Carapelli",
+              "count": 10
+            },
+            {
+              "name": "Partanna",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "name": "Health and Medicine > Vision Centers > Shop By",
+          "rowCount": 315,
+          "pricedCount": 315,
+          "inStockPct": 99.4,
+          "promotedPct": 0,
+          "priceStats": {
+            "average": 14.02,
+            "p25": 9.97,
+            "median": 12.97,
+            "p75": 17.47
+          },
+          "unitPriceStats": {
+            "average": null,
+            "median": null
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 315
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "M+ Glasses",
+              "count": 103
+            },
+            {
+              "name": "Equate",
+              "count": 90
+            },
+            {
+              "name": "EV1 from Ellen DeGeneres",
+              "count": 48
+            },
+            {
+              "name": "Ironman",
+              "count": 26
+            },
+            {
+              "name": "BKLYN",
+              "count": 15
+            },
+            {
+              "name": "Foster Grant",
+              "count": 12
+            },
+            {
+              "name": "Rz By Rachel Zoe",
+              "count": 8
+            },
+            {
+              "name": "M Readers",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Nailcare > Nail Polish",
+          "rowCount": 309,
+          "pricedCount": 309,
+          "inStockPct": 91.6,
+          "promotedPct": 33,
+          "priceStats": {
+            "average": 8.2,
+            "p25": 5.98,
+            "median": 7.48,
+            "p75": 9.97
+          },
+          "unitPriceStats": {
+            "average": 9.26,
+            "median": 8.28
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 309
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Sally Hansen",
+              "count": 213
+            },
+            {
+              "name": "essie",
+              "count": 45
+            },
+            {
+              "name": "OPI",
+              "count": 30
+            },
+            {
+              "name": "L.A. COLORS",
+              "count": 14
+            },
+            {
+              "name": "Salon Perfect",
+              "count": 2
+            },
+            {
+              "name": "Olive & June",
+              "count": 1
+            },
+            {
+              "name": "KISS",
+              "count": 1
+            },
+            {
+              "name": "ORLY",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Womens Hair Accessories",
+          "rowCount": 308,
+          "pricedCount": 308,
+          "inStockPct": 86,
+          "promotedPct": 16.9,
+          "priceStats": {
+            "average": 6.88,
+            "p25": 4.13,
+            "median": 6.95,
+            "p75": 7.97
+          },
+          "unitPriceStats": {
+            "average": null,
+            "median": null
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 308
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Goody",
+              "count": 77
+            },
+            {
+              "name": "scunci",
+              "count": 42
+            },
+            {
+              "name": "Time and Tru",
+              "count": 38
+            },
+            {
+              "name": "No Boundaries",
+              "count": 36
+            },
+            {
+              "name": "Gimme",
+              "count": 24
+            },
+            {
+              "name": "Way To Celebrate",
+              "count": 23
+            },
+            {
+              "name": "Equate",
+              "count": 14
+            },
+            {
+              "name": "ENCHANTE ACCESSORIES INC",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "name": "Household Essentials > Laundry > Laundry Detergents",
+          "rowCount": 305,
+          "pricedCount": 305,
+          "inStockPct": 92.5,
+          "promotedPct": 3.9,
+          "priceStats": {
+            "average": 15.58,
+            "p25": 9.97,
+            "median": 13.98,
+            "p75": 19.68
+          },
+          "unitPriceStats": {
+            "average": 0.34,
+            "median": 0.16
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 305
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Tide",
+              "count": 115
+            },
+            {
+              "name": "ARM & HAMMER",
+              "count": 40
+            },
+            {
+              "name": "all",
+              "count": 26
+            },
+            {
+              "name": "Gain",
+              "count": 21
+            },
+            {
+              "name": "Persil",
+              "count": 16
+            },
+            {
+              "name": "Ariel",
+              "count": 13
+            },
+            {
+              "name": "Great Value",
+              "count": 10
+            },
+            {
+              "name": "Purex",
+              "count": 10
+            }
+          ]
+        },
+        {
+          "name": "Food > Pantry > Herbs, spices & seasoning mixes",
+          "rowCount": 302,
+          "pricedCount": 302,
+          "inStockPct": 91.7,
+          "promotedPct": 11.6,
+          "priceStats": {
+            "average": 3.55,
+            "p25": 2.08,
+            "median": 3.26,
+            "p75": 4.38
+          },
+          "unitPriceStats": {
+            "average": 1.28,
+            "median": 0.69
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 302
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Great Value",
+              "count": 68
+            },
+            {
+              "name": "Grill Mates",
+              "count": 59
+            },
+            {
+              "name": "McCormick",
+              "count": 49
+            },
+            {
+              "name": "Slap Ya Mama",
+              "count": 20
+            },
+            {
+              "name": "Morton Salt",
+              "count": 13
+            },
+            {
+              "name": "Louisiana Fish Fry Products",
+              "count": 7
+            },
+            {
+              "name": "Kinder's",
+              "count": 7
+            },
+            {
+              "name": "Dash",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Hair Care > Conditioner",
+          "rowCount": 290,
+          "pricedCount": 290,
+          "inStockPct": 96.6,
+          "promotedPct": 10.7,
+          "priceStats": {
+            "average": 10.62,
+            "p25": 6.97,
+            "median": 8.97,
+            "p75": 11.94
+          },
+          "unitPriceStats": {
+            "average": 1.1,
+            "median": 0.84
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 290
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Pantene",
+              "count": 26
+            },
+            {
+              "name": "SheaMoisture",
+              "count": 17
+            },
+            {
+              "name": "L’Oréal Paris",
+              "count": 16
+            },
+            {
+              "name": "Head & Shoulders",
+              "count": 16
+            },
+            {
+              "name": "Aussie",
+              "count": 15
+            },
+            {
+              "name": "OGX",
+              "count": 10
+            },
+            {
+              "name": "John Frieda",
+              "count": 9
+            },
+            {
+              "name": "Hask",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "name": "Food > Bakery & Bread > Breakfast Breads",
+          "rowCount": 264,
+          "pricedCount": 264,
+          "inStockPct": 94.7,
+          "promotedPct": 0,
+          "priceStats": {
+            "average": 4.3,
+            "p25": 3.62,
+            "median": 3.97,
+            "p75": 4.98
+          },
+          "unitPriceStats": {
+            "average": 0.35,
+            "median": 0.35
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 264
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Thomas'",
+              "count": 90
+            },
+            {
+              "name": "Marketside",
+              "count": 44
+            },
+            {
+              "name": "Dave's Killer Bread",
+              "count": 24
+            },
+            {
+              "name": "Freshness Guaranteed",
+              "count": 18
+            },
+            {
+              "name": "Great Value",
+              "count": 16
+            },
+            {
+              "name": "Lender's",
+              "count": 12
+            },
+            {
+              "name": "bettergoods",
+              "count": 6
+            },
+            {
+              "name": "Oroweat",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Makeup > Nails",
+          "rowCount": 260,
+          "pricedCount": 260,
+          "inStockPct": 94.2,
+          "promotedPct": 10.8,
+          "priceStats": {
+            "average": 7.84,
+            "p25": 3.97,
+            "median": 7.83,
+            "p75": 9.97
+          },
+          "unitPriceStats": {
+            "average": 7.17,
+            "median": 7.98
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 260
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "L.A. COLORS",
+              "count": 62
+            },
+            {
+              "name": "OPI",
+              "count": 38
+            },
+            {
+              "name": "Equate",
+              "count": 25
+            },
+            {
+              "name": "Beetles",
+              "count": 21
+            },
+            {
+              "name": "Sally Hansen",
+              "count": 19
+            },
+            {
+              "name": "Dashing Diva",
+              "count": 16
+            },
+            {
+              "name": "Nails Inc",
+              "count": 9
+            },
+            {
+              "name": "Btartbox",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "name": "Food > Pantry > Pantry staples",
+          "rowCount": 259,
+          "pricedCount": 259,
+          "inStockPct": 100,
+          "promotedPct": 20.8,
+          "priceStats": {
+            "average": 3.18,
+            "p25": 2.32,
+            "median": 2.58,
+            "p75": 3.98
+          },
+          "unitPriceStats": {
+            "average": 0.21,
+            "median": 0.19
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 259
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "RAGÚ",
+              "count": 24
+            },
+            {
+              "name": "Ben's Original",
+              "count": 20
+            },
+            {
+              "name": "Classico",
+              "count": 18
+            },
+            {
+              "name": "Rice-A-Roni",
+              "count": 17
+            },
+            {
+              "name": "G Hughes",
+              "count": 17
+            },
+            {
+              "name": "Hormel",
+              "count": 16
+            },
+            {
+              "name": "Progresso",
+              "count": 15
+            },
+            {
+              "name": "Heinz",
+              "count": 14
+            }
+          ]
+        },
+        {
+          "name": "Beauty > Hair Care > Shampoo",
+          "rowCount": 255,
+          "pricedCount": 255,
+          "inStockPct": 96.9,
+          "promotedPct": 9.4,
+          "priceStats": {
+            "average": 12.17,
+            "p25": 7.97,
+            "median": 9.97,
+            "p75": 12.97
+          },
+          "unitPriceStats": {
+            "average": 1.07,
+            "median": 0.62
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 255
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Head & Shoulders",
+              "count": 36
+            },
+            {
+              "name": "Pantene",
+              "count": 26
+            },
+            {
+              "name": "L’Oréal Paris",
+              "count": 15
+            },
+            {
+              "name": "Herbal Essences",
+              "count": 11
+            },
+            {
+              "name": "TRESemmé",
+              "count": 8
+            },
+            {
+              "name": "COLAB",
+              "count": 8
+            },
+            {
+              "name": "John Frieda",
+              "count": 8
+            },
+            {
+              "name": "SheaMoisture",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "name": "Household Essentials > Pest Control > All Pest Control",
+          "rowCount": 253,
+          "pricedCount": 253,
+          "inStockPct": 97.2,
+          "promotedPct": 13,
+          "priceStats": {
+            "average": 14.74,
+            "p25": 7.37,
+            "median": 10.37,
+            "p75": 17.97
+          },
+          "unitPriceStats": {
+            "average": 2,
+            "median": 0.97
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 253
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Raid",
+              "count": 36
+            },
+            {
+              "name": "OFF!",
+              "count": 28
+            },
+            {
+              "name": "Thermacell",
+              "count": 18
+            },
+            {
+              "name": "Spectracide",
+              "count": 16
+            },
+            {
+              "name": "BONIDE",
+              "count": 11
+            },
+            {
+              "name": "Hot Shot",
+              "count": 9
+            },
+            {
+              "name": "Eliminator",
+              "count": 9
+            },
+            {
+              "name": "TOMCAT",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "name": "Food > Breakfast & Cereal > Oatmeal & Grits",
+          "rowCount": 251,
+          "pricedCount": 251,
+          "inStockPct": 88.8,
+          "promotedPct": 2.8,
+          "priceStats": {
+            "average": 4.75,
+            "p25": 3.12,
+            "median": 4.18,
+            "p75": 6.16
+          },
+          "unitPriceStats": {
+            "average": 1.57,
+            "median": 0.49
+          },
+          "topStates": [
+            {
+              "name": "CA",
+              "count": 251
+            }
+          ],
+          "topBrands": [
+            {
+              "name": "Quaker",
+              "count": 140
+            },
+            {
+              "name": "FAGE",
+              "count": 28
+            },
+            {
+              "name": "Great Value",
+              "count": 20
+            },
+            {
+              "name": "Kodiak",
+              "count": 16
+            },
+            {
+              "name": "Bob's Red Mill",
+              "count": 12
+            },
+            {
+              "name": "So Delicious",
+              "count": 4
+            },
+            {
+              "name": "bettergoods",
+              "count": 4
+            },
+            {
+              "name": "Sam's Choice",
+              "count": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elasticityBenchmarks": [
+    {
+      "segment": "KVIs",
+      "elasticityRange": [
+        -2.5,
+        -1.3
+      ],
+      "use": "Higher sensitivity items used to protect price perception and traffic."
+    },
+    {
+      "segment": "Core basket",
+      "elasticityRange": [
+        -1.6,
+        -0.8
+      ],
+      "use": "Mainstream categories where moves should stay within tested corridors."
+    },
+    {
+      "segment": "Long-tail / discretionary",
+      "elasticityRange": [
+        -0.9,
+        -0.3
+      ],
+      "use": "Lower sensitivity items that can absorb broader architecture moves."
+    }
+  ]
+}

@@ -31,5 +31,10 @@ yarn-error.log*
 # env files
 .env*.local
 
+# local internal source materials
+/Internal Data/
+/Pricing docs/
+/Walmart Scape.csv
+
 # vercel
 .vercel
