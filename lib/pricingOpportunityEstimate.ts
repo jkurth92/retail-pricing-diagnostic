@@ -30,7 +30,71 @@ export type PricingOpportunityEstimate = {
     guardrails: string[];
     povReferences: string[];
     contextAdjustments: string[];
+    drilldown: PricingDiagnosticDrilldown;
   };
+};
+
+export type PricingDiagnosticDrilldown = {
+  kvi: {
+    pct_above_benchmark: number | null;
+    avg_gap_pct: number | null;
+    matched_kvi_count: number;
+    match_confidence_pct: number | null;
+    insight: string;
+    top_gaps: {
+      sku: string;
+      item: string;
+      client_price: number;
+      benchmark_price: number;
+      gap_pct: number;
+      category: string;
+      confidence_pct: number | null;
+    }[];
+  };
+  architecture: {
+    status: "available" | "insufficient_data";
+    insight: string;
+    examples: {
+      title: string;
+      category: string;
+      issue_count: number;
+      points: {
+        label: string;
+        pack_size: number;
+        client_unit_price: number;
+        benchmark_unit_price: number | null;
+        client_price: number;
+        benchmark_price: number;
+      }[];
+      issues: string[];
+    }[];
+  };
+  zoning: {
+    status: "available" | "insufficient_data";
+    insight: string;
+    confidence: PricingOpportunityConfidence;
+    coverage_pct: number;
+    rows: {
+      zone: string;
+      matched_skus: number;
+      avg_gap_pct: number;
+      pct_above_benchmark: number;
+    }[];
+  };
+  opportunity_breakdown: {
+    lever: "KVI" | "Price Architecture" | "Price Zoning";
+    bps: number | null;
+    rationale: string;
+    benchmark_references: string[];
+    context_adjustments: string[];
+    confidence: PricingOpportunityConfidence;
+  }[];
+  recommended_actions: {
+    title: string;
+    finding: string;
+    impact_range_bps: string;
+    confidence: PricingOpportunityConfidence;
+  }[];
 };
 
 type ScopeInput = {
@@ -336,6 +400,73 @@ const getRevenueBase = (scopeInputs: ScopeInput | undefined) => {
 const guidanceReferences = (items: PricingPovGuidanceItem[], limit: number) =>
   items.slice(0, limit).map((item) => `${item.sourceFile}: ${item.guidance.slice(0, 180)}`);
 
+const average = (values: number[]) =>
+  values.length === 0
+    ? null
+    : values.reduce((total, value) => total + value, 0) / values.length;
+
+const confidenceToPct = (confidence: number | null) => {
+  if (confidence === null) return null;
+  return round(confidence <= 1 ? confidence * 100 : confidence, 0);
+};
+
+const emptyDrilldown = (
+  insight: string,
+  confidence: PricingOpportunityConfidence,
+  povReferences: string[],
+  contextAdjustments: string[]
+): PricingDiagnosticDrilldown => ({
+  kvi: {
+    pct_above_benchmark: null,
+    avg_gap_pct: null,
+    matched_kvi_count: 0,
+    match_confidence_pct: null,
+    insight,
+    top_gaps: [],
+  },
+  architecture: {
+    status: "insufficient_data",
+    insight: "Matched pricing rows need pack or size data before ladder diagnostics can be calculated.",
+    examples: [],
+  },
+  zoning: {
+    status: "insufficient_data",
+    insight:
+      "Matched pricing rows do not include enough geography to calculate zone-level pricing diagnostics.",
+    confidence,
+    coverage_pct: 0,
+    rows: [],
+  },
+  opportunity_breakdown: [
+    {
+      lever: "KVI",
+      bps: null,
+      rationale: "KVI opportunity is not estimated until matched KVI pricing evidence is available.",
+      benchmark_references: povReferences.slice(0, 2),
+      context_adjustments: contextAdjustments,
+      confidence,
+    },
+    {
+      lever: "Price Architecture",
+      bps: null,
+      rationale:
+        "Architecture opportunity is not estimated until matched rows include enough pack or tier relationships.",
+      benchmark_references: povReferences.slice(0, 2),
+      context_adjustments: contextAdjustments,
+      confidence,
+    },
+    {
+      lever: "Price Zoning",
+      bps: null,
+      rationale: "Zoning opportunity is not estimated without geography in the matched pricing data.",
+      benchmark_references: povReferences.slice(0, 2),
+      context_adjustments: contextAdjustments,
+      confidence,
+    },
+  ],
+  recommended_actions: [],
+});
+
 export const calculatePricingOpportunity = (
   request: PricingOpportunityRequest
 ): PricingOpportunityEstimate => {
@@ -389,6 +520,15 @@ export const calculatePricingOpportunity = (
   );
 
   if (matchedPairs.length === 0) {
+    const povReferences = guidanceReferences(
+      [
+        ...povStore.guidance.kviGuidance,
+        ...povStore.guidance.architecturePrinciples,
+        ...povStore.guidance.zoningPrinciples,
+      ],
+      4
+    );
+
     return {
       pricing: {
         total_bps: 0,
@@ -411,15 +551,14 @@ export const calculatePricingOpportunity = (
           "Matched pricing output is missing or has no rows with both client and Walmart prices.",
         ],
         guardrails,
-        povReferences: guidanceReferences(
-          [
-            ...povStore.guidance.kviGuidance,
-            ...povStore.guidance.architecturePrinciples,
-            ...povStore.guidance.zoningPrinciples,
-          ],
-          4
-        ),
+        povReferences,
         contextAdjustments: contextModifiers.rationale,
+        drilldown: emptyDrilldown(
+          "KVI diagnostics require matched client-to-Walmart pricing rows with observed prices.",
+          "low",
+          povReferences,
+          contextModifiers.rationale
+        ),
       },
     };
   }
@@ -472,6 +611,38 @@ export const calculatePricingOpportunity = (
       };
     })
     .filter((item) => item.meaningful);
+  const kviGapRows = kviCandidates.map((pair) => {
+    const gapPct = (((pair.clientPrice || 0) - (pair.walmartPrice || 0)) /
+      (pair.walmartPrice || 1)) *
+      100;
+
+    return {
+      pair,
+      gapPct,
+    };
+  });
+  const avgKviGapPct = average(kviGapRows.map((row) => row.gapPct));
+  const pctKvisAboveBenchmark =
+    kviGapRows.length === 0
+      ? null
+      : (kviGapRows.filter((row) => row.gapPct > 0).length / kviGapRows.length) * 100;
+  const avgKviMatchConfidence = average(
+    kviCandidates.flatMap((pair) =>
+      pair.matchConfidence === null ? [] : [confidenceToPct(pair.matchConfidence) || 0]
+    )
+  );
+  const topKviGaps = kviGapRows
+    .sort((left, right) => Math.abs(right.gapPct) - Math.abs(left.gapPct))
+    .slice(0, 8)
+    .map(({ pair, gapPct }) => ({
+      sku: pair.clientSku || pair.walmartSku || "Matched item",
+      item: pair.itemName || pair.clientSku || "Matched item",
+      client_price: round(pair.clientPrice || 0, 2),
+      benchmark_price: round(pair.walmartPrice || 0, 2),
+      gap_pct: round(gapPct, 1),
+      category: pair.category || "Uncategorized",
+      confidence_pct: confidenceToPct(pair.matchConfidence),
+    }));
   const kviUnderBenchmark = kviMeaningfulGaps.filter((item) => item.gapPct < 0);
   const kviWeightedGap =
     kviUnderBenchmark.length === 0
@@ -501,12 +672,15 @@ export const calculatePricingOpportunity = (
   });
   let architectureIssueCount = 0;
   let architectureEligibleGroups = 0;
-  architectureGroups.forEach((pairs) => {
+  const architectureExamples: PricingDiagnosticDrilldown["architecture"]["examples"] = [];
+  architectureGroups.forEach((pairs, groupKey) => {
     if (pairs.length < 3) return;
     architectureEligibleGroups += 1;
     const sortedPairs = [...pairs].sort(
       (left, right) => (left.packSize || 0) - (right.packSize || 0)
     );
+    let groupIssueCount = 0;
+    const groupIssues: string[] = [];
 
     for (let index = 1; index < sortedPairs.length; index += 1) {
       const previous = sortedPairs[index - 1];
@@ -518,7 +692,32 @@ export const calculatePricingOpportunity = (
           previous.clientUnitPrice * (1 + contextModifiers.architectureThresholdPct / 100)
       ) {
         architectureIssueCount += 1;
+        groupIssueCount += 1;
+        groupIssues.push(
+          `Pack ${current.packSize} has higher unit price than the smaller pack beyond the ${contextModifiers.architectureThresholdPct.toFixed(1)}% threshold.`
+        );
       }
+    }
+
+    if (architectureExamples.length < 4) {
+      architectureExamples.push({
+        title: groupKey || "Matched ladder",
+        category: sortedPairs[0]?.category || "Matched category",
+        issue_count: groupIssueCount,
+        points: sortedPairs.slice(0, 6).map((pair) => ({
+          label: pair.itemName || pair.clientSku || "Matched item",
+          pack_size: pair.packSize || 0,
+          client_unit_price: round(pair.clientUnitPrice || 0, 2),
+          benchmark_unit_price:
+            pair.walmartUnitPrice === null ? null : round(pair.walmartUnitPrice, 2),
+          client_price: round(pair.clientPrice || 0, 2),
+          benchmark_price: round(pair.walmartPrice || 0, 2),
+        })),
+        issues:
+          groupIssues.length > 0
+            ? groupIssues.slice(0, 3)
+            : ["No obvious ladder compression detected in this example."],
+      });
     }
   });
   const architectureBps =
@@ -568,6 +767,18 @@ export const calculatePricingOpportunity = (
           )
         );
 
+  const zoningRows = Array.from(geographyGroups.entries())
+    .map(([zone, gaps]) => ({
+      zone,
+      matched_skus: gaps.length,
+      avg_gap_pct: round(average(gaps) || 0, 1),
+      pct_above_benchmark: round(
+        (gaps.filter((gap) => gap > 0).length / Math.max(gaps.length, 1)) * 100,
+        1
+      ),
+    }))
+    .sort((left, right) => right.matched_skus - left.matched_skus);
+
   const selectedPricingLevers = request.scopeInputs?.selectedLeverIds || [];
   const kviContribution =
     selectedPricingLevers.length === 0 || selectedPricingLevers.includes("kvis")
@@ -594,6 +805,60 @@ export const calculatePricingOpportunity = (
       : matchedPairs.length >= 15 && matchCoveragePct >= 45 && walmartDataset
         ? "medium"
         : "low";
+  const povReferences = guidanceReferences(
+    [
+      ...povStore.guidance.kviGuidance,
+      ...povStore.guidance.pricingThresholds,
+      ...povStore.guidance.architecturePrinciples,
+      ...povStore.guidance.zoningPrinciples,
+      ...povStore.guidance.guardrails,
+    ],
+    6
+  );
+  const kviInsight =
+    kviCandidates.length === 0
+      ? "No KVI diagnostics are shown because KVI status is missing and conservative KVI heuristics did not produce confident candidates."
+      : `${kviCandidates.length} matched KVI candidate${kviCandidates.length === 1 ? "" : "s"} show an average ${round(avgKviGapPct || 0, 1)}% gap, interpreted against POV thresholds and elasticity only where category matches exist.`;
+  const architectureInsight =
+    architectureEligibleGroups === 0
+      ? "Insufficient pack or size relationships exist in matched pricing rows to calculate ladder diagnostics."
+      : `${architectureIssueCount} ladder issue${architectureIssueCount === 1 ? "" : "s"} found across ${architectureEligibleGroups} eligible pack or tier group${architectureEligibleGroups === 1 ? "" : "s"}.`;
+  const zoningInsight =
+    zoningRows.length < 2
+      ? "Insufficient zoning data: matched pricing rows need at least two geographies before zone diagnostics are calculated."
+      : `${zoningRows.length} geographies are available; observed regional gap spread is ${round(zoningSpread, 1)}%.`;
+  const recommendedActions: PricingDiagnosticDrilldown["recommended_actions"] = [
+    ...(kvisBps && kvisBps > 0
+      ? [
+          {
+            title: "Rebalance KVI pricing",
+            finding: `${round(Math.abs(avgKviGapPct || 0), 1)}% average KVI gap across matched KVI candidates.`,
+            impact_range_bps: `+${Math.max(1, Math.round(kvisBps * 0.6))}-${kvisBps} bps`,
+            confidence,
+          },
+        ]
+      : []),
+    ...(architectureBps && architectureBps > 0
+      ? [
+          {
+            title: "Rebuild pack-price architecture",
+            finding: `${architectureIssueCount} compressed or inconsistent ladder issue${architectureIssueCount === 1 ? "" : "s"} detected.`,
+            impact_range_bps: `+${Math.max(1, Math.round(architectureBps * 0.6))}-${architectureBps} bps`,
+            confidence,
+          },
+        ]
+      : []),
+    ...(zoningBps && zoningBps > 0
+      ? [
+          {
+            title: "Improve zoning differentiation",
+            finding: `${round(zoningSpread, 1)}% geographic price-gap spread across available zones.`,
+            impact_range_bps: `+${Math.max(1, Math.round(zoningBps * 0.6))}-${zoningBps} bps`,
+            confidence,
+          },
+        ]
+      : []),
+  ];
 
   return {
     pricing: {
@@ -622,17 +887,72 @@ export const calculatePricingOpportunity = (
         "Elasticity benchmarks modify recoverability only when a category match is found.",
       ],
       guardrails,
-      povReferences: guidanceReferences(
-        [
-          ...povStore.guidance.kviGuidance,
-          ...povStore.guidance.pricingThresholds,
-          ...povStore.guidance.architecturePrinciples,
-          ...povStore.guidance.zoningPrinciples,
-          ...povStore.guidance.guardrails,
-        ],
-        6
-      ),
+      povReferences,
       contextAdjustments: contextModifiers.rationale,
+      drilldown: {
+        kvi: {
+          pct_above_benchmark:
+            pctKvisAboveBenchmark === null ? null : round(pctKvisAboveBenchmark, 1),
+          avg_gap_pct: avgKviGapPct === null ? null : round(avgKviGapPct, 1),
+          matched_kvi_count: kviCandidates.length,
+          match_confidence_pct:
+            avgKviMatchConfidence === null ? null : round(avgKviMatchConfidence, 0),
+          insight: kviInsight,
+          top_gaps: topKviGaps,
+        },
+        architecture: {
+          status: architectureEligibleGroups === 0 ? "insufficient_data" : "available",
+          insight: architectureInsight,
+          examples: architectureExamples,
+        },
+        zoning: {
+          status: zoningRows.length < 2 ? "insufficient_data" : "available",
+          insight: zoningInsight,
+          confidence,
+          coverage_pct: round(
+            (matchedPairs.filter((pair) => pair.geography).length / matchedPairs.length) *
+              100,
+            1
+          ),
+          rows: zoningRows,
+        },
+        opportunity_breakdown: [
+          {
+            lever: "KVI",
+            bps: kvisBps,
+            rationale:
+              kvisBps === null
+                ? "KVI opportunity is not scored without confident KVI candidates."
+                : "KVI bps reflect matched-item gaps versus benchmark, POV thresholds, elasticity modifiers where category matches exist, and context recoverability.",
+            benchmark_references: povReferences.slice(0, 2),
+            context_adjustments: contextModifiers.rationale,
+            confidence,
+          },
+          {
+            lever: "Price Architecture",
+            bps: architectureBps,
+            rationale:
+              architectureBps === null
+                ? "Architecture opportunity is not scored because pack or size relationships are too sparse."
+                : "Architecture bps reflect observed unit-price ladder issues capped to a conservative benchmark range.",
+            benchmark_references: povReferences.slice(2, 4),
+            context_adjustments: contextModifiers.rationale,
+            confidence,
+          },
+          {
+            lever: "Price Zoning",
+            bps: zoningBps,
+            rationale:
+              zoningBps === null
+                ? "Zoning opportunity is not scored because geography is unavailable or too sparse."
+                : "Zoning bps reflect geographic price-gap spread against POV thresholds and context modifiers.",
+            benchmark_references: povReferences.slice(3, 5),
+            context_adjustments: contextModifiers.rationale,
+            confidence,
+          },
+        ],
+        recommended_actions: recommendedActions,
+      },
     },
   };
 };

@@ -1,8 +1,6 @@
 "use client";
 
 import { type ChangeEvent, useEffect, useState } from "react";
-import PricingLadderModule from "@/components/PricingLadderModule";
-import PriceZoneModule from "@/components/PriceZoneModule";
 import PromoCalendarModule from "@/components/PromoCalendarModule";
 import MarkdownModule from "@/components/MarkdownModule";
 
@@ -60,6 +58,69 @@ type PricingOpportunityEstimate = {
   guardrails: string[];
   povReferences: string[];
   contextAdjustments: string[];
+  drilldown: PricingDiagnosticDrilldown;
+};
+type PricingDiagnosticDrilldown = {
+  kvi: {
+    pct_above_benchmark: number | null;
+    avg_gap_pct: number | null;
+    matched_kvi_count: number;
+    match_confidence_pct: number | null;
+    insight: string;
+    top_gaps: {
+      sku: string;
+      item: string;
+      client_price: number;
+      benchmark_price: number;
+      gap_pct: number;
+      category: string;
+      confidence_pct: number | null;
+    }[];
+  };
+  architecture: {
+    status: "available" | "insufficient_data";
+    insight: string;
+    examples: {
+      title: string;
+      category: string;
+      issue_count: number;
+      points: {
+        label: string;
+        pack_size: number;
+        client_unit_price: number;
+        benchmark_unit_price: number | null;
+        client_price: number;
+        benchmark_price: number;
+      }[];
+      issues: string[];
+    }[];
+  };
+  zoning: {
+    status: "available" | "insufficient_data";
+    insight: string;
+    confidence: "high" | "medium" | "low";
+    coverage_pct: number;
+    rows: {
+      zone: string;
+      matched_skus: number;
+      avg_gap_pct: number;
+      pct_above_benchmark: number;
+    }[];
+  };
+  opportunity_breakdown: {
+    lever: "KVI" | "Price Architecture" | "Price Zoning";
+    bps: number | null;
+    rationale: string;
+    benchmark_references: string[];
+    context_adjustments: string[];
+    confidence: "high" | "medium" | "low";
+  }[];
+  recommended_actions: {
+    title: string;
+    finding: string;
+    impact_range_bps: string;
+    confidence: "high" | "medium" | "low";
+  }[];
 };
 type OpportunityEstimateApiResponse = {
   error?: string;
@@ -1873,105 +1934,11 @@ const effectiveRetailerScopeInputs: RetailerScopeInputs = {
             )}
 
       {activeTab === "pricing" && (
-        <div className="space-y-5">
-          <section className={sectionCard}>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Pricing diagnostic
-            </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
-              Pricing
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-              Diagnose price position, KVI structure, price-pack architecture, and pricing ladder gaps.
-            </p>
-          </section>
-
-          <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {[
-              { value: "Mid-tier", label: "Position" },
-              { value: "Compressed", label: "Ladder" },
-              { value: "+15–40 bps", label: "Margin opportunity" },
-            ].map((item) => (
-              <div key={item.label} className={metricCard}>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-                  {item.label}
-                </p>
-                <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-blue)]">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </section>
-
-          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className={`${sectionCard} space-y-3`}>
-              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Current State</h3>
-              <div className="space-y-2 text-sm leading-6 text-gray-600">
-                <p>Position: Mid-tier</p>
-                <p>Ladder: Compressed</p>
-                <p>Competitiveness: Mixed</p>
-              </div>
-            </div>
-
-            <div className={`${sectionCard} space-y-3`}>
-              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Opportunity</h3>
-              <div className="space-y-2 text-sm leading-6 text-gray-600">
-                <p>Revenue: <span className="font-semibold text-[var(--ui-blue)]">+0.5%–1.5%</span></p>
-                <p>Margin: <span className="font-semibold text-[var(--ui-blue)]">+15–40 bps</span></p>
-                <p>Unit Impact: Flat to +0.5%</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className={`${sectionCard} space-y-3`}>
-              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">KVI Structure</h3>
-              <div className="space-y-2 text-sm leading-6 text-gray-600">
-                <p>KVIs priced competitively</p>
-                <p>Over-investment in some categories</p>
-                <p>Under-monetization of non-KVIs</p>
-              </div>
-            </div>
-
-            <div className={`${sectionCard} space-y-3`}>
-              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Price-Pack Architecture</h3>
-              <div className="space-y-2 text-sm leading-6 text-gray-600">
-                <p>Missing mid-tier packs</p>
-                <p>Inconsistent price-per-unit scaling</p>
-                <p>Limited trade-up pathways</p>
-              </div>
-            </div>
-          </section>
-
-          <section className={sectionCard}>
-            <h3 className="mb-4 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Embedded Analysis</h3>
-            <div className="space-y-6">
-              <PricingLadderModule />
-              <PriceZoneModule />
-            </div>
-          </section>
-
-          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className={`${sectionCard} space-y-3`}>
-              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Recommendations</h3>
-              <div className="space-y-2 text-sm">
-                <div className={subCard}>Introduce mid-tier packs</div>
-                <div className={subCard}>Normalize price-per-unit logic</div>
-                <div className={subCard}>Improve zone differentiation</div>
-                <div className={subCard}>Increase non-KVI price capture</div>
-              </div>
-            </div>
-
-            <div className={`${sectionCard} space-y-3`}>
-              <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">Data Requests</h3>
-              <div className="space-y-2 text-sm leading-6 text-gray-600">
-                <p>• Elasticities by category</p>
-                <p>• Price zones and rules</p>
-                <p>• Pack-level sales mix</p>
-              </div>
-            </div>
-          </section>
-        </div>
+        <PricingDiagnosticDrilldownSection
+          pricingOpportunity={pricingOpportunity}
+          pricingOpportunityError={pricingOpportunityError}
+          pricingOpportunityLoading={pricingOpportunityLoading}
+        />
       )}
 
       {activeTab === "promotions" && (
@@ -3601,6 +3568,353 @@ function renderPeerComparisonBar(
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PricingDiagnosticDrilldownSection({
+  pricingOpportunity,
+  pricingOpportunityError,
+  pricingOpportunityLoading,
+}: {
+  pricingOpportunity: PricingOpportunityEstimate | null;
+  pricingOpportunityError: string | null;
+  pricingOpportunityLoading: boolean;
+}) {
+  const drilldown = pricingOpportunity?.drilldown;
+  const hasMatchedData = (pricingOpportunity?.diagnostics.matched_skus ?? 0) > 0;
+  const pricingPosition =
+    !hasMatchedData || !pricingOpportunity
+      ? "Insufficient data"
+      : pricingOpportunity.diagnostics.avg_price_gap_pct > 2
+        ? "Above benchmark"
+        : pricingOpportunity.diagnostics.avg_price_gap_pct < -2
+          ? "Below benchmark"
+          : "Near benchmark";
+  const ladderState =
+    !drilldown || drilldown.architecture.status === "insufficient_data"
+      ? "Insufficient data"
+      : pricingOpportunity.diagnostics.architecture_issue_count > 0
+        ? "Issues detected"
+        : "No issues detected";
+  const opportunityLabel = pricingOpportunity
+    ? formatSignedBps(pricingOpportunity.total_bps)
+    : "Pending";
+  const confidenceLabel = pricingOpportunity
+    ? pricingOpportunity.confidence[0].toUpperCase() + pricingOpportunity.confidence.slice(1)
+    : "Pending";
+
+  return (
+    <div className="space-y-5">
+      <section className={sectionCard}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+          Pricing Diagnostic Drilldown
+        </p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-navy)]">
+          Evidence-based pricing analysis
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
+          Powered by matched client-to-Walmart pricing diagnostics, internal benchmark summaries, elasticity modifiers, POV thresholds, and client context.
+        </p>
+      </section>
+
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        {[
+          { value: pricingPosition, label: "Pricing position" },
+          { value: ladderState, label: "Ladder state" },
+          { value: opportunityLabel, label: "Total pricing opportunity" },
+        ].map((item) => (
+          <div key={item.label} className={metricCard}>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+              {item.label}
+            </p>
+            <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--ui-blue)]">
+              {item.value}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      {(pricingOpportunityLoading || pricingOpportunityError) && (
+        <section className={`${sectionCard} space-y-2`}>
+          <p className="text-sm font-semibold text-[var(--ui-navy)]">
+            {pricingOpportunityLoading ? "Loading pricing diagnostics..." : "Pricing diagnostics status"}
+          </p>
+          {pricingOpportunityError && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-800">
+              {pricingOpportunityError}
+            </p>
+          )}
+        </section>
+      )}
+
+      <section className={`${sectionCard} space-y-4 border-blue-100 bg-blue-50/30`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ui-blue)]">
+            Primary Section
+          </p>
+          <h3 className="mt-1 text-xl font-semibold tracking-tight text-[var(--ui-navy)]">
+            KVI Diagnostic
+          </h3>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-4">
+          {[
+            {
+              label: "% KVIs above benchmark",
+              value:
+                drilldown?.kvi.pct_above_benchmark === null ||
+                drilldown?.kvi.pct_above_benchmark === undefined
+                  ? "N/A"
+                  : `${drilldown.kvi.pct_above_benchmark.toFixed(1)}%`,
+            },
+            {
+              label: "Avg KVI gap",
+              value:
+                drilldown?.kvi.avg_gap_pct === null ||
+                drilldown?.kvi.avg_gap_pct === undefined
+                  ? "N/A"
+                  : `${drilldown.kvi.avg_gap_pct.toFixed(1)}%`,
+            },
+            {
+              label: "Matched KVI count",
+              value: String(drilldown?.kvi.matched_kvi_count ?? 0),
+            },
+            {
+              label: "Match confidence",
+              value:
+                drilldown?.kvi.match_confidence_pct === null ||
+                drilldown?.kvi.match_confidence_pct === undefined
+                  ? `${pricingOpportunity?.diagnostics.match_coverage_pct.toFixed(1) ?? "0.0"}% coverage`
+                  : `${drilldown.kvi.match_confidence_pct.toFixed(0)}% confidence`,
+            },
+          ].map((item) => (
+            <div key={item.label} className={subCard}>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                {item.label}
+              </p>
+              <p className="mt-2 text-xl font-bold tracking-tight text-[var(--ui-navy)]">
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className={`${subCard} text-sm leading-6 text-gray-600`}>
+          {drilldown?.kvi.insight ||
+            "KVI diagnostics require matched pricing data before benchmark gaps can be shown."}
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table className="min-w-[760px] w-full text-left text-sm">
+            <thead className="bg-gray-50 text-xs uppercase tracking-[0.12em] text-gray-500">
+              <tr>
+                <th className="px-3 py-3 font-semibold">SKU / item</th>
+                <th className="px-3 py-3 font-semibold">Client price</th>
+                <th className="px-3 py-3 font-semibold">Benchmark price</th>
+                <th className="px-3 py-3 font-semibold">Gap</th>
+                <th className="px-3 py-3 font-semibold">Category</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {drilldown?.kvi.top_gaps.length ? (
+                drilldown.kvi.top_gaps.map((row) => (
+                  <tr key={`${row.sku}-${row.gap_pct}`}>
+                    <td className="px-3 py-3">
+                      <p className="font-semibold text-[var(--ui-navy)]">{row.sku}</p>
+                      <p className="mt-0.5 text-xs text-gray-500">{row.item}</p>
+                    </td>
+                    <td className="px-3 py-3">${row.client_price.toFixed(2)}</td>
+                    <td className="px-3 py-3">${row.benchmark_price.toFixed(2)}</td>
+                    <td className="px-3 py-3 font-semibold text-[var(--ui-blue)]">
+                      {row.gap_pct > 0 ? "+" : ""}
+                      {row.gap_pct.toFixed(1)}%
+                    </td>
+                    <td className="px-3 py-3 text-gray-600">{row.category}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-3 py-5 text-sm text-gray-500" colSpan={5}>
+                    No matched KVI pricing gaps are available. The page will populate once the pricing match engine sends matched rows to the route.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+            Price Architecture Drilldown
+          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+            Ladder, pack, and trade-up diagnostics
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-gray-600">
+            {drilldown?.architecture.insight ||
+              "Architecture diagnostics require matched rows with pack or size relationships."}
+          </p>
+        </div>
+
+        {drilldown?.architecture.status === "available" &&
+        drilldown.architecture.examples.length > 0 ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {drilldown.architecture.examples.map((example) => (
+              <div key={example.title} className={`${subCard} space-y-4`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-[var(--ui-navy)]">{example.title}</p>
+                    <p className="mt-1 text-xs text-gray-500">{example.category}</p>
+                  </div>
+                  <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-[var(--ui-blue)]">
+                    {example.issue_count} issue{example.issue_count === 1 ? "" : "s"}
+                  </span>
+                </div>
+                <div className="flex items-end gap-3 overflow-x-auto pb-1">
+                  {example.points.map((point) => {
+                    const maxUnitPrice = Math.max(
+                      ...example.points.map((item) => item.client_unit_price),
+                      1
+                    );
+                    const barHeight = Math.max(
+                      (point.client_unit_price / maxUnitPrice) * 120,
+                      18
+                    );
+
+                    return (
+                      <div key={`${example.title}-${point.label}`} className="min-w-[86px]">
+                        <div className="flex h-36 items-end justify-center rounded-lg bg-gray-50 px-2">
+                          <div
+                            className="w-full rounded-t-lg bg-[var(--ui-blue)]"
+                            style={{ height: `${barHeight}px` }}
+                            title={`Client unit price $${point.client_unit_price.toFixed(2)}`}
+                          />
+                        </div>
+                        <p className="mt-2 truncate text-xs font-semibold text-[var(--ui-navy)]">
+                          {point.pack_size}
+                        </p>
+                        <p className="text-[11px] text-gray-500">
+                          ${point.client_unit_price.toFixed(2)} / unit
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="space-y-1 text-sm leading-6 text-gray-600">
+                  {example.issues.map((issue) => (
+                    <p key={issue}>• {issue}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={`${subCard} text-sm leading-6 text-gray-600`}>
+            Insufficient architecture data. Matched pricing rows need category plus pack/size and unit-price fields before ladder comparisons can be calculated.
+          </div>
+        )}
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+            Price Zoning Drilldown
+          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+            Geographic price alignment
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-gray-600">
+            {drilldown?.zoning.insight ||
+              "Zoning diagnostics require region, state, market, store-region, or zone fields in matched rows."}
+          </p>
+        </div>
+
+        {drilldown?.zoning.status === "available" ? (
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+            <table className="min-w-[620px] w-full text-left text-sm">
+              <thead className="bg-gray-50 text-xs uppercase tracking-[0.12em] text-gray-500">
+                <tr>
+                  <th className="px-3 py-3 font-semibold">Zone</th>
+                  <th className="px-3 py-3 font-semibold">Matched SKUs</th>
+                  <th className="px-3 py-3 font-semibold">Avg gap</th>
+                  <th className="px-3 py-3 font-semibold">Above benchmark</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {drilldown.zoning.rows.map((row) => (
+                  <tr key={row.zone}>
+                    <td className="px-3 py-3 font-semibold text-[var(--ui-navy)]">{row.zone}</td>
+                    <td className="px-3 py-3">{row.matched_skus}</td>
+                    <td className="px-3 py-3">{row.avg_gap_pct.toFixed(1)}%</td>
+                    <td className="px-3 py-3">{row.pct_above_benchmark.toFixed(1)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className={`${subCard} text-sm leading-6 text-gray-600`}>
+            Insufficient zoning data. No geographic output is inferred or fabricated without matched rows by store, region, state, market, or zone.
+          </div>
+        )}
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+          Pricing Opportunity Breakdown
+        </h3>
+        <div className="grid gap-3 lg:grid-cols-3">
+          {(drilldown?.opportunity_breakdown || []).map((item) => (
+            <div key={item.lever} className={`${subCard} space-y-3`}>
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-semibold text-[var(--ui-navy)]">{item.lever}</p>
+                <p className="text-lg font-bold text-[var(--ui-blue)]">
+                  {item.bps === null ? "N/A" : formatSignedBps(item.bps)}
+                </p>
+              </div>
+              <p className="text-sm leading-6 text-gray-600">{item.rationale}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+                Confidence: {item.confidence}
+              </p>
+              <div className="space-y-1 text-xs leading-5 text-gray-500">
+                {item.benchmark_references.slice(0, 2).map((reference) => (
+                  <p key={reference}>• {reference}</p>
+                ))}
+                {item.context_adjustments.slice(0, 2).map((adjustment) => (
+                  <p key={adjustment}>• {adjustment}</p>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${sectionCard} space-y-4`}>
+        <h3 className="text-lg font-semibold tracking-tight text-[var(--ui-navy)]">
+          Recommended Pricing Actions
+        </h3>
+        {drilldown?.recommended_actions.length ? (
+          <div className="grid gap-3 lg:grid-cols-3">
+            {drilldown.recommended_actions.map((action) => (
+              <div key={action.title} className={`${subCard} space-y-2`}>
+                <p className="font-semibold text-[var(--ui-navy)]">{action.title}</p>
+                <p className="text-sm leading-6 text-gray-600">{action.finding}</p>
+                <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+                  <span>{action.impact_range_bps}</span>
+                  <span>{action.confidence}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={`${subCard} text-sm leading-6 text-gray-600`}>
+            No pricing actions are recommended until observed diagnostics support a KVI, architecture, or zoning finding.
+          </div>
+        )}
+      </section>
     </div>
   );
 }
