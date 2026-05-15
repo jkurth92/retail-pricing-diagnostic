@@ -164,6 +164,7 @@ type NormalizedSourceRecord = {
   price: number | null;
   unitPrice: number | null;
   packSize: number | null;
+  packSizeText: string;
   kviFlag: boolean | null;
   geography: string | null;
 };
@@ -182,6 +183,10 @@ type MatchBuildResult = {
     fieldMapping: Record<FieldKey, { client: string | null; benchmark: string | null }>;
     sampleNormalizedClientRow: SafeNormalizedRecord | null;
     sampleNormalizedBenchmarkRow: SafeNormalizedRecord | null;
+    sampleNormalizedClientRows: SafeNormalizedRecord[];
+    sampleNormalizedBenchmarkRows: SafeNormalizedRecord[];
+    matchTrace: MatchTraceRow[];
+    zeroCoverageSummary: string | null;
     exactUpcMatches: number;
     exactSkuMatches: number;
     fuzzyMatches: number;
@@ -206,7 +211,37 @@ type SafeNormalizedRecord = {
   price: number | null;
   unitPrice: number | null;
   packSize: number | null;
+  normalizedMatchFields?: {
+    sku: string | null;
+    upc: string | null;
+    itemName: string;
+    brand: string;
+    category: string;
+    sizePack: string;
+  };
   geography: string | null;
+};
+
+type CandidateTrace = {
+  candidate: SafeNormalizedRecord | null;
+  score: number;
+  nameScore: number;
+  brandScore: number;
+  sizeScore: number;
+  categoryScore: number;
+  fieldsMatched: string[];
+  fieldsNotMatched: string[];
+  accepted: boolean;
+  reason: string;
+};
+
+type MatchTraceRow = {
+  client: SafeNormalizedRecord | null;
+  exactUpcCandidate: SafeNormalizedRecord | null;
+  exactSkuCandidate: SafeNormalizedRecord | null;
+  candidatesConsidered: CandidateTrace[];
+  acceptedCandidate: CandidateTrace | null;
+  finalDecision: string;
 };
 
 type NormalizedMatchedPair = {
@@ -332,6 +367,70 @@ const toBooleanFlag = (value: unknown): boolean | null => {
   return null;
 };
 
+const normalizeNumberToken = (value: string) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && Number.isInteger(numericValue)
+    ? String(numericValue)
+    : value;
+};
+
+const normalizeText = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/(\d+(?:\.\d+)?)([a-z]+)/g, "$1 $2")
+    .replace(/([a-z]+)(\d+(?:\.\d+)?)/g, "$1 $2")
+    .replace(/\bfluid\s*ounces?\b/g, "fl oz")
+    .replace(/\bfl\.?\s*ounces?\b/g, "fl oz")
+    .replace(/\bfl\.?\s*oz\.?\b/g, "fl oz")
+    .replace(/\bounces?\b/g, "oz")
+    .replace(/\boz\.?\b/g, "oz")
+    .replace(/\bpounds?\b/g, "lb")
+    .replace(/\blbs?\b/g, "lb")
+    .replace(/\bcounts?\b/g, "ct")
+    .replace(/\bct\.?\b/g, "ct")
+    .replace(/[^a-z0-9.]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((token) => (/^\d+\.\d+$/.test(token) ? normalizeNumberToken(token) : token))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizedTokens = (value: string, minLength = 1) =>
+  normalizeText(value)
+    .split(" ")
+    .filter((token) => token.length >= minLength);
+
+const SIZE_UNIT_TOKENS = new Set(["oz", "lb", "ct", "fl"]);
+
+const sizeSignature = (
+  row: Pick<NormalizedSourceRecord, "itemName" | "packSize" | "packSizeText">
+) => {
+  const tokens = normalizedTokens(
+    `${row.itemName} ${row.packSizeText} ${row.packSize !== null ? row.packSize : ""}`
+  );
+  const sizeTokens = tokens.filter((token, index) => {
+    const nextToken = tokens[index + 1];
+    const previousToken = tokens[index - 1];
+    return (
+      SIZE_UNIT_TOKENS.has(token) ||
+      (/^\d+(?:\.\d+)?$/.test(token) && nextToken && SIZE_UNIT_TOKENS.has(nextToken)) ||
+      (previousToken && /^\d+(?:\.\d+)?$/.test(previousToken) && SIZE_UNIT_TOKENS.has(token))
+    );
+  });
+
+  return sizeTokens.join(" ");
+};
+
+const tokenOverlapScore = (left: string, right: string, minLength = 1) => {
+  const leftTokens = new Set(normalizedTokens(left, minLength));
+  const rightTokens = new Set(normalizedTokens(right, minLength));
+  if (leftTokens.size === 0 || rightTokens.size === 0) return 0;
+
+  const overlap = [...leftTokens].filter((token) => rightTokens.has(token)).length;
+  return overlap / Math.max(leftTokens.size, rightTokens.size);
+};
+
 const asArray = (value: unknown): unknown[] => {
   if (Array.isArray(value)) return value;
   const record = toRecord(value);
@@ -400,7 +499,8 @@ const normalizeRecords = (
   rows.map((row) => {
     const record = toRecord(row);
     const price = toNumber(getMappedValue(record, detectedColumns, "price"));
-    const packSize = toNumber(getMappedValue(record, detectedColumns, "packSize"));
+    const rawPackSize = getMappedValue(record, detectedColumns, "packSize");
+    const packSize = toNumber(rawPackSize);
     const unitPrice =
       toNumber(getMappedValue(record, detectedColumns, "unitPrice")) ??
       (price !== null && packSize !== null && packSize > 0 ? price / packSize : null);
@@ -416,6 +516,7 @@ const normalizeRecords = (
       price,
       unitPrice,
       packSize,
+      packSizeText: String(rawPackSize ?? ""),
       kviFlag: toBooleanFlag(getMappedValue(record, detectedColumns, "kvi")),
       geography: (getMappedValue(record, detectedColumns, "geography") as string | null) ?? null,
     };
@@ -434,6 +535,14 @@ const safeNormalizedRecord = (
         price: row.price,
         unitPrice: row.unitPrice,
         packSize: row.packSize,
+        normalizedMatchFields: {
+          sku: row.sku,
+          upc: row.upc,
+          itemName: normalizeText(row.itemName),
+          brand: normalizeText(row.brand),
+          category: normalizeText(row.category),
+          sizePack: sizeSignature(row),
+        },
         geography: row.geography,
       }
     : null;
@@ -530,18 +639,110 @@ const loadBenchmarkRecords = () => {
 
 const tokenSet = (value: string) =>
   new Set(
-    normalizeText(value)
-      .split(" ")
-      .filter((token) => token.length >= 3)
+    normalizedTokens(value, 2).filter(
+      (token) => token.length >= 3 || SIZE_UNIT_TOKENS.has(token) || /^\d+$/.test(token)
+    )
   );
 
 const similarityScore = (left: string, right: string) => {
-  const leftTokens = tokenSet(left);
-  const rightTokens = tokenSet(right);
-  if (leftTokens.size === 0 || rightTokens.size === 0) return 0;
+  return tokenOverlapScore(left, right, 2);
+};
 
-  const overlap = [...leftTokens].filter((token) => rightTokens.has(token)).length;
-  return overlap / Math.max(leftTokens.size, rightTokens.size);
+const fieldMatchState = (score: number, field: string, matched: string[], notMatched: string[]) => {
+  if (score >= 0.8) {
+    matched.push(field);
+  } else {
+    notMatched.push(field);
+  }
+};
+
+const scoreCandidate = (
+  client: NormalizedSourceRecord,
+  candidate: NormalizedSourceRecord
+): CandidateTrace => {
+  const nameScore = similarityScore(client.itemName, candidate.itemName);
+  const brandScore = client.brand && candidate.brand ? similarityScore(client.brand, candidate.brand) : 0;
+  const sizeScore = sizeSignature(client) && sizeSignature(candidate)
+    ? similarityScore(sizeSignature(client), sizeSignature(candidate))
+    : 0;
+  const categoryScore =
+    client.category && candidate.category ? similarityScore(client.category, candidate.category) : 0;
+  const score =
+    nameScore * 0.55 +
+    brandScore * 0.25 +
+    sizeScore * 0.1 +
+    categoryScore * 0.1;
+  const bothBrandsPresent = Boolean(client.brand && candidate.brand);
+  const fieldsMatched: string[] = [];
+  const fieldsNotMatched: string[] = [];
+
+  fieldMatchState(nameScore, "itemName", fieldsMatched, fieldsNotMatched);
+  fieldMatchState(brandScore, "brand", fieldsMatched, fieldsNotMatched);
+  if (sizeSignature(client) || sizeSignature(candidate)) {
+    fieldMatchState(sizeScore, "sizePack", fieldsMatched, fieldsNotMatched);
+  }
+  if (client.category || candidate.category) {
+    fieldMatchState(categoryScore, "category", fieldsMatched, fieldsNotMatched);
+  }
+
+  const strongFuzzyMatch =
+    score >= 0.55 &&
+    nameScore >= 0.6 &&
+    (bothBrandsPresent ? brandScore >= 0.5 : score >= 0.65);
+  const conservativeFallback =
+    score >= 0.45 && nameScore >= 0.75 && bothBrandsPresent && brandScore >= 0.75;
+  const accepted = strongFuzzyMatch || conservativeFallback;
+  const reason = accepted
+    ? strongFuzzyMatch
+      ? "accepted: fuzzy score meets threshold with sufficient name and brand agreement"
+      : "accepted: conservative fallback with strong name and brand agreement"
+    : `rejected: score ${round(score, 2)} below threshold or insufficient name/brand agreement`;
+
+  return {
+    candidate: safeNormalizedRecord(candidate),
+    score: round(score, 3),
+    nameScore: round(nameScore, 3),
+    brandScore: round(brandScore, 3),
+    sizeScore: round(sizeScore, 3),
+    categoryScore: round(categoryScore, 3),
+    fieldsMatched,
+    fieldsNotMatched,
+    accepted,
+    reason,
+  };
+};
+
+const summarizeZeroCoverageRootCause = (
+  trace: MatchTraceRow[],
+  diagnostics: MatchBuildResult["diagnostics"]
+) => {
+  if (diagnostics.exactUpcMatches === 0 && diagnostics.exactSkuMatches === 0) {
+    const anyClientIds = trace.some((row) => row.client?.upc || row.client?.sku);
+    if (!anyClientIds) return "missing UPC / SKU fields";
+  }
+
+  const candidateScores = trace.flatMap((row) => row.candidatesConsidered);
+  if (candidateScores.length === 0) return "client naming mismatch";
+
+  const bestName = Math.max(...candidateScores.map((candidate) => candidate.nameScore));
+  const bestBrand = Math.max(...candidateScores.map((candidate) => candidate.brandScore));
+  const bestSize = Math.max(...candidateScores.map((candidate) => candidate.sizeScore));
+  const bestCategory = Math.max(...candidateScores.map((candidate) => candidate.categoryScore));
+  const bestScore = Math.max(...candidateScores.map((candidate) => candidate.score));
+
+  if (bestName < 0.45) return "client naming mismatch";
+  if (bestBrand < 0.45) return "benchmark naming mismatch";
+  if (bestSize < 0.45 && candidateScores.some((candidate) => candidate.fieldsNotMatched.includes("sizePack"))) {
+    return "size/unit mismatch";
+  }
+  if (
+    bestCategory < 0.45 &&
+    candidateScores.some((candidate) => candidate.fieldsNotMatched.includes("category"))
+  ) {
+    return "category mismatch";
+  }
+  if (bestScore >= 0.45) return "overly strict threshold";
+  return diagnostics.zeroCoverageRootCause ?? "overly strict threshold";
 };
 
 const toMatchedPair = (
@@ -594,6 +795,13 @@ const buildMatchesFromSourceRows = (
     fieldMapping,
     sampleNormalizedClientRow: safeNormalizedRecord(normalizedClientRows[0]),
     sampleNormalizedBenchmarkRow: safeNormalizedRecord(normalizedBenchmarkRows[0]),
+    sampleNormalizedClientRows: normalizedClientRows.slice(0, 5).map(safeNormalizedRecord).filter(Boolean),
+    sampleNormalizedBenchmarkRows: normalizedBenchmarkRows
+      .slice(0, 5)
+      .map(safeNormalizedRecord)
+      .filter(Boolean),
+    matchTrace: [],
+    zeroCoverageSummary: null,
     exactUpcMatches: 0,
     exactSkuMatches: 0,
     fuzzyMatches: 0,
@@ -601,49 +809,79 @@ const buildMatchesFromSourceRows = (
     emptyReason: null,
     zeroCoverageRootCause: null,
   };
+  const logMatcherTraceDiagnostics = () => {
+    console.info(
+      "[opportunity-estimate] Matcher sample normalized inputs:",
+      JSON.stringify({
+        clientRows: diagnostics.sampleNormalizedClientRows,
+        walmartBenchmarkRows: diagnostics.sampleNormalizedBenchmarkRows,
+      })
+    );
+    console.info(
+      "[opportunity-estimate] Matcher candidate trace:",
+      JSON.stringify({
+        tracedClientRows: diagnostics.matchTrace.length,
+        trace: diagnostics.matchTrace,
+        zeroCoverageSummary: diagnostics.zeroCoverageSummary,
+      })
+    );
+  };
 
   if (clientRows.length === 0) {
     diagnostics.zeroCoverageRootCause =
       uploadedClientFileCount > 0 ? "unsupported_file_parsing" : "missing_client_rows";
+    diagnostics.zeroCoverageSummary =
+      uploadedClientFileCount > 0 ? "missing UPC / SKU fields" : "missing client rows";
     diagnostics.emptyReason =
       uploadedClientFileCount > 0
         ? "Client upload metadata is present, but parsed client pricing rows are missing. File parsing is not producing row-level pricing data for the matcher."
         : "Client pricing upload rows are missing. The current request contains no client row payload for the matcher.";
+    logMatcherTraceDiagnostics();
     return { matches: [], unmatchedCount: 0, diagnostics };
   }
   if (benchmarkRecords.length === 0) {
     diagnostics.zeroCoverageRootCause = "missing_benchmark_rows";
+    diagnostics.zeroCoverageSummary = "missing benchmark rows";
     diagnostics.emptyReason =
       "Walmart benchmark source rows are missing. The internal CSV could not be loaded server-side.";
     diagnostics.unmatchedRows = clientRows.length;
+    logMatcherTraceDiagnostics();
     return { matches: [], unmatchedCount: clientRows.length, diagnostics };
   }
   if (!hasMinimumMatchFields(clientColumnsDetected)) {
     diagnostics.zeroCoverageRootCause = "column_mismatch";
+    diagnostics.zeroCoverageSummary = "missing UPC / SKU fields";
     diagnostics.emptyReason =
       "Client pricing columns do not map to the minimum required fields: price plus UPC, SKU, or product name.";
     diagnostics.unmatchedRows = clientRows.length;
+    logMatcherTraceDiagnostics();
     return { matches: [], unmatchedCount: clientRows.length, diagnostics };
   }
   if (!hasMinimumMatchFields(benchmarkColumnsDetected)) {
     diagnostics.zeroCoverageRootCause = "column_mismatch";
+    diagnostics.zeroCoverageSummary = "missing UPC / SKU fields";
     diagnostics.emptyReason =
       "Walmart benchmark columns do not map to the minimum required fields: price plus UPC, SKU, or product name.";
     diagnostics.unmatchedRows = clientRows.length;
+    logMatcherTraceDiagnostics();
     return { matches: [], unmatchedCount: clientRows.length, diagnostics };
   }
   if (normalizedClientRows.length === 0) {
     diagnostics.zeroCoverageRootCause = "column_mismatch";
+    diagnostics.zeroCoverageSummary = "client naming mismatch";
     diagnostics.emptyReason =
       "Client rows were present, but none normalized into usable pricing records after field mapping.";
     diagnostics.unmatchedRows = clientRows.length;
+    logMatcherTraceDiagnostics();
     return { matches: [], unmatchedCount: clientRows.length, diagnostics };
   }
   if (normalizedBenchmarkRows.length === 0) {
     diagnostics.zeroCoverageRootCause = "column_mismatch";
+    diagnostics.zeroCoverageSummary = "benchmark naming mismatch";
     diagnostics.emptyReason =
       "Walmart benchmark rows were present, but none normalized into usable pricing records after field mapping.";
     diagnostics.unmatchedRows = clientRows.length;
+    logMatcherTraceDiagnostics();
     return { matches: [], unmatchedCount: clientRows.length, diagnostics };
   }
 
@@ -654,55 +892,101 @@ const buildMatchesFromSourceRows = (
   normalizedBenchmarkRows.forEach((row) => {
     if (row.upc && !upcIndex.has(row.upc)) upcIndex.set(row.upc, row);
     if (row.sku && !skuIndex.has(row.sku)) skuIndex.set(row.sku, row);
-    const tokens = [...tokenSet(`${row.brand} ${row.itemName}`)].slice(0, 4);
+    const tokens = [...tokenSet(`${row.brand} ${row.itemName} ${row.category} ${sizeSignature(row)}`)].slice(0, 8);
     tokens.forEach((token) => {
       tokenIndex.set(token, [...(tokenIndex.get(token) || []), row]);
     });
   });
 
   const matches: NormalizedMatchedPair[] = [];
-  normalizedClientRows.forEach((client) => {
+  normalizedClientRows.forEach((client, rowIndex) => {
+    const traceRow: MatchTraceRow | null =
+      rowIndex < 5
+        ? {
+            client: safeNormalizedRecord(client),
+            exactUpcCandidate:
+              client.upc && upcIndex.has(client.upc)
+                ? safeNormalizedRecord(upcIndex.get(client.upc))
+                : null,
+            exactSkuCandidate:
+              client.sku && skuIndex.has(client.sku)
+                ? safeNormalizedRecord(skuIndex.get(client.sku))
+                : null,
+            candidatesConsidered: [],
+            acceptedCandidate: null,
+            finalDecision: "",
+          }
+        : null;
+
     if (client.upc && upcIndex.has(client.upc)) {
       diagnostics.exactUpcMatches += 1;
       matches.push(toMatchedPair(client, upcIndex.get(client.upc) as NormalizedSourceRecord, 1));
+      if (traceRow) {
+        traceRow.finalDecision = "accepted: exact UPC match";
+        diagnostics.matchTrace.push(traceRow);
+      }
       return;
     }
 
     if (client.sku && skuIndex.has(client.sku)) {
       diagnostics.exactSkuMatches += 1;
       matches.push(toMatchedPair(client, skuIndex.get(client.sku) as NormalizedSourceRecord, 0.95));
+      if (traceRow) {
+        traceRow.finalDecision = "accepted: exact SKU/product id match";
+        diagnostics.matchTrace.push(traceRow);
+      }
       return;
     }
 
-    const candidateTokens = [...tokenSet(`${client.brand} ${client.itemName}`)].slice(0, 4);
+    const candidateTokens = [...tokenSet(`${client.brand} ${client.itemName} ${client.category} ${sizeSignature(client)}`)].slice(
+      0,
+      8
+    );
     const candidates = Array.from(
       new Set(candidateTokens.flatMap((token) => tokenIndex.get(token) || []))
     ).slice(0, 250);
-    const bestCandidate = candidates
+    const scoredCandidates = candidates
       .map((candidate) => ({
         candidate,
-        score:
-          similarityScore(`${client.brand} ${client.itemName}`, `${candidate.brand} ${candidate.itemName}`) +
-          (client.category && candidate.category
-            ? similarityScore(client.category, candidate.category) * 0.25
-            : 0),
+        trace: scoreCandidate(client, candidate),
       }))
-      .sort((left, right) => right.score - left.score)[0];
+      .sort((left, right) => right.trace.score - left.trace.score);
+    const bestCandidate = scoredCandidates[0];
 
-    if (bestCandidate && bestCandidate.score >= 0.5) {
+    if (traceRow) {
+      traceRow.candidatesConsidered = scoredCandidates.slice(0, 8).map(({ trace }) => trace);
+    }
+
+    if (bestCandidate?.trace.accepted) {
       diagnostics.fuzzyMatches += 1;
-      matches.push(toMatchedPair(client, bestCandidate.candidate, clamp(bestCandidate.score, 0.5, 0.9)));
+      matches.push(
+        toMatchedPair(client, bestCandidate.candidate, clamp(bestCandidate.trace.score, 0.45, 0.9))
+      );
+      if (traceRow) {
+        traceRow.acceptedCandidate = bestCandidate.trace;
+        traceRow.finalDecision = bestCandidate.trace.reason;
+        diagnostics.matchTrace.push(traceRow);
+      }
       return;
     }
 
     diagnostics.unmatchedRows += 1;
+    if (traceRow) {
+      traceRow.finalDecision =
+        bestCandidate?.trace.reason ||
+        "rejected: no benchmark candidates shared normalized name, brand, category, or size tokens";
+      diagnostics.matchTrace.push(traceRow);
+    }
   });
 
   if (matches.length === 0) {
     diagnostics.zeroCoverageRootCause = "overly_strict_matching";
+    diagnostics.zeroCoverageSummary = summarizeZeroCoverageRootCause(diagnostics.matchTrace, diagnostics);
     diagnostics.emptyReason =
-      "Client and benchmark rows normalized successfully, but no UPC, SKU, or fuzzy product matches met the current thresholds.";
+      `Client and benchmark rows normalized successfully, but no UPC, SKU, or fuzzy product matches met the current thresholds. Likely root cause: ${diagnostics.zeroCoverageSummary}.`;
   }
+
+  logMatcherTraceDiagnostics();
 
   return {
     matches,
@@ -1053,6 +1337,15 @@ export const calculatePricingOpportunity = (
             geography: null,
           }
         : null,
+    sampleNormalizedClientRows: [],
+    sampleNormalizedBenchmarkRows: [],
+    matchTrace: [],
+    zeroCoverageSummary:
+      clientSourceRows.length === 0 && preMatchedPairs.length === 0
+        ? uploadedClientFileCount > 0
+          ? "missing UPC / SKU fields"
+          : "missing client rows"
+        : null,
     exactUpcMatches: 0,
     exactSkuMatches: 0,
     fuzzyMatches: preMatchedPairs.length,
@@ -1122,6 +1415,7 @@ export const calculatePricingOpportunity = (
       fuzzyMatches: matchDiagnostics.fuzzyMatches,
       unmatchedRows: matchDiagnostics.unmatchedRows,
       zeroCoverageRootCause: matchDiagnostics.zeroCoverageRootCause,
+      zeroCoverageSummary: matchDiagnostics.zeroCoverageSummary,
       zeroCoverageReason: matchDiagnostics.emptyReason,
       missingRequiredInputs: matchedPairs.length === 0 ? ["matchedPricingPairs"] : [],
     })
